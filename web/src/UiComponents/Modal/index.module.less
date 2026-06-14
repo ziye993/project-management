@@ -12,6 +12,16 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+
+  &.boxOpen {
+    opacity: 1;
+  }
+
+  &.boxClose {
+    opacity: 0;
+  }
 
   .content {
     width: auto;
@@ -20,12 +30,24 @@
     max-width: 80%;
     background-color: #FFF;
     border-radius: 10px;
-    // transform: translateY(-10vh);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
     max-height: 90%;
+    opacity: 0;
+    transform: scale(0.92) translateY(-16px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+
+    &.contentOpen {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    &.contentClose {
+      opacity: 0;
+      transform: scale(0.92) translateY(-16px);
+    }
   }
 
   .userContent::-webkit-scrollbar {
