@@ -1,0 +1,261 @@
+.box {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px;
+  position: relative;
+}
+
+
+.contentBox {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  position: relative;
+  flex: 1;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 10px;
+  background-color: #FFF;
+  border-radius: 20px;
+  color: #000;
+  min-width: 200px;
+  max-height: calc(100vh - 90px - 50px);
+  overflow-y: auto;
+
+  p {
+    text-align: center;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    line-height: 40px;
+  }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .checkedItem {
+    background-color: #e3e3e3;
+  }
+
+
+
+
+
+  .itemBox {
+    width: 100%;
+    transition: all 0.5s;
+    line-height: 30px;
+    padding: 5px 5px 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 5px 0;
+    font-size: 18px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    margin-left: 5px;
+    white-space: nowrap;
+
+    .projectItemName {
+      flex: 1;
+      margin-left: 0px;
+    }
+  }
+
+  .runningItemBox {
+    cursor: default;
+    color: #333;
+
+    span {
+      display: inline-block;
+      max-width: 150px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+  }
+
+  .itemBox:hover {
+    background-color: #f2f2f2;
+  }
+
+  .path {
+    display: inline-block;
+    font-size: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    overflow: hidden;
+    margin-left: 10px;
+  }
+}
+
+.hasRunning {
+  background-color: #0ead00;
+  animation: runningicon 5s infinite;
+}
+
+.maskHasPause {
+  background-color: #a0a0a0;
+}
+
+.noMask {
+  display: none;
+}
+
+.hasRunningicon {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0;
+  padding: 0;
+  border-radius: 3px;
+  position: absolute;
+  left: -9px;
+}
+
+@keyframes runningicon {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+}
+
+.content {
+  flex: 1;
+  height: calc(100vh - 90px - 50px);
+  background-color: #FFF;
+  border-radius: 20px;
+  margin-left: 14px;
+  padding: 18px;
+  margin-right: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.contentHeadButton {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  height: auto;
+
+  .comButton {
+    width: auto;
+    height: 40px;
+    border-radius: 8px;
+    text-align: center;
+    line-height: 40px;
+    color: #000000;
+    padding: 0px 20px;
+    cursor: pointer;
+    background-color: #f1f1f1;
+    margin-right: 20px;
+    margin-bottom: 20px;
+    transition: all 0.5s;
+  }
+
+  .comButton:hover {
+    background-color: #e8e8e8;
+  }
+
+  .comButtonChecked:hover {
+    background-color: #12dc00;
+  }
+
+  .comButtonChecked {
+    background-color: #0ead00;
+    color: #FFF;
+  }
+}
+
+.commandBottonLine {
+  width: 100%;
+  height: 1px;
+  background-color: #F0F0F0;
+}
+
+
+.cmdContent {
+  width: 100%;
+  flex: 1;
+  border-radius: 10px;
+  background-color: rgb(246, 245, 245, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+
+  .commandName {
+    color: #000;
+    width: 100%;
+    line-height: 50px;
+    border-bottom: 4px solid #FFF;
+    padding: 0 20px 20px 20px;
+    font-size: 18px;
+    display: inline-block;
+    height: 50px;
+  }
+
+  .commandLogBox {
+    overflow: auto;
+    margin-top: 10px;
+    padding: 10px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex: 1;
+    max-height: 100%;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    code {
+      width: auto;
+      color: #000;
+      font-size: 20px;
+    }
+  }
+}
+
+.codeline {
+  // white-space: nowrap;
+  white-space: pre-wrap;
+  padding: 5px;
+  border-radius: 5px;
+  transition: all 0.3s;
+}
+
+.codeline:hover {
+  background-color: #ddd;
+
+}
+
+.codeindex {
+ 
+  display: inline-block;
+}

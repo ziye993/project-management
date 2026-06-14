@@ -1,0 +1,63 @@
+.box {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  height: 100%;
+  background: #f5f5f5;
+
+  .userHeader {
+    background: #fff;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+}
+
+.path {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #666;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:hover {
+    background: #fafafa;
+  }
+}
+
+.name {
+  flex: 1;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+
+  button {
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+
+    &:hover {
+      background: #f0f4ff;
+    }
+  }
+}

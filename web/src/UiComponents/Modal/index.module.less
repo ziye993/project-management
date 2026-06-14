@@ -1,0 +1,94 @@
+.box {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.19);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  .content {
+    width: auto;
+    min-width: 30%;
+    min-height: 150px;
+    max-width: 80%;
+    background-color: #FFF;
+    border-radius: 10px;
+    // transform: translateY(-10vh);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    max-height: 90%;
+  }
+
+  .userContent::-webkit-scrollbar {
+    display: none;
+  }
+
+  .title {
+    width: 90%;
+    height: 60px;
+    border-bottom: 1px solid #cccccc9c;
+    text-align: left;
+    line-height: 60px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .userContent {
+    flex: 1;
+    min-height: 100px;
+    width: 100%;
+    padding: 10px 20px;
+    overflow: auto;
+    max-height: 100%;
+    padding-top: 5px;
+
+  }
+
+  .footer {
+    width: 90%;
+    height: 60px;
+    border-top: 1px solid #cccccc9c;
+    text-align: left;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: flex-start;
+
+    >div {
+      margin: 5px 10px;
+    }
+  }
+}
+
+.messageBox {
+  position: fixed;
+  top: 100px;
+  left: 50vw;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: auto;
+  height: 45px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  background-color: #FFFFFF;
+  padding: 5px 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
+  transition: all 0.5s;
+  >*{
+    margin: 0 10px;
+  }
+}
