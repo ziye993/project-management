@@ -20,3 +20,6 @@ export const chunkUpload = async (uploadId: string, chunkIndex: number, blob: Bl
 };
 
 export const chunkMerge = async (uploadId: string) => post('/upload/chunkMerge', { uploadId });
+
+export const deleteMedia = async (type: 'pic' | 'mov', storedName: string) =>
+  post('/file/deleteMedia', { type, storedName });

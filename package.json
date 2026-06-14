@@ -1,0 +1,16 @@
+{
+  "name": "project-management",
+  "version": "1.0.0",
+  "description": "Local project management system",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "build": "npm run build --prefix web",
+    "dev:web": "npm run dev --prefix web",
+    "postinstall": "npm install --prefix server && npm install --prefix web"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,4 +1,4 @@
-import { EyeOutlined, LinkOutlined } from '@ant-design/icons';
+import { EyeOutlined, LinkOutlined, DeleteOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
 import type { LinkItem } from '../LinkCopyModal';
 
@@ -9,6 +9,7 @@ interface MediaItemCardProps {
   links?: LinkItem[];
   onView: () => void;
   onCopyLinks: () => void;
+  onDelete: () => void;
 }
 
 export default function MediaItemCard(props: MediaItemCardProps) {
@@ -23,6 +24,9 @@ export default function MediaItemCard(props: MediaItemCardProps) {
         <div className={styles.overlay}>
           <button type="button" onClick={props.onView}><EyeOutlined /> 查看</button>
           <button type="button" onClick={props.onCopyLinks}><LinkOutlined /> 复制链接</button>
+          <button type="button" className={styles.dangerBtn} onClick={props.onDelete}>
+            <DeleteOutlined /> 删除
+          </button>
         </div>
       </div>
       <p className={styles.name} title={props.name}>{props.name}</p>
