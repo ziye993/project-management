@@ -2,16 +2,16 @@ import path from 'path';
 import { getProjectsData, getColorCache, setColorCache } from './jsonFile.js';
 
 const LIGHT_COLORS = [
-  '#FFF9C4',
-  '#C8E6C9',
-  '#BBDEFB',
-  '#FFE0B2',
-  '#E1BEE7',
-  '#F8BBD0',
-  '#B2DFDB',
-  '#D7CCC8',
-  '#F0F4C3',
-  '#FFCCBC',
+  '#FFFDE7',
+  '#E8F5E9',
+  '#E3F2FD',
+  '#FFF3E0',
+  '#F3E5F5',
+  '#FCE4EC',
+  '#E0F2F1',
+  '#EFEBE9',
+  '#F9FBE7',
+  '#FBE9E7',
 ];
 
 export function computeColorGroups() {
