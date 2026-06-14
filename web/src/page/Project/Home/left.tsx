@@ -1,8 +1,9 @@
 import type { IProjectListItem } from '../../../type';
 import styles from './index.module.less';
-import { DeleteOutlined } from '@ant-design/icons';
+import { DeleteOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { removeProject } from '../../../server/project';
 import message from '../../../UiComponents/Modal/message';
+import { softenRowColor } from '../../../utils/color';
 
 interface IProps {
 	projectList: IProjectListItem[];
@@ -21,14 +22,17 @@ export default function Left(props: IProps) {
 	};
 
 	return (
-		<div className={styles.list}>
-			<p>项目列表</p>
+		<div className={`${styles.list} ${styles.projectPanel}`}>
+			<p className={styles.panelTitle}><AppstoreOutlined /> 项目列表</p>
 			{projectList.map((item, index) => {
 				return (
 					<div
 						key={item.path}
 						className={`${styles.itemBox} ${item.checked ? styles.checkedItem : ''}`}
-						style={{ backgroundColor: item.color || undefined }}
+						style={{
+							'--row-accent': item.color || '#cbd5e1',
+							backgroundColor: item.color ? softenRowColor(item.color) : undefined,
+						} as React.CSSProperties}
 						onClick={() => { setProjectChecked(index) }}
 					>
 						<span className={`

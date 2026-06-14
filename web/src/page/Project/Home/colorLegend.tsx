@@ -1,5 +1,6 @@
 import type { IColorCache } from '../../../type';
 import styles from './colorLegend.module.less';
+import { softenRowColor } from '../../../utils/color';
 
 interface IProps {
   colorCache: IColorCache | null;
@@ -25,7 +26,7 @@ export default function ColorLegend(props: IProps) {
       <ul className={styles.list}>
         {colorCache.groups.map(group => (
           <li key={group.parentPath} className={styles.item}>
-            <span className={styles.swatch} style={{ backgroundColor: group.color }} />
+            <span className={styles.swatch} style={{ backgroundColor: softenRowColor(group.color) }} />
             <div className={styles.info}>
               <span className={styles.path} title={group.parentPath}>{group.parentPath}</span>
               <span className={styles.count}>{group.projects.length} 个项目</span>

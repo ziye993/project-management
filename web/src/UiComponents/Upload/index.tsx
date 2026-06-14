@@ -15,7 +15,6 @@ export default function (props: any) {
         }
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            // 检查 item 是否是 File 对象
             if (file instanceof File) {
                 newFiles.push({
                     name: file.name,
@@ -39,7 +38,7 @@ export default function (props: any) {
             nprev.splice(index, 1);
             return nprev
         });
-        fileListRef.current = fileListRef.current?.splice(index, 1);
+        fileListRef.current.splice(index, 1);
         try {
             await props.onChange(fileListRef.current)
         } catch (error) {
@@ -47,18 +46,26 @@ export default function (props: any) {
         }
     }
 
+    const formatSize = (size: number) => {
+        if (size < 1024) return `${size} B`;
+        if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+        return `${(size / 1024 / 1024).toFixed(1)} MB`;
+    };
+
     return <>
         <div className={styles.uploadBox} >
             <PlusOutlined /> <span>选择照片或视频</span>
             <input type='file' {...props} onChange={(e) => fileChange(e)} />
         </div>
         <div className={styles.fileList}>
-            {fileList.length ? <div className={styles.fleListItem} style={{ fontSize: '14px', lineHeight: '16px', marginTop: "10px", color: '#919191ff', marginBottom: '8px' }}>
-                <span style={{ color: '#595959ff', padding: '0 30px 0 0' }} ></span><span style={{ flex: 1 }}>{'名称'}</span> <span>{'大小'}</span>
+            {fileList.length ? <div className={styles.fileListHeader}>
+                <span style={{ flex: 1 }}>名称</span> <span>大小</span>
             </div> : null}
             {fileList.map((_, index) => {
-                return <div className={styles.fleListItem}>
-                    <DeleteOutlined onClick={() => { deleteListItem(index) }} /> <span style={{ flex: 1 }}>{_.name}</span> <span>{_.size}</span>
+                return <div key={index} className={styles.fileListItem}>
+                    <DeleteOutlined onClick={() => { deleteListItem(index) }} />
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{_.name}</span>
+                    <span>{formatSize(_.size)}</span>
                 </div>
             })}
         </div>

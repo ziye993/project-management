@@ -28,7 +28,7 @@ export default function Center(props: IProps) {
             {currentCommand?.label && <code className={styles.commandName} >{currentCommand?.label} {`：`} {currentCommand?.command}</code>}
             <div className={styles.commandLogBox} ref={commandBoxRef} >
                 {refCount && logs.map((_, index) => {
-                    return <code key={index} className={styles.codeline} style={{ color: _.type === 'error' ? 'red' : '#333', margin: '2px 0' }}>
+                    return <code key={index} className={styles.codeline} style={{ color: _.type === 'error' ? '#dc2626' : '#334155', margin: '2px 0' }}>
                         {_.text}
                     </code>
                 })}

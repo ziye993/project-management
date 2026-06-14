@@ -206,6 +206,8 @@ export default function ProjectManage() {
   }, [refCount])
 
   return <div className={styles.box}>
+    <div className={styles.ambientBg} aria-hidden />
+    <div className={styles.pageInner}>
     <UserHeader className={styles.userHeader}>
       <Header forceRefreshList={forceRefreshList} onColorRefresh={loadColorGroups} />
     </UserHeader>
@@ -214,6 +216,7 @@ export default function ProjectManage() {
       <Center commandBoxRef={commandBoxRef} currentCommand={currentCommand} currentProject={currentProject} refCount={refCount} logs={logs} runCommand={runCommand} />
       <Right currentProject={currentProject} setCommandChecked={setCommandChecked} runCommand={runCommand} close={close} stop={stop} />
       <ColorLegend colorCache={colorCache} />
+    </div>
     </div>
   </div>
 }

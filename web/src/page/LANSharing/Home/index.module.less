@@ -1,29 +1,46 @@
 .box {
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  width: 100%;
   height: 100%;
-  background: #f5f5f5;
+}
 
-  .userHeader {
-    background: #fff;
-    border-radius: 20px;
-    margin-bottom: 12px;
-  }
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .path {
   margin: 0 0 12px;
-  font-size: 13px;
-  color: #666;
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 0 4px;
 }
 
 .list {
   flex: 1;
   overflow-y: auto;
-  background: #fff;
-  border-radius: 12px;
-  padding: 8px;
+  border-radius: 10px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 4px;
+  }
+}
+
+.empty {
+  margin: 24px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #94a3b8;
 }
 
 .row {
@@ -31,10 +48,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-radius: 10px;
+  transition: background 0.2s;
 
   &:hover {
-    background: #fafafa;
+    background: rgba(241, 245, 249, 0.8);
+  }
+
+  & + & {
+    margin-top: 2px;
   }
 }
 
@@ -42,22 +64,38 @@
   flex: 1;
   cursor: pointer;
   font-size: 14px;
+  color: #334155;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 
   button {
-    border: 1px solid #ddd;
-    background: #fff;
-    border-radius: 6px;
-    padding: 4px 10px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    padding: 5px 10px;
     cursor: pointer;
     font-size: 12px;
+    color: #64748b;
+    transition: all 0.2s;
 
     &:hover {
-      background: #f0f4ff;
+      background: rgba(238, 242, 255, 0.7);
+      border-color: rgba(129, 140, 248, 0.25);
+      color: #4f46e5;
     }
+  }
+
+  .dangerBtn:hover {
+    background: rgba(254, 242, 242, 0.9);
+    border-color: rgba(252, 165, 165, 0.4);
+    color: #ef4444;
   }
 }

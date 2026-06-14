@@ -1,65 +1,116 @@
-import { useEffect, useState } from 'react'
-import UserHeader from '../../compomeents/UserHeader'
-import styles from './index.module.less'
-import { AlignLeftOutlined, BarChartOutlined, CodeOutlined, DesktopOutlined, FundViewOutlined, PartitionOutlined } from '@ant-design/icons'
-import { useNavigate } from '../../Router'
+import { useEffect, useState } from 'react';
+import UserHeader from '../../compomeents/UserHeader';
+import styles from './index.module.less';
+import {
+  AlignLeftOutlined,
+  BarChartOutlined,
+  CodeOutlined,
+  DesktopOutlined,
+  FundViewOutlined,
+  PartitionOutlined,
+  RightOutlined,
+} from '@ant-design/icons';
+import { useNavigate } from '../../Router';
 
-const _data = {
-    data: [{
-        id: 7,
-        name: '代码管理',
-        icon: <CodeOutlined />,
-        code: 'codeMenege',
-        path: '/project',
-    }, {
-        id: 2,
-        name: '图像',
-        code: 'image',
-        icon: <FundViewOutlined />,
-        path: '/image',
-    }, {
-        id: 3,
-        name: '影视',
-        icon: <DesktopOutlined />,
-        code: 'television',
-        path: '/television',
-    }, {
-        id: 4,
-        name: '系统配置',
-        icon: <AlignLeftOutlined />,
-        code: 'config',
-        path: '/config',
-    }, {
-        id: 5,
-        name: '服务器状态信息',
-        icon: <BarChartOutlined />,
-        code: 'serverInfo',
-        path: '/serverInfo',
-    }, {
-        id: 6,
-        name: '局域网共享',
-        icon: <PartitionOutlined />,
-        code: 'LANSharing',
-        path: '/LANSharing',
-    },]
+interface EntryItem {
+  id: number;
+  name: string;
+  desc: string;
+  icon: React.ReactNode;
+  path: string;
+  accent: string;
 }
 
-export default function ZiyeHome() {
-    const [data, setData] = useState<any[]>([]);
-    const { push } = useNavigate();
+const entries: EntryItem[] = [
+  {
+    id: 7,
+    name: '代码管理',
+    desc: '管理本地项目、运行脚本与查看日志',
+    icon: <CodeOutlined />,
+    path: '/project',
+    accent: 'indigo',
+  },
+  {
+    id: 2,
+    name: '图像',
+    desc: '上传图片、预览与复制访问链接',
+    icon: <FundViewOutlined />,
+    path: '/image',
+    accent: 'sky',
+  },
+  {
+    id: 3,
+    name: '影视',
+    desc: '视频上传、切片存储与在线播放',
+    icon: <DesktopOutlined />,
+    path: '/television',
+    accent: 'violet',
+  },
+  {
+    id: 4,
+    name: '系统配置',
+    desc: '存储路径、公网链接等全局设置',
+    icon: <AlignLeftOutlined />,
+    path: '/config',
+    accent: 'amber',
+  },
+  {
+    id: 5,
+    name: '服务器状态',
+    desc: '查看 CPU、内存、磁盘等运行指标',
+    icon: <BarChartOutlined />,
+    path: '/serverInfo',
+    accent: 'mint',
+  },
+  {
+    id: 6,
+    name: '局域网共享',
+    desc: '共享文件夹上传、下载与管理',
+    icon: <PartitionOutlined />,
+    path: '/LANSharing',
+    accent: 'cyan',
+  },
+];
 
-    useEffect(() => { setData(_data.data || []) }, [])
-    return <div className={styles.box}>
-        <div className={styles.content}>
-            <UserHeader />
-            <div className={styles.fun}>
-                {data.map((_, index) => {
-                    return <div key={index} className={styles.funItem} onClick={() => { push(_.path) }}>
-                        {_.icon}
-                        <span>{_.name}</span>
-                    </div>
-                })}
-            </div>
-        </div>
+export default function ZiyeHome() {
+  const [data, setData] = useState<EntryItem[]>([]);
+  const { push } = useNavigate();
+
+  useEffect(() => {
+    setData(entries);
+  }, []);
+
+  return (
+    <div className={styles.box}>
+      <div className={styles.ambientBg} aria-hidden />
+      <div className={styles.pageInner}>
+        <UserHeader className={styles.userHeader} />
+        <main className={styles.main}>
+          {/*<section className={styles.hero}>*/}
+          {/*  <p className={styles.heroTag}>本地工作台</p>*/}
+          {/*  <h1 className={styles.heroTitle}>项目管理</h1>*/}
+          {/*  <p className={styles.heroDesc}>选择一个模块，开始你的本地开发与管理</p>*/}
+          {/*</section>*/}
+          <section className={styles.grid}>
+            {data.map(item => (
+              <button
+                key={item.id}
+                type="button"
+                className={styles.card}
+                data-accent={item.accent}
+                onClick={() => push(item.path)}
+              >
+                <span className={styles.iconWrap}>{item.icon}</span>
+                <span className={styles.cardBody}>
+                  <span className={styles.cardName}>{item.name}</span>
+                  <span className={styles.cardDesc}>{item.desc}</span>
+                </span>
+                <RightOutlined className={styles.cardArrow} />
+              </button>
+            ))}
+          </section>
+        </main>
+      </div>
     </div>
+  );
 }

@@ -1,4 +1,4 @@
-import { ApiOutlined, CloseCircleOutlined, PauseCircleOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { ApiOutlined, CloseCircleOutlined, PauseCircleOutlined, PlayCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import type { IProjectListItem } from '../../../type';
 import styles from './index.module.less';
 
@@ -12,9 +12,14 @@ interface IProps {
 }
 export default function Right(props: IProps) {
     const { currentProject, setCommandChecked, runCommand, close, stop } = props;
-    return (<div className={styles.list}>
-        <p>正在运行中的</p>
-        {currentProject?.scripts?.filter?.(_ => _?.running !== undefined)?.map(_ => {
+    const runningScripts = currentProject?.scripts?.filter?.(_ => _?.running !== undefined) ?? [];
+
+    return (<div className={`${styles.list} ${styles.runningPanel}`}>
+        <p className={styles.panelTitle}><ThunderboltOutlined /> 正在运行</p>
+        {runningScripts.length === 0 && (
+            <p className={styles.emptyHint}>暂无运行中的命令</p>
+        )}
+        {runningScripts.map(_ => {
             return <div key={_.value} className={`${styles.itemBox} ${styles.runningItemBox} ${_?.checked ? styles.checkedItem : ''}`} onClick={() => { setCommandChecked(_) }}>
                 <span>{_.label}</span>
                 <div>

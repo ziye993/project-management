@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { PlusOutlined } from '@ant-design/icons';
 import { chunkInit, chunkMerge, chunkUpload } from '../../server/media';
 import message from '../../UiComponents/Modal/message';
 import styles from './index.module.less';
@@ -45,16 +46,24 @@ export default function ChunkUploader(props: ChunkUploaderProps) {
 
   return (
     <div className={styles.box}>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={props.accept || 'video/*'}
-        multiple
-        disabled={uploading}
-        onChange={e => handleFiles(e.target.files)}
-      />
-      {uploading && <div className={styles.bar}><div style={{ width: `${progress}%` }} /></div>}
-      {uploading && <p>上传中 {progress}%</p>}
+      <div className={`${styles.uploadBox} ${uploading ? styles.disabled : ''}`}>
+        <PlusOutlined />
+        <span>{uploading ? `上传中 ${progress}%` : '选择视频文件'}</span>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={props.accept || 'video/*'}
+          multiple
+          disabled={uploading}
+          onChange={e => handleFiles(e.target.files)}
+        />
+      </div>
+      {uploading && (
+        <>
+          <div className={styles.progressBar}><div style={{ width: `${progress}%` }} /></div>
+          <p className={styles.progressText}>切片上传中，请勿关闭窗口</p>
+        </>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import UserHeader from '../../../compomeents/UserHeader';
 import PageHeader from '../../../compomeents/PageHeader';
+import PageShell, { shellStyles } from '../../../compomeents/PageShell';
 import MediaItemCard from '../../../compomeents/MediaItemCard';
 import LinkCopyModal, { type LinkItem } from '../../../compomeents/LinkCopyModal';
 import ChunkUploader from '../../../compomeents/ChunkUploader';
@@ -37,13 +38,13 @@ export default function TelevisionHome() {
   };
 
   return (
-    <div className={styles.box}>
-      <UserHeader className={styles.userHeader}>
+    <PageShell className={styles.box}>
+      <UserHeader className={shellStyles.userHeader}>
         <PageHeader>
           <Button onClick={() => setUploadOpen(true)}><UploadOutlined /> 上传视频</Button>
         </PageHeader>
       </UserHeader>
-      <div className={styles.content}>
+      <div className={`${shellStyles.contentPanel} ${styles.content}`}>
         {fileList.map(item => (
           <MediaItemCard
             key={item.storedName}
@@ -72,6 +73,6 @@ export default function TelevisionHome() {
         <p className={styles.deleteTip}>确定删除「{deleteTarget?.name}」？此操作不可恢复。</p>
       </Modal>
       <LinkCopyModal open={linkModal.open} links={linkModal.links} onClose={() => setLinkModal({ open: false, links: [] })} />
-    </div>
+    </PageShell>
   );
 }

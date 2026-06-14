@@ -1,0 +1,99 @@
+.uploadBox {
+  width: 100%;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  text-align: center;
+  color: #64748b;
+  background: rgba(248, 250, 252, 0.8);
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    border-color: rgba(129, 140, 248, 0.4);
+    background: rgba(238, 242, 255, 0.5);
+    color: #4f46e5;
+  }
+
+  :global(.anticon) {
+    font-size: 18px;
+    color: #94a3b8;
+  }
+
+  &:hover :global(.anticon) {
+    color: #6366f1;
+  }
+
+  span {
+    font-size: 14px;
+  }
+
+  &.disabled {
+    opacity: 0.65;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+}
+
+.fileList {
+  margin-top: 12px;
+}
+
+.fileListItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 4px;
+  font-size: 13px;
+  color: #475569;
+
+  :global(.anticon) {
+    color: #94a3b8;
+    cursor: pointer;
+    margin-right: 8px;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.08);
+    }
+  }
+}
+
+.fileListHeader {
+  font-size: 12px;
+  line-height: 16px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+  color: #94a3b8;
+  display: flex;
+  justify-content: space-between;
+}
+
+.progressBar {
+  height: 6px;
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 999px;
+  margin-top: 14px;
+  overflow: hidden;
+
+  div {
+    height: 100%;
+    background: linear-gradient(90deg, #a5b4fc, #818cf8);
+    border-radius: 999px;
+    transition: width 0.2s;
+  }
+}
+
+.progressText {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+}

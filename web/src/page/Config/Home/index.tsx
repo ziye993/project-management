@@ -1,4 +1,5 @@
 import UserHeader from '../../../compomeents/UserHeader'
+import PageShell, { shellStyles } from '../../../compomeents/PageShell';
 import styles from './index.module.less'
 import FileSelect, { type FileSelectResult } from '../../../compomeents/FileSelect';
 import { useEffect, useRef, useState } from 'react';
@@ -10,7 +11,6 @@ import {
   setPicUploadPath,
   setPublicBaseUrl,
 } from '../../../server/setConfig';
-// import Header from "./header.tsx";
 import PageHeader from "../../../compomeents/PageHeader";
 
 type ConfigState = {
@@ -55,11 +55,9 @@ export default function ConfigHome() {
   const displayPath = (p?: string) => p || '未设置';
 
   return (
-    <div className={styles.box}>
-      <UserHeader className={styles.userHeader} >
-          <PageHeader>
-
-          </PageHeader>
+    <PageShell className={styles.box}>
+      <UserHeader className={shellStyles.userHeader}>
+        <PageHeader />
       </UserHeader>
 
       <FileSelect
@@ -71,7 +69,7 @@ export default function ConfigHome() {
         onOK={onOK}
       />
       <div className={styles.content}>
-        <div className={styles.configItemBox}>
+        <div className={`${shellStyles.panel} ${styles.configItemBox}`}>
           <span className={styles.configItemTitle}>上传路径</span>
           <p className={styles.hint}>默认使用项目 data/files 目录，可按需修改</p>
           <div className={styles.configItemContent}>
@@ -91,7 +89,7 @@ export default function ConfigHome() {
             </ul>
           </div>
         </div>
-        <div className={styles.configItemBox}>
+        <div className={`${shellStyles.panel} ${styles.configItemBox}`}>
           <span className={styles.configItemTitle}>访问链接</span>
           <p className={styles.hint}>配置公网域名后，图片/视频链接会额外生成线上地址（如 https://example.com）</p>
           <div className={styles.publicUrlRow}>
@@ -113,6 +111,6 @@ export default function ConfigHome() {
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
