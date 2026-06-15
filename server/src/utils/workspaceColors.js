@@ -56,7 +56,7 @@ export function getProjectColorMap() {
   const map = {};
   for (const group of cache.groups || []) {
     for (const project of group.projects || []) {
-      map[project.value] = {
+      map[project.path] = {
         color: group.color,
         parentPath: group.parentPath,
       };

@@ -44,8 +44,8 @@ app.post('/api/project/getProjectList', (req, res) => {
   const colorMap = getProjectColorMap();
   const list = projectList.map(p => ({
     ...p,
-    color: colorMap[p.value]?.color,
-    groupPath: colorMap[p.value]?.parentPath,
+    color: colorMap[p.path]?.color,
+    groupPath: colorMap[p.path]?.parentPath,
   }));
   ok(res, list);
 });
