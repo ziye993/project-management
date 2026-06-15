@@ -10,11 +10,11 @@ export const forceRefreshList = async () => {
   return await post(basePath + '/forceRefreshList')
 }
 
-export const runCom = async (param: { path: string; value: string; project: string }, event: (data: any) => void) => {
+export const runCom = async (param: { path: string; value: string }, event: (data: any) => void) => {
   fetchStream(basePath + '/runCommand', { ...param }, event);
 }
 
-export const stopCommand = async (param: { path: string; value: string; project: string }) => {
+export const stopCommand = async (param: { path: string; value: string }) => {
   return await post(basePath + '/stopCommand', param)
 }
 

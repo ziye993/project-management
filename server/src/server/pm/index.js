@@ -9,6 +9,7 @@ import getProjectList, {
 } from '../../utils/initConfig.js';
 import { computeColorGroups, getProjectColorMap } from '../../utils/workspaceColors.js';
 import { getColorCache } from '../../utils/jsonFile.js';
+import { makeRunKey, parseRunKey } from '../../utils/runKey.js';
 
 let projectList = getProjectList();
 let currentChild = {};
@@ -109,11 +110,11 @@ app.post('/api/project/removeProject', (req, res) => {
 });
 
 app.post('/api/project/runCommand', (req, res) => {
-  const { path: projectPath, value, project } = req.body;
+  const { path: projectPath, value } = req.body;
   if (!value || !projectPath) return res.status(400).send('缺少参数');
 
   let child;
-  const key = `${project}:${value}`;
+  const key = makeRunKey(projectPath, value);
 
   if (!currentChild[key]) {
     const isWin = process.platform === 'win32';
@@ -130,14 +131,14 @@ app.post('/api/project/runCommand', (req, res) => {
     child.stderr.removeAllListeners('data');
   }
 
-  if (!logs[project]) logs[project] = {};
-  if (!logs[project][value]) logs[project][value] = { logs: [] };
+  if (!logs[projectPath]) logs[projectPath] = {};
+  if (!logs[projectPath][value]) logs[projectPath][value] = { logs: [] };
   if (!child) return;
 
   const appendLog = (text, type) => {
-    logs[project][value].logs.push({ text, type });
-    if (logs[project][value].logs.length > 100) {
-      logs[project][value].logs.shift();
+    logs[projectPath][value].logs.push({ text, type });
+    if (logs[projectPath][value].logs.length > 100) {
+      logs[projectPath][value].logs.shift();
     }
   };
 
@@ -171,14 +172,17 @@ app.post('/api/project/runCommand', (req, res) => {
 });
 
 app.post('/api/project/stopCommand', async (req, res) => {
-  const { value, project } = req.body;
-  const key = `${project}:${value}`;
+  const { value, path: projectPath } = req.body;
+  if (!value || !projectPath) {
+    return res.status(400).send({ success: false, code: 1, msg: '缺少参数', data: null });
+  }
+  const key = makeRunKey(projectPath, value);
   if (currentChild?.[key]) {
     let killRes = await killChild(currentChild[key], 'SIGINT');
     if (!killRes) {
       killRes = await killChild(currentChild[key], 'SIGTERM');
     }
-    logs[project][value] = undefined;
+    if (logs[projectPath]) logs[projectPath][value] = undefined;
     currentChild[key] = undefined;
     res.send({ msg: '', code: 0, success: killRes, data: killRes });
   } else {
@@ -190,9 +194,9 @@ app.post('/api/project/getRunningList', (req, res) => {
   const result = {};
   Object.keys(currentChild).forEach(key => {
     if (!currentChild[key]) return;
-    const names = key.split(':');
-    if (!result[names[0]]) result[names[0]] = [];
-    result[names[0]].push(names[1]);
+    const { projectPath, command } = parseRunKey(key);
+    if (!result[projectPath]) result[projectPath] = [];
+    result[projectPath].push(command);
   });
   res.send({ success: true, data: result, code: 0, msg: '' });
 });

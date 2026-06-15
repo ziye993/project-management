@@ -17,6 +17,7 @@ import Right from './right';
 import UserHeader from '../../../compomeents/UserHeader';
 import Header from './header';
 import ColorLegend from './colorLegend';
+import { makeRunKey, parseRunKey } from '../../../utils/runKey';
 
 interface IProjectData {
   projectList: _IProjectData["projectList"],
@@ -39,7 +40,7 @@ export default function ProjectManage() {
   const currentProject = projectList?.[currentProjectIndex];
   const currentCommandIndex = currentProject?.scripts?.findIndex?.(_ => _.checked);
   const currentCommand = currentProject?.scripts?.[currentCommandIndex];
-  const logs: any[] = logRef.current?.[currentProject?.value]?.[currentCommand?.value]?.logs || []
+  const logs: any[] = logRef.current?.[currentProject?.path]?.[currentCommand?.value]?.logs || []
   const commandBoxRef = useRef<HTMLDivElement>(null);
 
   const loadColorGroups = async () => {
@@ -52,9 +53,9 @@ export default function ProjectManage() {
     const { success: runningSuccess, data: runningList } = await getRunningList();
     if (runningSuccess) {
       projectData?.forEach((_: any) => {
-        if (runningList?.[_?.value]) {
+        if (runningList?.[_?.path]) {
           _?.scripts?.forEach?.((__: any) => {
-            if ((runningList?.[_.value] as string[])?.includes(__.value)) {
+            if ((runningList?.[_.path] as string[])?.includes(__.value)) {
               __.running = true;
             }
           })
@@ -109,21 +110,22 @@ export default function ProjectManage() {
     if (!currentProject) return;
     if (currentProject?.scripts?.find(s => s.value === item.value)?.running && item.connect) return;
 
-    if (!logRef.current?.[currentProject?.value]) {
-      logRef.current[currentProject.value] = {};
+    if (!logRef.current?.[currentProject.path]) {
+      logRef.current[currentProject.path] = {};
     }
-    if (!logRef.current[currentProject.value][item.value]) {
-      logRef.current[currentProject.value][item.value] = {
+    if (!logRef.current[currentProject.path][item.value]) {
+      logRef.current[currentProject.path][item.value] = {
         logs: [],
-        key: `${currentProject.value}:${item.value}`,
+        key: makeRunKey(currentProject.path, item.value),
         event: undefined,
       }
     }
 
-    logRef.current[currentProject.value][item.value].event = function (data: string | boolean) {
+    const runKey = makeRunKey(currentProject.path, item.value);
+    logRef.current[currentProject.path][item.value].event = function (data: string | boolean) {
       if (data === true) {
-        const [project, command] = (this as string).split(":");
-        const idx = projectList.findIndex(_ => _.value === project);
+        const { projectPath, command } = parseRunKey(this as string);
+        const idx = projectList.findIndex(_ => _.path === projectPath);
         const cmdIdx = projectList?.[idx]?.scripts?.findIndex?.(_ => _.value === command);
         setProjectData(prev => {
           let nPrev = { ...prev };
@@ -138,16 +140,15 @@ export default function ProjectManage() {
       let text = (data as string).replace(/^\r?\n|\r?\n$/g, '');
       const error = text.includes('[[E]]');
       if (error) text = text.slice(5);
-      logRef.current[currentProject?.value][item.value].logs.push({ text, type: error ? 'error' : undefined });
+      logRef.current[currentProject.path][item.value].logs.push({ text, type: error ? 'error' : undefined });
       setRefCount(prev => prev <= 10000 ? prev + 1 : 1);
     }
 
     runCom({
       ...item,
-      project: currentProject.value,
-      path: currentProject?.path
+      path: currentProject.path,
     },
-      logRef.current[currentProject.value][item.value].event.bind(`${currentProject.value}:${item.value}`)
+      logRef.current[currentProject.path][item.value].event.bind(runKey)
     );
     setCommandRunning(item);
   }
@@ -155,8 +156,7 @@ export default function ProjectManage() {
   const stop = async (item: any) => {
     const data = await stopCommand({
       ...item,
-      project: currentProject.value,
-      path: currentProject?.path
+      path: currentProject.path,
     });
     if (!data.success) return;
     setProjectData(prev => {
@@ -175,8 +175,7 @@ export default function ProjectManage() {
     if (item.running) {
       const data = await stopCommand({
         ...item,
-        project: currentProject.value,
-        path: currentProject?.path
+        path: currentProject.path,
       });
       if (!data.success) return;
     }
@@ -190,7 +189,7 @@ export default function ProjectManage() {
       });
       return nPrev
     });
-    logRef.current[currentProject?.value][item.value] = undefined;
+    logRef.current[currentProject.path][item.value] = undefined;
     setRefCount(prev => prev + 1)
   }
 
