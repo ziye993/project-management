@@ -29,8 +29,10 @@ export const baseUpload = (type, req, res) => {
       return res.status(400).send({ success: false, msg: '未上传文件' });
     }
 
+    const uploadSource = req.query?.source === 'chat' ? 'chat' : 'normal';
+    const filesWithMeta = req.files.map(f => ({ ...f, source: uploadSource }));
     const registered = (type === 'pic' || type === 'mov')
-      ? registerMedia(type, req.files)
+      ? registerMedia(type, filesWithMeta)
       : [];
     cache.del(cachePicListKey);
 

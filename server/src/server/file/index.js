@@ -57,7 +57,9 @@ app.post('/api/file/getPicList', async (req, res) => {
       return res.send({ code: 0, success: true, data: [], msg: '未配置照片路径' });
     }
     cache.del('PicListCache');
-    const list = getMediaList('pic', config.picUploadPath);
+    const chatOnly = req.body?.chatOnly === true;
+    const source = chatOnly ? 'chat' : 'normal';
+    const list = getMediaList('pic', config.picUploadPath, { source });
     const data = list.map(item => mapMediaItem('pic', item, config));
     return res.send({ code: 0, success: true, data, msg: '' });
   } catch (error) {
@@ -73,7 +75,9 @@ app.post('/api/file/getMovList', async (req, res) => {
     if (!config.movUploadPath) {
       return res.send({ code: 0, success: true, data: [], msg: '未配置影视路径' });
     }
-    const list = getMediaList('mov', config.movUploadPath);
+    const chatOnly = req.body?.chatOnly === true;
+    const source = chatOnly ? 'chat' : 'normal';
+    const list = getMediaList('mov', config.movUploadPath, { source });
     const data = list.map(item => mapMediaItem('mov', item, config));
     return res.send({ code: 0, success: true, data, msg: '' });
   } catch (error) {
