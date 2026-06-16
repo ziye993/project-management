@@ -21,7 +21,15 @@ export function makeUserId(ip, deviceId) {
 }
 
 export function makePrivateConvId(userIdA, userIdB) {
-  return ['private', ...[userIdA, userIdB].sort()].join('::');
+  const [a, b] = [userIdA, userIdB].sort();
+  return `private:::${a}:::${b}`;
+}
+
+function parsePrivateConvId(convId) {
+  if (!convId.startsWith('private:::')) return null;
+  const parts = convId.split(':::');
+  if (parts.length !== 3 || parts[0] !== 'private') return null;
+  return [parts[1], parts[2]];
 }
 
 export function makeGroupConvId(groupId) {
@@ -197,9 +205,8 @@ export function buildConversation(userId, convId, groups) {
     };
   }
 
-  const parts = convId.split('::');
-  if (parts[0] !== 'private' || parts.length !== 3) return null;
-  const participants = [parts[1], parts[2]];
+  const participants = parsePrivateConvId(convId);
+  if (!participants) return null;
   if (!participants.includes(userId)) return null;
 
   const otherId = participants.find(id => id !== userId);
