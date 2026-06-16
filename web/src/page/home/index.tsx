@@ -7,6 +7,7 @@ import {
   CodeOutlined,
   DesktopOutlined,
   FundViewOutlined,
+  MessageOutlined,
   PartitionOutlined, PercentageOutlined,
   RightOutlined,
 } from '@ant-design/icons';
@@ -69,6 +70,14 @@ const entries: EntryItem[] = [
     icon: <PartitionOutlined />,
     path: '/LANSharing',
     accent: 'cyan',
+  },
+  {
+    id: 8,
+    name: '局域网对话',
+    desc: '纯匿名局域网聊天，支持图片与视频',
+    icon: <MessageOutlined />,
+    path: '/localChat',
+    accent: 'rose',
   },
   {
     id: 6,

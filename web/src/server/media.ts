@@ -1,7 +1,7 @@
 import { post, upload } from ".";
 
-export const getPicList = async () => post('/file/getPicList', {});
-export const getMovList = async () => post('/file/getMovList', {});
+export const getPicList = async (chatOnly = false) => post('/file/getPicList', { chatOnly });
+export const getMovList = async (chatOnly = false) => post('/file/getMovList', { chatOnly });
 export const getFileLinks = async (type: string, storedName: string) =>
   post('/file/getFileLinks', { type, storedName });
 

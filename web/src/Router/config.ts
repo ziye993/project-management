@@ -1,3 +1,6 @@
+import ChatLayout from "../page/LocalChat/Layout";
+import LocalChatHome from "../page/LocalChat/Home";
+import LocalChatProfile from "../page/LocalChat/Profile";
 import Layout from "../compomeents/Layout";
 import ProjectManage from "../page/Project/Home";
 import type { TRouter } from "./type";
@@ -56,6 +59,14 @@ const router: TRouter = [{
   children: [
     { path: '/home', components: Swagger }
   ]
+}, {
+    path: '/localChat',
+    components: ChatLayout,
+    redirect: 'home',
+    children: [
+        { path: '/home', components: LocalChatHome },
+        { path: '/profile', components: LocalChatProfile },
+    ]
 }, {
     path: '/404',
     components: NotFound
