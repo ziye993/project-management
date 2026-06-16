@@ -7,7 +7,7 @@ import {
   CodeOutlined,
   DesktopOutlined,
   FundViewOutlined,
-  PartitionOutlined,
+  PartitionOutlined, PercentageOutlined,
   RightOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '../../Router';
@@ -69,6 +69,14 @@ const entries: EntryItem[] = [
     icon: <PartitionOutlined />,
     path: '/LANSharing',
     accent: 'cyan',
+  },
+  {
+    id: 6,
+    name: 'swagger',
+    desc: '更加可视化和简单的weagger文档',
+    icon: <PercentageOutlined />,
+    path: '/swagger',
+    accent: 'swagger',
   },
 ];
 

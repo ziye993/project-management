@@ -8,6 +8,7 @@ import TelevisionHome from "../page/Television/Home";
 import ServerInfoHome from "../page/ServerInfo/Home";
 import LANSharingHome from "../page/LANSharing/Home";
 import ConfigHome from "../page/Config/Home";
+import Swagger from "../page/swagger/home";
 
 const router: TRouter = [{
     path: '/',
@@ -49,6 +50,12 @@ const router: TRouter = [{
     children: [
         { path: '/home', components: LANSharingHome }
     ]
+},{
+  path: '/swagger',
+  redirect: 'home',
+  children: [
+    { path: '/home', components: Swagger }
+  ]
 }, {
     path: '/404',
     components: NotFound
