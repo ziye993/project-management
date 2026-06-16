@@ -51,20 +51,34 @@ export default function ProjectManage() {
   const init = async () => {
     const { success: projectSuccess, data: projectData } = await getProjectList();
     const { success: runningSuccess, data: runningList } = await getRunningList();
-    if (runningSuccess) {
-      projectData?.forEach((_: any) => {
+    if (runningSuccess && projectData) {
+      projectData.forEach((_: any) => {
         if (runningList?.[_?.path]) {
           _?.scripts?.forEach?.((__: any) => {
             if ((runningList?.[_.path] as string[])?.includes(__.value)) {
               __.running = true;
+              __.connect = false;
             }
           })
         }
       });
     }
-    projectSuccess && setProjectData((prev: any) => ({ ...prev, projectList: projectData || [] }));
     const logResult = await getLogs();
-    if (logResult) logRef.current = logResult.data || {};
+    if (logResult?.data) {
+      logRef.current = logResult.data;
+      projectData?.forEach((project: any) => {
+        const projectLogs = logRef.current[project.path];
+        if (!projectLogs) return;
+        project.scripts?.forEach((script: any) => {
+          if (projectLogs[script.value]?.logs?.length && script.running !== true) {
+            script.running = false;
+          }
+        });
+      });
+    }
+    if (projectSuccess) {
+      setProjectData({ projectList: projectData || [] });
+    }
     await loadColorGroups();
   }
 
@@ -108,33 +122,52 @@ export default function ProjectManage() {
 
   const runCommand = async (item: any) => {
     if (!currentProject) return;
-    if (currentProject?.scripts?.find(s => s.value === item.value)?.running && item.connect) return;
-
-    if (!logRef.current?.[currentProject.path]) {
-      logRef.current[currentProject.path] = {};
-    }
-    if (!logRef.current[currentProject.path][item.value]) {
-      logRef.current[currentProject.path][item.value] = {
-        logs: [],
-        key: makeRunKey(currentProject.path, item.value),
-        event: undefined,
-      }
-    }
+    const isReconnect = item.reconnect === true;
+    const script = currentProject.scripts?.find(s => s.value === item.value);
+    if (script?.running && script?.connect && !isReconnect) return;
 
     const runKey = makeRunKey(currentProject.path, item.value);
+    if (isReconnect || (script?.running && !script?.connect)) {
+      const logResult = await getLogs();
+      const serverLogs = logResult?.data?.[currentProject.path]?.[item.value]?.logs || [];
+      logRef.current[currentProject.path] = logRef.current[currentProject.path] || {};
+      logRef.current[currentProject.path][item.value] = {
+        logs: [...serverLogs],
+        key: runKey,
+        event: undefined,
+      };
+    } else if (!logRef.current?.[currentProject.path]) {
+      logRef.current[currentProject.path] = {};
+    } else if (!logRef.current[currentProject.path][item.value]) {
+      logRef.current[currentProject.path][item.value] = {
+        logs: [],
+        key: runKey,
+        event: undefined,
+      };
+    }
+
     logRef.current[currentProject.path][item.value].event = function (data: string | boolean) {
       if (data === true) {
         const { projectPath, command } = parseRunKey(this as string);
-        const idx = projectList.findIndex(_ => _.path === projectPath);
-        const cmdIdx = projectList?.[idx]?.scripts?.findIndex?.(_ => _.value === command);
-        setProjectData(prev => {
-          let nPrev = { ...prev };
-          if (cmdIdx !== undefined && cmdIdx > -1) {
-            nPrev.projectList[idx].scripts[cmdIdx].running = false;
-          }
-          return nPrev;
-        })
-        setRefCount(prev => prev <= 10000 ? prev + 1 : 1);
+        getRunningList().then(({ data: runningList }) => {
+          const stillRunning = runningList?.[projectPath]?.includes(command);
+          setProjectData(prev => {
+            const nPrev = { ...prev };
+            const idx = nPrev.projectList.findIndex(_ => _.path === projectPath);
+            const cmdIdx = nPrev.projectList[idx]?.scripts?.findIndex?.(_ => _.value === command);
+            if (idx > -1 && cmdIdx !== undefined && cmdIdx > -1) {
+              if (stillRunning) {
+                nPrev.projectList[idx].scripts[cmdIdx].running = true;
+                nPrev.projectList[idx].scripts[cmdIdx].connect = false;
+              } else {
+                nPrev.projectList[idx].scripts[cmdIdx].running = false;
+                nPrev.projectList[idx].scripts[cmdIdx].connect = false;
+              }
+            }
+            return nPrev;
+          });
+          setRefCount(prev => prev <= 10000 ? prev + 1 : 1);
+        });
         return
       }
       let text = (data as string).replace(/^\r?\n|\r?\n$/g, '');
@@ -151,6 +184,10 @@ export default function ProjectManage() {
       logRef.current[currentProject.path][item.value].event.bind(runKey)
     );
     setCommandRunning(item);
+  }
+
+  const reconnectCommand = (item: any) => {
+    runCommand({ ...item, reconnect: true });
   }
 
   const stop = async (item: any) => {
@@ -189,7 +226,6 @@ export default function ProjectManage() {
       });
       return nPrev
     });
-    logRef.current[currentProject.path][item.value] = undefined;
     setRefCount(prev => prev + 1)
   }
 
@@ -213,7 +249,7 @@ export default function ProjectManage() {
     <div className={styles.contentBox}>
       <Left projectList={projectList} setProjectChecked={setProjectChecked} onProjectRemoved={init} />
       <Center commandBoxRef={commandBoxRef} currentCommand={currentCommand} currentProject={currentProject} refCount={refCount} logs={logs} runCommand={runCommand} />
-      <Right currentProject={currentProject} setCommandChecked={setCommandChecked} runCommand={runCommand} close={close} stop={stop} />
+      <Right currentProject={currentProject} setCommandChecked={setCommandChecked} runCommand={runCommand} reconnectCommand={reconnectCommand} close={close} stop={stop} />
       <ColorLegend colorCache={colorCache} />
     </div>
     </div>

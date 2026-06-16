@@ -26,12 +26,13 @@ function parseScripts(projectPath, soltScript = []) {
 }
 
 function buildProjectEntry(projectPath, importType) {
-  const label = path.basename(projectPath);
+  const normalizedPath = path.normalize(projectPath);
+  const label = path.basename(normalizedPath);
   return {
     label,
     value: label,
-    path: projectPath,
-    parentPath: path.dirname(projectPath),
+    path: normalizedPath,
+    parentPath: path.dirname(normalizedPath),
     importType,
     scripts: parseScripts(projectPath, getConfig()?.soltScript || []),
   };
@@ -39,10 +40,15 @@ function buildProjectEntry(projectPath, importType) {
 
 export function buildProjectListFromStore() {
   const store = getProjectsData(true);
-  const list = store.projects.map(entry => ({
-    ...entry,
-    scripts: parseScripts(entry.path, store.soltScript || []),
-  }));
+  const list = store.projects.map(entry => {
+    const normalizedPath = path.normalize(entry.path);
+    return {
+      ...entry,
+      path: normalizedPath,
+      parentPath: path.dirname(normalizedPath),
+      scripts: parseScripts(normalizedPath, store.soltScript || []),
+    };
+  });
   return list;
 }
 

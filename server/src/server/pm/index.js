@@ -10,10 +10,13 @@ import getProjectList, {
 import { computeColorGroups, getProjectColorMap } from '../../utils/workspaceColors.js';
 import { getColorCache } from '../../utils/jsonFile.js';
 import { makeRunKey, parseRunKey } from '../../utils/runKey.js';
+import { decodeOutput } from '../../utils/decodeOutput.js';
+import { appendCommandLog, ensureCommandLog, getCommandLogs } from '../../utils/commandLogs.js';
+import { resolveExistingProjectPath, spawnProjectScript } from '../../utils/projectCommand.js';
 
 let projectList = getProjectList();
 let currentChild = {};
-let logs = {};
+const logs = getCommandLogs(true);
 
 const cleanup = () => {
   const keys = Object.keys(currentChild).filter(k => !!currentChild[k]);
@@ -113,17 +116,32 @@ app.post('/api/project/runCommand', (req, res) => {
   const { path: projectPath, value } = req.body;
   if (!value || !projectPath) return res.status(400).send('缺少参数');
 
+  let resolvedPath;
+  try {
+    resolvedPath = resolveExistingProjectPath(projectPath);
+  } catch (error) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    const message = error.message || '项目路径无效';
+    appendCommandLog(projectPath, value, { text: message, type: 'error' });
+    res.write(`[[E]][错误] ${message}`);
+    res.end(`\n❌ ${message}`);
+    return;
+  }
+
   let child;
-  const key = makeRunKey(projectPath, value);
+  const key = makeRunKey(resolvedPath, value);
 
   if (!currentChild[key]) {
-    const isWin = process.platform === 'win32';
-    const cmd = isWin ? 'cmd' : 'sh';
-    const args = isWin
-      ? ['/c', `cd /d "${projectPath}" && npm run ${value}`]
-      : ['-c', `cd "${projectPath}" && npm run ${value}`];
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    child = spawn(cmd, args, { detached: !isWin, stdio: ['ignore', 'pipe', 'pipe'] });
+    try {
+      child = spawnProjectScript(resolvedPath, value);
+    } catch (error) {
+      const message = error.message || '进程启动失败';
+      appendCommandLog(resolvedPath, value, { text: message, type: 'error' });
+      res.write(`[[E]][错误] ${message}`);
+      res.end(`\n❌ ${message}`);
+      return;
+    }
     currentChild[key] = child;
   } else {
     child = currentChild[key];
@@ -131,27 +149,25 @@ app.post('/api/project/runCommand', (req, res) => {
     child.stderr.removeAllListeners('data');
   }
 
-  if (!logs[projectPath]) logs[projectPath] = {};
-  if (!logs[projectPath][value]) logs[projectPath][value] = { logs: [] };
+  if (!logs[resolvedPath]) logs[resolvedPath] = {};
+  if (!logs[resolvedPath][value]) logs[resolvedPath][value] = { logs: [] };
+  ensureCommandLog(resolvedPath, value);
   if (!child) return;
 
   const appendLog = (text, type) => {
-    logs[projectPath][value].logs.push({ text, type });
-    if (logs[projectPath][value].logs.length > 100) {
-      logs[projectPath][value].logs.shift();
-    }
+    appendCommandLog(resolvedPath, value, { text, type });
   };
 
   child.stdout.on('data', data => {
-    const str = Buffer.from(data).toString();
+    const str = decodeOutput(data);
     appendLog(str);
-    res.write(data);
+    res.write(str);
   });
 
   child.stderr.on('data', data => {
-    const str = Buffer.from(data).toString();
+    const str = decodeOutput(data);
     appendLog(str, 'error');
-    res.write(`[[E]][错误] ${data}`);
+    res.write(`[[E]][错误] ${str}`);
   });
 
   child.on('error', err => {
@@ -162,11 +178,11 @@ app.post('/api/project/runCommand', (req, res) => {
   });
 
   child.on('close', code => {
-    if (code === 0) {
-      res.end(`\n✅ 进程正常退出（退出码 ${code}）`);
-    } else {
-      res.end(`\n❌ 进程异常退出（退出码 ${code}）`);
-    }
+    const message = code === 0
+      ? `\n✅ 进程正常退出（退出码 ${code}）`
+      : `\n❌ 进程异常退出（退出码 ${code}）`;
+    appendLog(message, code === 0 ? undefined : 'error');
+    res.end(message);
     currentChild[key] = null;
   });
 });
@@ -176,13 +192,19 @@ app.post('/api/project/stopCommand', async (req, res) => {
   if (!value || !projectPath) {
     return res.status(400).send({ success: false, code: 1, msg: '缺少参数', data: null });
   }
-  const key = makeRunKey(projectPath, value);
+  let resolvedPath;
+  try {
+    resolvedPath = resolveExistingProjectPath(projectPath);
+  } catch (error) {
+    return res.send({ msg: error.message, code: 1, success: false, data: null });
+  }
+  const key = makeRunKey(resolvedPath, value);
   if (currentChild?.[key]) {
     let killRes = await killChild(currentChild[key], 'SIGINT');
     if (!killRes) {
       killRes = await killChild(currentChild[key], 'SIGTERM');
     }
-    if (logs[projectPath]) logs[projectPath][value] = undefined;
+    appendCommandLog(resolvedPath, value, { text: '\n⏹ 已手动停止', type: 'error' });
     currentChild[key] = undefined;
     res.send({ msg: '', code: 0, success: killRes, data: killRes });
   } else {
