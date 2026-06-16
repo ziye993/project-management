@@ -6,7 +6,6 @@ import {
   createGroup,
   createMessage,
   ensureUserConv,
-  getAllUsers,
   getConversationList,
   getGroupMemberIds,
   getGroupsForUser,
@@ -33,37 +32,24 @@ function resolveIp(socket) {
   return addr.replace(/^::ffff:/, '');
 }
 
-function getOnlineUserIds() {
-  const ids = new Set();
+function buildOnlineUserList() {
+  const map = new Map();
   for (const meta of socketMeta.values()) {
-    if (meta.userId) ids.add(meta.userId);
+    if (!meta.userId) continue;
+    map.set(meta.userId, {
+      userId: meta.userId,
+      ip: meta.ip,
+      deviceId: meta.deviceId,
+      username: meta.username,
+      avatar: meta.avatar,
+      online: true,
+    });
   }
-  return ids;
+  return Array.from(map.values());
 }
 
-function buildUserList() {
-  const onlineIds = getOnlineUserIds();
-  const persisted = getAllUsers();
-  const map = new Map(persisted.map(u => [u.userId, u]));
-
-  for (const userId of onlineIds) {
-    const meta = [...socketMeta.values()].find(m => m.userId === userId);
-    if (meta) {
-      map.set(userId, {
-        userId,
-        ip: meta.ip,
-        deviceId: meta.deviceId,
-        username: meta.username,
-        avatar: meta.avatar,
-        online: true,
-      });
-    }
-  }
-
-  return Array.from(map.values()).map(u => ({
-    ...u,
-    online: onlineIds.has(u.userId),
-  }));
+function broadcastUserList() {
+  io.emit('userList', buildOnlineUserList());
 }
 
 function emitToUser(userId, event, data) {
@@ -76,10 +62,6 @@ function emitToUser(userId, event, data) {
 
 function emitConversationList(userId) {
   emitToUser(userId, 'conversationList', getConversationList(userId));
-}
-
-function broadcastUserList() {
-  io.emit('userList', buildUserList());
 }
 
 function notifyGroupMembers(groupId, event, data, excludeUserId) {

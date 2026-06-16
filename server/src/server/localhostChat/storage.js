@@ -162,10 +162,16 @@ export function buildConversation(userId, convId, groups) {
   const participants = [parts[1], parts[2]];
   if (!participants.includes(userId)) return null;
 
+  const otherId = participants.find(id => id !== userId);
+  const otherUser = otherId ? getUser(otherId) : null;
+
   return {
     id: convId,
     type: 'private',
     participants,
+    peerId: otherId,
+    peerName: otherUser?.username,
+    peerAvatar: otherUser?.avatar,
     lastMessage: last ? previewText(last) : '',
     lastTime: last?.time,
     unreadCount,
