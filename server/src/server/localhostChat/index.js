@@ -5,7 +5,6 @@ import {
   clearUnread,
   createGroup,
   createMessage,
-  ensureUserConv,
   getConversationList,
   getGroupMemberIds,
   getGroupsForUser,
@@ -14,6 +13,7 @@ import {
   makeGroupConvId,
   makePrivateConvId,
   makeUserId,
+  touchUserConv,
   updateUserProfile,
   upsertUser,
 } from './storage.js';
@@ -138,8 +138,8 @@ io.on('connection', socket => {
     if (!meta?.userId || !toUserId || !content) return;
 
     const convId = makePrivateConvId(meta.userId, toUserId);
-    ensureUserConv(meta.userId, convId);
-    ensureUserConv(toUserId, convId);
+    touchUserConv(meta.userId, convId);
+    touchUserConv(toUserId, convId);
 
     const message = createMessage({
       from: meta.userId,
@@ -152,10 +152,18 @@ io.on('connection', socket => {
 
     incrementUnread(toUserId, convId);
 
-    socket.emit('newMsg', message);
-    emitToUser(toUserId, 'newMsg', message);
-    emitConversationList(meta.userId);
     emitConversationList(toUserId);
+    emitConversationList(meta.userId);
+    emitToUser(toUserId, 'newMsg', message);
+    socket.emit('newMsg', message);
+  });
+
+  socket.on('startConversation', ({ convId }) => {
+    const meta = socketMeta.get(socket.id);
+    if (!meta?.userId || !convId) return;
+
+    touchUserConv(meta.userId, convId);
+    emitConversationList(meta.userId);
   });
 
   socket.on('groupMsg', ({ groupId, content, type }) => {
@@ -166,6 +174,8 @@ io.on('connection', socket => {
     if (!members.includes(meta.userId)) return;
 
     const convId = makeGroupConvId(groupId);
+    members.forEach(uid => touchUserConv(uid, convId));
+
     const message = createMessage({
       from: meta.userId,
       convId,
@@ -178,16 +188,16 @@ io.on('connection', socket => {
       if (uid !== meta.userId) incrementUnread(uid, convId);
     });
 
+    members.forEach(uid => emitConversationList(uid));
     socket.emit('newMsg', message);
     notifyGroupMembers(groupId, 'newMsg', message, meta.userId);
-    members.forEach(uid => emitConversationList(uid));
   });
 
   socket.on('getHistory', ({ convId }) => {
     const meta = socketMeta.get(socket.id);
     if (!meta?.userId || !convId) return;
 
-    ensureUserConv(meta.userId, convId);
+    touchUserConv(meta.userId, convId);
     socket.emit('chatHistory', { convId, messages: getMessages(convId) });
     emitConversationList(meta.userId);
   });

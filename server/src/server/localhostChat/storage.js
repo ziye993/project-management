@@ -6,6 +6,15 @@ const MESSAGES_FILE = 'chat-messages.json';
 const GROUPS_FILE = 'chat-groups.json';
 const UNREAD_FILE = 'chat-unread.json';
 const CONVS_FILE = 'chat-conversations.json';
+const CONV_META_FILE = 'chat-conv-meta.json';
+
+function asObject(data, fallback = {}) {
+  return data && typeof data === 'object' && !Array.isArray(data) ? data : fallback;
+}
+
+function asArray(data) {
+  return Array.isArray(data) ? data : [];
+}
 
 export function makeUserId(ip, deviceId) {
   return `${ip}::${deviceId}`;
@@ -20,7 +29,7 @@ export function makeGroupConvId(groupId) {
 }
 
 function readUsers() {
-  return readJSONFile(USERS_FILE, {});
+  return asObject(readJSONFile(USERS_FILE, {}));
 }
 
 function writeUsers(data) {
@@ -28,7 +37,7 @@ function writeUsers(data) {
 }
 
 function readMessages() {
-  return readJSONFile(MESSAGES_FILE, {});
+  return asObject(readJSONFile(MESSAGES_FILE, {}));
 }
 
 function writeMessages(data) {
@@ -36,15 +45,16 @@ function writeMessages(data) {
 }
 
 function readGroups() {
-  return readJSONFile(GROUPS_FILE, { groups: [] });
+  const data = readJSONFile(GROUPS_FILE, { groups: [] });
+  return { groups: asArray(data?.groups) };
 }
 
 function writeGroups(data) {
-  writeJSONFile(GROUPS_FILE, data);
+  writeJSONFile(GROUPS_FILE, { groups: asArray(data?.groups) });
 }
 
 function readUnread() {
-  return readJSONFile(UNREAD_FILE, {});
+  return asObject(readJSONFile(UNREAD_FILE, {}));
 }
 
 function writeUnread(data) {
@@ -52,17 +62,29 @@ function writeUnread(data) {
 }
 
 function readUserConvs() {
-  return readJSONFile(CONVS_FILE, {});
+  return asObject(readJSONFile(CONVS_FILE, {}));
 }
 
 function writeUserConvs(data) {
   writeJSONFile(CONVS_FILE, data);
 }
 
+function readConvMeta() {
+  return asObject(readJSONFile(CONV_META_FILE, {}));
+}
+
+function writeConvMeta(data) {
+  writeJSONFile(CONV_META_FILE, data);
+}
+
+function getConvTouchedAt(userId, convId) {
+  return readConvMeta()[userId]?.[convId] || 0;
+}
+
 export function upsertUser(userId, payload) {
   const users = readUsers();
   users[userId] = {
-    ...users[userId],
+    ...(users[userId] || {}),
     userId,
     ip: payload.ip,
     deviceId: payload.deviceId,
@@ -99,6 +121,17 @@ export function ensureUserConv(userId, convId) {
   }
 }
 
+export function touchUserConv(userId, convId) {
+  ensureUserConv(userId, convId);
+  const meta = readConvMeta();
+  if (!meta[userId]) meta[userId] = {};
+  if (!meta[userId][convId]) {
+    meta[userId][convId] = Date.now();
+    writeConvMeta(meta);
+  }
+  return meta[userId][convId];
+}
+
 export function addMessage(convId, message) {
   const messages = readMessages();
   if (!messages[convId]) messages[convId] = [];
@@ -108,7 +141,7 @@ export function addMessage(convId, message) {
 }
 
 export function getMessages(convId) {
-  return readMessages()[convId] || [];
+  return asArray(readMessages()[convId]);
 }
 
 export function incrementUnread(userId, convId) {
@@ -136,23 +169,30 @@ function previewText(msg) {
   return msg.content?.slice(0, 80) || '';
 }
 
+function convSortTime(conv) {
+  return Math.max(conv.lastTime || 0, conv.openedAt || 0, conv.updatedAt || 0);
+}
+
 export function buildConversation(userId, convId, groups) {
   const list = getMessages(convId);
   const last = list[list.length - 1];
   const unreadCount = getUnreadCount(userId, convId);
+  const openedAt = getConvTouchedAt(userId, convId);
 
   if (convId.startsWith('group::')) {
     const groupId = convId.slice('group::'.length);
     const group = groups.find(g => g.id === groupId);
-    if (!group || !group.members.includes(userId)) return null;
+    if (!group || !asArray(group.members).includes(userId)) return null;
     return {
       id: convId,
       type: 'group',
       groupId,
       name: group.name,
-      participants: group.members,
+      participants: asArray(group.members),
       lastMessage: last ? previewText(last) : '',
       lastTime: last?.time,
+      openedAt,
+      updatedAt: last?.time || openedAt,
       unreadCount,
     };
   }
@@ -174,6 +214,8 @@ export function buildConversation(userId, convId, groups) {
     peerAvatar: otherUser?.avatar,
     lastMessage: last ? previewText(last) : '',
     lastTime: last?.time,
+    openedAt,
+    updatedAt: last?.time || openedAt,
     unreadCount,
   };
 }
@@ -181,11 +223,11 @@ export function buildConversation(userId, convId, groups) {
 export function getConversationList(userId) {
   const convs = readUserConvs();
   const { groups } = readGroups();
-  const ids = convs[userId] || [];
+  const ids = asArray(convs[userId]);
   return ids
     .map(convId => buildConversation(userId, convId, groups))
     .filter(Boolean)
-    .sort((a, b) => (b.lastTime || 0) - (a.lastTime || 0));
+    .sort((a, b) => convSortTime(b) - convSortTime(a));
 }
 
 export function createMessage({ from, convId, type, content, to }) {
@@ -202,16 +244,16 @@ export function createMessage({ from, convId, type, content, to }) {
 
 export function getGroupsForUser(userId) {
   const { groups } = readGroups();
-  return groups.filter(g => g.members.includes(userId));
+  return groups.filter(g => asArray(g.members).includes(userId));
 }
 
 export function getAllGroups() {
-  return readGroups().groups || [];
+  return readGroups().groups;
 }
 
 export function createGroup({ name, creatorId, memberIds }) {
   const data = readGroups();
-  const members = Array.from(new Set([creatorId, ...memberIds]));
+  const members = Array.from(new Set([creatorId, ...asArray(memberIds)]));
   const group = {
     id: randomUUID(),
     name,
@@ -223,7 +265,7 @@ export function createGroup({ name, creatorId, memberIds }) {
   writeGroups(data);
 
   const convId = makeGroupConvId(group.id);
-  members.forEach(uid => ensureUserConv(uid, convId));
+  members.forEach(uid => touchUserConv(uid, convId));
 
   return group;
 }
@@ -234,5 +276,5 @@ export function getGroup(groupId) {
 
 export function getGroupMemberIds(groupId) {
   const group = getGroup(groupId);
-  return group?.members || [];
+  return asArray(group?.members);
 }

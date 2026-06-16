@@ -14,7 +14,17 @@ function readRegistry() {
   if (!fs.existsSync(file)) {
     return { pic: [], mov: [] };
   }
-  return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  try {
+    const raw = fs.readFileSync(file, 'utf-8');
+    if (!raw.trim()) return { pic: [], mov: [] };
+    const data = JSON.parse(raw);
+    return {
+      pic: Array.isArray(data?.pic) ? data.pic : [],
+      mov: Array.isArray(data?.mov) ? data.mov : [],
+    };
+  } catch {
+    return { pic: [], mov: [] };
+  }
 }
 
 function writeRegistry(data) {
