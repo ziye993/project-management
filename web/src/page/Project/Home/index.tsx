@@ -136,10 +136,10 @@ export default function ProjectManage() {
         key: runKey,
         event: undefined,
       };
-    } 
+    }
     if (!logRef.current?.[currentProject.path]) {
       logRef.current[currentProject.path] = {};
-    } 
+    }
     if (!logRef.current[currentProject.path][item.value]) {
       logRef.current[currentProject.path][item.value] = {
         logs: [],
@@ -228,7 +228,10 @@ export default function ProjectManage() {
       });
       return nPrev
     });
-    setRefCount(prev => prev + 1)
+    setRefCount(prev => prev + 1); 
+    if (logRef.current?.[currentProject?.path]?.[item.value]?.logs) {
+      logRef.current[currentProject?.path][item.value].logs = [];
+    }
   }
 
   useEffect(() => {
@@ -245,15 +248,15 @@ export default function ProjectManage() {
   return <div className={styles.box}>
     <div className={styles.ambientBg} aria-hidden />
     <div className={styles.pageInner}>
-    <UserHeader className={styles.userHeader}>
-      <Header forceRefreshList={forceRefreshList} onColorRefresh={loadColorGroups} />
-    </UserHeader>
-    <div className={styles.contentBox}>
-      <Left projectList={projectList} setProjectChecked={setProjectChecked} onProjectRemoved={init} />
-      <Center commandBoxRef={commandBoxRef} currentCommand={currentCommand} currentProject={currentProject} refCount={refCount} logs={logs} runCommand={runCommand} />
-      <Right currentProject={currentProject} setCommandChecked={setCommandChecked} runCommand={runCommand} reconnectCommand={reconnectCommand} close={close} stop={stop} />
-      <ColorLegend colorCache={colorCache} />
-    </div>
+      <UserHeader className={styles.userHeader}>
+        <Header forceRefreshList={forceRefreshList} onColorRefresh={loadColorGroups} />
+      </UserHeader>
+      <div className={styles.contentBox}>
+        <Left projectList={projectList} setProjectChecked={setProjectChecked} onProjectRemoved={init} />
+        <Center commandBoxRef={commandBoxRef} currentCommand={currentCommand} currentProject={currentProject} refCount={refCount} logs={logs} runCommand={runCommand} />
+        <Right currentProject={currentProject} setCommandChecked={setCommandChecked} runCommand={runCommand} reconnectCommand={reconnectCommand} close={close} stop={stop} />
+        <ColorLegend colorCache={colorCache} />
+      </div>
     </div>
   </div>
 }

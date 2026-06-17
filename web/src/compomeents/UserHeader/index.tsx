@@ -11,6 +11,6 @@ export default function UserHeader(props: IProps) {
         <div className={styles.otherChildren}>
             {props.children}
         </div>
-        <div className={styles.brand}>项目管理</div>
+        {/* <div className={styles.brand}>项目管理</div> */}
     </div>
 }

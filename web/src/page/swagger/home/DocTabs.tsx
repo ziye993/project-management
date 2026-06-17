@@ -1,3 +1,4 @@
+import { PlusOutlined } from '@ant-design/icons'
 import type { DocTab } from '../../../type/docTab'
 import styles from './index.module.less'
 
@@ -46,7 +47,7 @@ export function DocTabs({ tabs, activeTabId, onSelect, onClose, onAdd }: DocTabs
         })}
       </div>
       <button type="button" className={styles.docTabAdd} onClick={onAdd} title="加载新文档">
-        ＋
+        <PlusOutlined />
       </button>
     </div>
   )

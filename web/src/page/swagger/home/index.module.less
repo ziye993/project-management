@@ -85,7 +85,7 @@
   cursor: pointer;
   color: var(--text);
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: background 0.15s; 
 
   &:hover {
     background: var(--border);
@@ -178,7 +178,8 @@
   color: var(--text-muted);
   flex-shrink: 0;
   transition: all 0.15s;
-
+  padding: 0;
+  
   &:hover {
     border-color: var(--primary);
     color: var(--primary);
@@ -186,13 +187,13 @@
   }
 }
 
-.urlFormWrapper {
-  margin-top: 16px;
+// .urlFormWrapper {
+//   margin-top: 16px;
 
-  &.compact {
-    margin-top: 12px;
-  }
-}
+//   &.compact {
+//     margin-top: 12px;
+//   }
+// }
 
 .modeTabs {
   display: flex;
@@ -226,14 +227,17 @@
 
 .formRow {
   flex: 1;
-  min-width: 200px;
+  min-width: 300px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 
   label {
     display: block;
     font-size: 0.8rem;
     font-weight: 600;
+    min-width: 60px;
     color: var(--text-muted);
-    margin-bottom: 4px;
   }
 
   input {
@@ -653,14 +657,37 @@
   font-family: var(--mono);
 }
 
-.methodGet { background: #10b981; }
-.methodPost { background: #3b82f6; }
-.methodPut { background: #f59e0b; }
-.methodDelete { background: #ef4444; }
-.methodPatch { background: #8b5cf6; }
-.methodHead { background: #6b7280; }
-.methodOptions { background: #6b7280; }
-.methodDefault { background: #64748b; }
+.methodGet {
+  background: #10b981;
+}
+
+.methodPost {
+  background: #3b82f6;
+}
+
+.methodPut {
+  background: #f59e0b;
+}
+
+.methodDelete {
+  background: #ef4444;
+}
+
+.methodPatch {
+  background: #8b5cf6;
+}
+
+.methodHead {
+  background: #6b7280;
+}
+
+.methodOptions {
+  background: #6b7280;
+}
+
+.methodDefault {
+  background: #64748b;
+}
 
 .endpointPath {
   font-size: 0.85rem;
@@ -773,9 +800,20 @@
   font-family: var(--mono);
 }
 
-.status2 { background: #d1fae5; color: #065f46; }
-.status4 { background: #fef3c7; color: #92400e; }
-.status5 { background: #fee2e2; color: #991b1b; }
+.status2 {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status4 {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status5 {
+  background: #fee2e2;
+  color: #991b1b;
+}
 
 .examples {
   margin-top: 8px;

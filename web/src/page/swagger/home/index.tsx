@@ -5,6 +5,8 @@ import { DocTabs } from './DocTabs'
 import { UrlForm } from './UrlForm'
 import { createDocTab, type DocTab } from '../../../type/docTab.ts'
 import styles from './index.module.less'
+import UserHeader from '../../../compomeents/UserHeader/index.tsx'
+import PageHeader from '../../../compomeents/PageHeader/index.tsx'
 
 function Swagger() {
   const [tabs, setTabs] = useState<DocTab[]>([])
@@ -73,12 +75,14 @@ function Swagger() {
 
   return (
     <div className={styles.app}>
-      <header
-        className={`${styles.appHeader} ${tabs.length > 0 ? styles.hasTabs : ''} ${!showForm ? styles.formCollapsed : ''}`}
-      >
-        <div className={styles.headerTop}>
-          <h1 className={styles.appTitle}>API 文档查看器</h1>
-
+      <UserHeader className={styles.userHeader}>
+        <PageHeader>
+          {showForm && <UrlForm
+            onFetch={handleFetch}
+            onPaste={handlePaste}
+            loading={loading}
+            compact={tabs.length > 0}
+          />}
           {tabs.length > 0 && (
             <DocTabs
               tabs={tabs}
@@ -98,6 +102,15 @@ function Swagger() {
               {showForm ? '收起' : '加载文档'}
             </button>
           )}
+        </PageHeader>
+      </UserHeader>
+      {/* <header
+        className={`${styles.appHeader} ${tabs.length > 0 ? styles.hasTabs : ''} ${!showForm ? styles.formCollapsed : ''}`}
+      >
+        <div className={styles.headerTop}>
+          <h1 className={styles.appTitle}>API 文档查看器</h1>
+
+
         </div>
 
         {showWelcome && (
@@ -112,7 +125,7 @@ function Swagger() {
             compact={tabs.length > 0}
           />
         )}
-      </header>
+      </header> */}
 
       {error && (
         <div className={styles.errorBanner} role="alert">
