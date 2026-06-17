@@ -136,9 +136,11 @@ export default function ProjectManage() {
         key: runKey,
         event: undefined,
       };
-    } else if (!logRef.current?.[currentProject.path]) {
+    } 
+    if (!logRef.current?.[currentProject.path]) {
       logRef.current[currentProject.path] = {};
-    } else if (!logRef.current[currentProject.path][item.value]) {
+    } 
+    if (!logRef.current[currentProject.path][item.value]) {
       logRef.current[currentProject.path][item.value] = {
         logs: [],
         key: runKey,
