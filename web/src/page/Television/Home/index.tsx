@@ -19,13 +19,14 @@ export default function TelevisionHome() {
   const [preview, setPreview] = useState('');
   const [linkModal, setLinkModal] = useState<{ open: boolean; links: LinkItem[] }>({ open: false, links: [] });
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [chatOnly, setChatOnly] = useState(false);
 
   const load = async () => {
-    const res = await getMovList();
+    const res = await getMovList(chatOnly);
     setFileList(res?.data ?? []);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [chatOnly]);
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
@@ -41,6 +42,10 @@ export default function TelevisionHome() {
     <PageShell className={styles.box}>
       <UserHeader className={shellStyles.userHeader}>
         <PageHeader>
+          <label className={styles.filterToggle}>
+            <input type="checkbox" checked={chatOnly} onChange={e => setChatOnly(e.target.checked)} />
+            聊天文件
+          </label>
           <Button onClick={() => setUploadOpen(true)}><UploadOutlined /> 上传视频</Button>
         </PageHeader>
       </UserHeader>

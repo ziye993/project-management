@@ -14,7 +14,17 @@ function readRegistry() {
   if (!fs.existsSync(file)) {
     return { pic: [], mov: [] };
   }
-  return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  try {
+    const raw = fs.readFileSync(file, 'utf-8');
+    if (!raw.trim()) return { pic: [], mov: [] };
+    const data = JSON.parse(raw);
+    return {
+      pic: Array.isArray(data?.pic) ? data.pic : [],
+      mov: Array.isArray(data?.mov) ? data.mov : [],
+    };
+  } catch {
+    return { pic: [], mov: [] };
+  }
 }
 
 function writeRegistry(data) {
@@ -68,6 +78,7 @@ export function registerMedia(type, files) {
       displayName,
       size: file.size || 0,
       uploadedAt: uploadedAt || Date.now(),
+      source: file.source || 'normal',
     });
     existing.add(storedName);
   }
@@ -131,8 +142,14 @@ export function syncMediaFromDisk(type, uploadDir) {
   return registry[type];
 }
 
-export function getMediaList(type, uploadDir) {
-  const list = syncMediaFromDisk(type, uploadDir);
+export function getMediaList(type, uploadDir, options = {}) {
+  const { source } = options;
+  let list = syncMediaFromDisk(type, uploadDir);
+  if (source === 'chat') {
+    list = list.filter(item => item.source === 'chat');
+  } else if (source === 'normal') {
+    list = list.filter(item => item.source !== 'chat');
+  }
   return list.sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
 }
 

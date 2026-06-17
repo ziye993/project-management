@@ -21,8 +21,15 @@ export function readJSONFile(name, fallback = {}) {
   ensureDataDir();
   const filePath = resolveDataFile(name);
   if (!fs.existsSync(filePath)) return fallback;
-  const data = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(data);
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    if (!raw.trim()) return fallback;
+    const data = JSON.parse(raw);
+    if (data === null || data === undefined) return fallback;
+    return data;
+  } catch {
+    return fallback;
+  }
 }
 
 export function writeJSONFile(name, content) {

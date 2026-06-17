@@ -1,261 +1,417 @@
-.box {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 20px;
-  position: relative;
+.container {
+  display: grid;
+  grid-template-columns: 280px 1fr 240px;
+  gap: 12px;
+  height: calc(100vh - 80px);
 }
 
-
-.contentBox {
-  width: 100%;
+.historyPanel,
+.discoverPanel,
+.chatPanel {
+  background: #fff;
+  border-radius: 12px;
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  position: relative;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.panelTitle {
+  font-weight: 600;
+  font-size: 14px;
   flex: 1;
 }
 
-.list {
+.myAvatarBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.convList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.convItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.convActive {
+  background: #eef3ff;
+}
+
+.convAvatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.onlineDot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.online {
+  background: #52c41a;
+}
+
+.offline {
+  background: #bbb;
+}
+
+.convBody {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 10px;
-  background-color: #FFF;
-  border-radius: 20px;
-  color: #000;
-  min-width: 200px;
-  max-height: calc(100vh - 90px - 50px);
+  gap: 4px;
+}
+
+.convTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.convName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #222;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.convTime {
+  font-size: 11px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.convPreview {
+  font-size: 12px;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unreadBadge {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.chatPanel {
+  min-width: 0;
+}
+
+.chatHead {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.msgList {
+  flex: 1;
   overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.msgRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.msgSelf {
+  flex-direction: row-reverse;
+
+  .msgBubble {
+    background: #95ec69;
+    align-items: flex-end;
+  }
+}
+
+.msgAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e8e8e8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.msgBubble {
+  max-width: 60%;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 
   p {
-    text-align: center;
-    width: 100%;
     margin: 0;
-    padding: 0;
-    line-height: 40px;
-  }
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-
-  .checkedItem {
-    background-color: #e3e3e3;
-  }
-
-
-
-
-
-  .itemBox {
-    width: 100%;
-    transition: all 0.5s;
-    line-height: 30px;
-    padding: 5px 5px 5px 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    margin: 5px 0;
-    font-size: 18px;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    margin-left: 5px;
-    white-space: nowrap;
-
-    .projectItemName {
-      flex: 1;
-      margin-left: 0px;
-    }
-  }
-
-  .runningItemBox {
-    cursor: default;
-    color: #333;
-
-    span {
-      display: inline-block;
-      max-width: 150px;
-      margin-right: 10px;
-      cursor: pointer;
-    }
-  }
-
-  .itemBox:hover {
-    background-color: #f2f2f2;
-  }
-
-  .path {
-    display: inline-block;
-    font-size: 12px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    max-width: 100px;
-    overflow: hidden;
-    margin-left: 10px;
+    word-break: break-word;
+    font-size: 14px;
+    line-height: 1.5;
   }
 }
 
-.hasRunning {
-  background-color: #0ead00;
-  animation: runningicon 5s infinite;
+.msgSender {
+  font-size: 11px;
+  color: #888;
 }
 
-.maskHasPause {
-  background-color: #a0a0a0;
+.msgTime {
+  font-size: 10px;
+  color: #aaa;
+  align-self: flex-end;
 }
 
-.noMask {
-  display: none;
+.msgImage {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.hasRunningicon {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin: 0;
-  padding: 0;
-  border-radius: 3px;
-  position: absolute;
-  left: -9px;
+.msgVideo {
+  max-width: 260px;
+  border-radius: 6px;
 }
 
-@keyframes runningicon {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.1;
-  }
-
-  80% {
-    opacity: 1;
-  }
-}
-
-.content {
-  flex: 1;
-  height: calc(100vh - 90px - 50px);
-  background-color: #FFF;
-  border-radius: 20px;
-  margin-left: 14px;
-  padding: 18px;
-  margin-right: 14px;
-  display: flex;
-  flex-direction: column;
-}
-
-.contentHeadButton {
+.inputBar {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  height: auto;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid #f0f0f0;
+}
 
-  .comButton {
-    width: auto;
-    height: 40px;
-    border-radius: 8px;
-    text-align: center;
-    line-height: 40px;
-    color: #000000;
-    padding: 0px 20px;
-    cursor: pointer;
-    background-color: #f1f1f1;
-    margin-right: 20px;
-    margin-bottom: 20px;
-    transition: all 0.5s;
-  }
+.toolBtn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: #f5f5f5;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #555;
 
-  .comButton:hover {
-    background-color: #e8e8e8;
-  }
-
-  .comButtonChecked:hover {
-    background-color: #12dc00;
-  }
-
-  .comButtonChecked {
-    background-color: #0ead00;
-    color: #FFF;
+  &:hover {
+    background: #ebebeb;
   }
 }
 
-.commandBottonLine {
-  width: 100%;
-  height: 1px;
-  background-color: #F0F0F0;
-}
-
-
-.cmdContent {
-  width: 100%;
+.textInput {
   flex: 1;
-  border-radius: 10px;
-  background-color: rgb(246, 245, 245, 0.5);
+  height: 36px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  outline: none;
+
+  &:focus {
+    border-color: #667eea;
+  }
+}
+
+.sendBtn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: #667eea;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+
+  &:hover {
+    background: #5a6fd6;
+  }
+}
+
+.chatEmpty {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  position: relative;
-  height: 100%;
-  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #999;
+  font-size: 14px;
+}
 
-  .commandName {
-    color: #000;
-    width: 100%;
-    line-height: 50px;
-    border-bottom: 4px solid #FFF;
-    padding: 0 20px 20px 20px;
-    font-size: 18px;
-    display: inline-block;
-    height: 50px;
+.discoverSection {
+  padding: 8px 12px;
+
+  h4 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
   }
+}
 
-  .commandLogBox {
-    overflow: auto;
-    margin-top: 10px;
-    padding: 10px 20px;
+.discoverItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.discoverName {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discoverIp {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.emptyTip {
+  font-size: 12px;
+  color: #bbb;
+  text-align: center;
+  padding: 16px 8px;
+  margin: 0;
+}
+
+.groupForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  label {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    flex: 1;
-    max-height: 100%;
+    gap: 6px;
+    font-size: 13px;
+    color: #555;
 
-    &::-webkit-scrollbar {
-      display: none;
-    }
-
-    code {
-      width: auto;
-      color: #000;
-      font-size: 20px;
+    input {
+      height: 36px;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 14px;
     }
   }
 }
 
-.codeline {
-  // white-space: nowrap;
-  white-space: pre-wrap;
-  padding: 5px;
-  border-radius: 5px;
-  transition: all 0.3s;
+.memberLabel {
+  margin: 0;
+  font-size: 13px;
+  color: #555;
 }
 
-.codeline:hover {
-  background-color: #ddd;
-
+.memberList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.codeindex {
- 
-  display: inline-block;
+.memberChip {
+  padding: 6px 12px;
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  background: #fafafa;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.memberSelected {
+  background: #eef3ff;
+  border-color: #667eea;
+  color: #667eea;
 }

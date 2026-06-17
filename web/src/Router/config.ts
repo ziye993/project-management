@@ -1,3 +1,6 @@
+import ChatLayout from "../page/LocalChat/Layout";
+import LocalChatHome from "../page/LocalChat/Home";
+import LocalChatProfile from "../page/LocalChat/Profile";
 import Layout from "../compomeents/Layout";
 import ProjectManage from "../page/Project/Home";
 import type { TRouter } from "./type";
@@ -8,6 +11,7 @@ import TelevisionHome from "../page/Television/Home";
 import ServerInfoHome from "../page/ServerInfo/Home";
 import LANSharingHome from "../page/LANSharing/Home";
 import ConfigHome from "../page/Config/Home";
+import Swagger from "../page/swagger/home";
 
 const router: TRouter = [{
     path: '/',
@@ -48,6 +52,20 @@ const router: TRouter = [{
     redirect: 'home',
     children: [
         { path: '/home', components: LANSharingHome }
+    ]
+},{
+  path: '/swagger',
+  redirect: 'home',
+  children: [
+    { path: '/home', components: Swagger }
+  ]
+}, {
+    path: '/localChat',
+    components: ChatLayout,
+    redirect: 'home',
+    children: [
+        { path: '/home', components: LocalChatHome },
+        { path: '/profile', components: LocalChatProfile },
     ]
 }, {
     path: '/404',
