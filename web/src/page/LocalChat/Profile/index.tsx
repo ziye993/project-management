@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from '../../../Router';
 import { loadChatIdentity, saveChatIdentity } from '../../../utils/chatIdentity';
-import { connectChatSocket, registerChatUser, setChatHandlers, updateChatProfile } from '../../../utils/chatSocket';
+import { connectChatSocket, registerChatUser, setChatHandlers, clearChatHandlers, updateChatProfile } from '../../../utils/chatSocket';
 import Button from '../../../UiComponents/Button';
 import message from '../../../UiComponents/Modal/message';
 import styles from './index.module.less';
@@ -32,6 +32,10 @@ export default function LocalChatProfile() {
       },
     });
     registerChatUser(identity);
+
+    return () => {
+      clearChatHandlers(['onRegistered', 'onProfileUpdated']);
+    };
   }, []);
 
   const save = () => {

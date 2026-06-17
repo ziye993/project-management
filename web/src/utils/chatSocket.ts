@@ -13,36 +13,67 @@ type Handlers = {
   onError?: (err: { msg: string }) => void;
 };
 
+type RegisterPayload = { deviceId: string; username: string; avatar: string };
+
 let socket: Socket | null = null;
-let handlers: Handlers = {};
+let eventsBound = false;
+let pendingRegister: RegisterPayload | null = null;
+const handlers: { current: Handlers } = { current: {} };
 
-export function connectChatSocket() {
-  if (socket?.connected) return socket;
+function bindEventsOnce(s: Socket) {
+  if (eventsBound) return;
+  eventsBound = true;
 
-  socket = io(window.location.origin, {
-    transports: ['websocket', 'polling'],
-    path: '/socket.io',
+  s.on('connect', () => {
+    if (pendingRegister) s.emit('register', pendingRegister);
   });
 
-  socket.on('registered', data => handlers.onRegistered?.(data));
-  socket.on('userList', data => handlers.onUserList?.(data));
-  socket.on('conversationList', data => handlers.onConversationList?.(data));
-  socket.on('newMsg', data => handlers.onNewMsg?.(data));
-  socket.on('chatHistory', data => handlers.onChatHistory?.(data));
-  socket.on('groupList', data => handlers.onGroupList?.(data));
-  socket.on('groupCreated', data => handlers.onGroupCreated?.(data));
-  socket.on('profileUpdated', data => handlers.onProfileUpdated?.(data));
-  socket.on('error', data => handlers.onError?.(data));
+  s.on('registered', data => handlers.current.onRegistered?.(data));
+  s.on('userList', data => handlers.current.onUserList?.(data));
+  s.on('conversationList', data => handlers.current.onConversationList?.(data));
+  s.on('newMsg', data => handlers.current.onNewMsg?.(data));
+  s.on('chatHistory', data => handlers.current.onChatHistory?.(data));
+  s.on('groupList', data => handlers.current.onGroupList?.(data));
+  s.on('groupCreated', data => handlers.current.onGroupCreated?.(data));
+  s.on('profileUpdated', data => handlers.current.onProfileUpdated?.(data));
+  s.on('error', data => handlers.current.onError?.(data));
+}
 
+export function connectChatSocket() {
+  if (!socket) {
+    socket = io(window.location.origin, {
+      path: '/socket.io',
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+    bindEventsOnce(socket);
+  }
   return socket;
 }
 
 export function setChatHandlers(next: Handlers) {
-  handlers = { ...handlers, ...next };
+  handlers.current = { ...handlers.current, ...next };
 }
 
-export function registerChatUser(payload: { deviceId: string; username: string; avatar: string }) {
-  connectChatSocket().emit('register', payload);
+export function clearChatHandlers(keys?: (keyof Handlers)[]) {
+  if (!keys) {
+    handlers.current = {};
+    return;
+  }
+  const next = { ...handlers.current };
+  keys.forEach(key => delete next[key]);
+  handlers.current = next;
+}
+
+export function registerChatUser(payload: RegisterPayload) {
+  pendingRegister = payload;
+  const s = connectChatSocket();
+  if (s.connected) {
+    s.emit('register', payload);
+  }
 }
 
 export function updateChatProfile(payload: { username?: string; avatar?: string }) {
@@ -55,6 +86,10 @@ export function sendPrivateMsg(toUserId: string, content: string, type: 'text' |
 
 export function sendGroupMsg(groupId: string, content: string, type: 'text' | 'image' | 'video' = 'text') {
   socket?.emit('groupMsg', { groupId, content, type });
+}
+
+export function startConversation(convId: string) {
+  socket?.emit('startConversation', { convId });
 }
 
 export function fetchChatHistory(convId: string) {
@@ -74,12 +109,15 @@ export function createChatGroup(name: string, memberIds: string[]) {
 }
 
 export function disconnectChatSocket() {
+  pendingRegister = null;
   socket?.disconnect();
   socket = null;
+  eventsBound = false;
 }
 
 export function makePrivateConvId(userIdA: string, userIdB: string) {
-  return ['private', ...[userIdA, userIdB].sort()].join('::');
+  const [a, b] = [userIdA, userIdB].sort();
+  return `private:::${a}:::${b}`;
 }
 
 export function makeGroupConvId(groupId: string) {

@@ -38,9 +38,14 @@ export interface Conversation {
   type: 'private' | 'group';
   groupId?: string;
   name?: string;
+  peerId?: string;
+  peerName?: string;
+  peerAvatar?: string;
   participants: string[];
   lastMessage?: string;
   lastTime?: number;
+  openedAt?: number;
+  updatedAt?: number;
   unread?: Record<string, number>;
   unreadCount?: number;
 }
