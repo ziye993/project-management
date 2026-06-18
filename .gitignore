@@ -1,6 +1,5 @@
 node_modules/
 data/
-html/assets/
 .idea/
 .DS_Store
 *.log
