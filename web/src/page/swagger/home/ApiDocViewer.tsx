@@ -1,3 +1,4 @@
+import { ReloadOutlined } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
 import type { OpenAPISpec } from '../../../type/openapi'
 import {
@@ -11,9 +12,18 @@ import styles from './index.module.less'
 interface ApiDocViewerProps {
   spec: OpenAPISpec
   sourceUrl: string
+  canRefresh?: boolean
+  refreshing?: boolean
+  onRefresh?: () => void
 }
 
-export function ApiDocViewer({ spec, sourceUrl }: ApiDocViewerProps) {
+export function ApiDocViewer({
+  spec,
+  sourceUrl,
+  canRefresh = false,
+  refreshing = false,
+  onRefresh,
+}: ApiDocViewerProps) {
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [infoExpanded, setInfoExpanded] = useState(false)
@@ -83,6 +93,18 @@ export function ApiDocViewer({ spec, sourceUrl }: ApiDocViewerProps) {
           <span className={styles.searchHint}>
             找到 {filteredCount} 个匹配接口
           </span>
+        )}
+        {canRefresh && onRefresh && (
+          <button
+            type="button"
+            className={styles.refreshBtn}
+            onClick={onRefresh}
+            disabled={refreshing}
+            title="从服务端重新拉取最新文档"
+          >
+            <ReloadOutlined spin={refreshing} />
+            {refreshing ? '刷新中…' : '刷新'}
+          </button>
         )}
       </div>
 

@@ -13,6 +13,21 @@ export function buildApiDocsUrl(baseUrl: string, group = '应用'): string {
   return `${normalized}/v3/api-docs/${encodeURIComponent(group)}`
 }
 
+export function parseApiDocsUrl(docsUrl: string): { baseUrl: string; group: string } | null {
+  try {
+    const parts = docsUrl.split('/v3/api-docs/')
+    if (parts.length !== 2) return null
+    const group = decodeURIComponent(parts[1].split('?')[0])
+    return { baseUrl: parts[0], group }
+  } catch {
+    return null
+  }
+}
+
+export function isFetchableSourceUrl(sourceUrl: string): boolean {
+  return sourceUrl !== '本地粘贴的 JSON' && /^https?:\/\//i.test(sourceUrl)
+}
+
 export async function fetchOpenAPISpec(url: string): Promise<OpenAPISpec> {
   const fetchUrl = import.meta.env.DEV
     ? `/openapi-proxy?url=${encodeURIComponent(url)}`
