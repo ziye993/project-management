@@ -20,7 +20,7 @@ app.get(/.*/, (req, res) => {
   res.sendFile(path.join(getHtmlDir(), 'index.html'));
 });
 
-const port = 40014;
+const port = 30014;
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`Project management running at http://localhost:${port}`);
