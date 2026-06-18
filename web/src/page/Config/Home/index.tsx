@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import message from '../../../UiComponents/Modal/message';
 import {
   getConfig,
+  setCommandSortOrder,
   setFileUploadPath,
   setMovUploadPath,
   setPicUploadPath,
@@ -18,6 +19,7 @@ type ConfigState = {
   movUploadPath?: string;
   fileUploadPath?: string;
   publicBaseUrl?: string;
+  commandSortOrder?: string[];
   filesRoot?: string;
 };
 
@@ -25,6 +27,7 @@ export default function ConfigHome() {
   const [selectFileOpen, setSelectFileOpen] = useState(false);
   const [config, setConfigState] = useState<ConfigState>({});
   const [publicUrl, setPublicUrl] = useState('');
+  const [commandSortText, setCommandSortText] = useState('');
   const apiFun = useRef<(param: { uploadPath: string }) => Promise<any>>(async () => ({}));
   const filesRoot = config.filesRoot;
 
@@ -33,6 +36,7 @@ export default function ConfigHome() {
     if (res?.data) {
       setConfigState(res.data);
       setPublicUrl(res.data.publicBaseUrl || '');
+      setCommandSortText((res.data.commandSortOrder || ['dev', 'start', 'build', 'server', 'preview']).join('\n'));
     }
   };
 
@@ -87,6 +91,32 @@ export default function ConfigHome() {
                 <span className={styles.value} title={config.fileUploadPath}>{displayPath(config.fileUploadPath)}</span>
               </li>
             </ul>
+          </div>
+        </div>
+        <div className={`${shellStyles.panel} ${styles.configItemBox}`}>
+          <span className={styles.configItemTitle}>项目指令排序</span>
+          <p className={styles.hint}>每行一个指令名，排在前面的指令会固定显示在项目页最左侧，横向滚动时不会移动</p>
+          <div className={styles.sortOrderBox}>
+            <textarea
+              className={styles.sortTextarea}
+              value={commandSortText}
+              onChange={e => setCommandSortText(e.target.value)}
+              placeholder={'dev\nstart\nbuild\nserver\npreview'}
+              rows={6}
+            />
+            <button
+              type="button"
+              className={styles.saveBtn}
+              onClick={async () => {
+                const commandSortOrder = commandSortText
+                  .split('\n')
+                  .map(s => s.trim())
+                  .filter(Boolean);
+                await setCommandSortOrder({ commandSortOrder });
+                message.success('指令排序已保存');
+                loadConfig();
+              }}
+            >保存</button>
           </div>
         </div>
         <div className={`${shellStyles.panel} ${styles.configItemBox}`}>

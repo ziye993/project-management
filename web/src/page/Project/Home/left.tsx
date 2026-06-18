@@ -34,14 +34,16 @@ export default function Left(props: IProps) {
 							backgroundColor: item.color ? softenRowColor(item.color) : undefined,
 						} as React.CSSProperties}
 						onClick={() => { setProjectChecked(index) }}
+						title={item.path}
 					>
-						<span className={`
+						<div className={styles.itemMain}>
+							<span className={`
               ${styles.hasRunningicon} 
               ${item.hasMask ? (item.hasRunning
 								? styles.hasRunning : styles.maskHasPause) : styles.noMask}
               `}></span>
-						<span className={styles.projectItemName}>{item.label}</span>
-						<span className={styles.path} title={item.path}>{item.path}</span>
+							<span className={styles.projectItemName}>{item.label}</span>
+						</div>
 						<DeleteOutlined className={styles.removeBtn} onClick={(e) => handleRemove(e, item)} />
 					</div>
 				);

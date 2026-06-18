@@ -8,6 +8,7 @@ export interface IProjectScript {
     runningId?: string | number;
     connect?: boolean;
     sortIndex?: number;
+    isPinned?: boolean;
 }
 
 export interface IProjectListItem {

@@ -21,3 +21,7 @@ export const setFileUploadPath = async (param: { uploadPath: string }) => {
 export const setPublicBaseUrl = async (param: { publicBaseUrl: string }) => {
   return await post(basePath + '/setPublicBaseUrl', param);
 }
+
+export const setCommandSortOrder = async (param: { commandSortOrder: string[] }) => {
+  return await post(basePath + '/setCommandSortOrder', param);
+}
