@@ -16,11 +16,7 @@ await import('./server/index.js');
 
 app.use(express.static(getHtmlDir()));
 
-// app.get(/.*/, (req, res) => {
-//   res.sendFile(path.join(getHtmlDir(), 'index.html'));
-// });
-
-app.get('*', (req, res) => {
+app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(getHtmlDir(), 'index.html'));
 });
 
