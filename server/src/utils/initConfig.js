@@ -8,21 +8,30 @@ import {
   setProjectsData,
 } from './jsonFile.js';
 
-const sortScript = ["dev","start",'build','server','preview']
+const DEFAULT_COMMAND_SORT = ['dev', 'start', 'build', 'server', 'preview'];
 
-function parseScripts(projectPath, soltScript = []) {
+export function getCommandSortOrder() {
+  const config = getConfig(true);
+  if (config.commandSortOrder?.length) return config.commandSortOrder;
+  const store = getProjectsData(true);
+  if (store.soltScript?.length) return store.soltScript;
+  return DEFAULT_COMMAND_SORT;
+}
+
+function parseScripts(projectPath, sortOrder = []) {
   const pkgPath = path.join(projectPath, 'package.json');
   if (!fileExists(pkgPath)) return [];
   const scriptConfig = readJSON(pkgPath);
   const scripts = scriptConfig?.scripts;
   if (!scripts) return [];
   return Object.keys(scripts).map(item => {
-    const fIndex = soltScript.findIndex(s => item === s);
+    const fIndex = sortOrder.findIndex(s => item === s);
     return {
       label: item,
       value: item,
       command: scripts[item],
-      sortIndex: fIndex > -1 ? fIndex : soltScript.length + 100,
+      sortIndex: fIndex > -1 ? fIndex : sortOrder.length + 100,
+      isPinned: fIndex > -1,
     };
   });
 }
@@ -36,7 +45,7 @@ function buildProjectEntry(projectPath, importType) {
     path: normalizedPath,
     parentPath: path.dirname(normalizedPath),
     importType,
-    scripts: parseScripts(projectPath, getConfig()?.soltScript || []),
+    scripts: parseScripts(projectPath, getCommandSortOrder()),
   };
 }
 
@@ -48,7 +57,7 @@ export function buildProjectListFromStore() {
       ...entry,
       path: normalizedPath,
       parentPath: path.dirname(normalizedPath),
-      scripts: parseScripts(normalizedPath, store.soltScript || []),
+      scripts: parseScripts(normalizedPath, getCommandSortOrder()),
     };
   });
   return list;

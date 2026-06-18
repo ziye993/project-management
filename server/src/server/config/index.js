@@ -55,3 +55,17 @@ app.post('/api/config/setPublicBaseUrl', (req, res) => {
   setConfig(config);
   res.send({ code: 0, success: true, data: null, msg: '' });
 });
+
+app.post('/api/config/setCommandSortOrder', (req, res) => {
+  const { commandSortOrder } = req.body;
+  if (!Array.isArray(commandSortOrder)) {
+    return res.status(400).send({ code: 1, success: false, data: null, msg: '排序列表格式无效' });
+  }
+  const cleaned = commandSortOrder
+    .map(item => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+  const config = getConfig(true) || {};
+  config.commandSortOrder = cleaned;
+  setConfig(config);
+  res.send({ code: 0, success: true, data: { commandSortOrder: cleaned }, msg: '' });
+});
