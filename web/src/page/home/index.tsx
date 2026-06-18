@@ -9,6 +9,7 @@ import {
   FundViewOutlined,
   MessageOutlined,
   PartitionOutlined, PercentageOutlined,
+  PlayCircleOutlined,
   RightOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '../../Router';
@@ -70,6 +71,14 @@ const entries: EntryItem[] = [
     icon: <PartitionOutlined />,
     path: '/LANSharing',
     accent: 'cyan',
+  },
+  {
+    id: 9,
+    name: '游戏',
+    desc: '本地小游戏合集，休闲放松',
+    icon: <PlayCircleOutlined />,
+    path: '/game',
+    accent: 'orange',
   },
   {
     id: 8,

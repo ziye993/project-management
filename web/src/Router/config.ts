@@ -12,6 +12,9 @@ import ServerInfoHome from "../page/ServerInfo/Home";
 import LANSharingHome from "../page/LANSharing/Home";
 import ConfigHome from "../page/Config/Home";
 import Swagger from "../page/swagger/home";
+import GameLayout from "../page/Game/Layout";
+import GameHome from "../page/Game/Home";
+import SudokuHome from "../page/Game/Sudoku";
 
 const router: TRouter = [{
     path: '/',
@@ -59,6 +62,14 @@ const router: TRouter = [{
   children: [
     { path: '/home', components: Swagger }
   ]
+}, {
+    path: '/game',
+    components: GameLayout,
+    redirect: 'home',
+    children: [
+        { path: '/home', components: GameHome },
+        { path: '/sudoku', components: SudokuHome },
+    ]
 }, {
     path: '/localChat',
     components: ChatLayout,

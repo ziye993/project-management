@@ -1,0 +1,263 @@
+.page {
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.toolbar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 14px;
+}
+
+.settingGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.settingLabel {
+  font-size: 12px;
+  color: #64748b;
+  min-width: 32px;
+}
+
+.settingBtn {
+  padding: 5px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-size: 12px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+  }
+}
+
+.settingBtnActive {
+  background: #fff7ed;
+  border-color: #fb923c;
+  color: #ea580c;
+  font-weight: 600;
+}
+
+.checkLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+  user-select: none;
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #475569;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.noteTag,
+.pauseTag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.noteTag {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.pauseTag {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.gameArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.gamePaused {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.board {
+  display: grid;
+  width: 100%;
+  max-width: min(100%, 420px);
+  aspect-ratio: 1;
+  border: 2px solid #1e293b;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  padding: 0;
+  min-height: 0;
+  transition: background 0.1s;
+
+  &:hover:not(:disabled) {
+    background: #f8fafc;
+  }
+}
+
+.cellBorderRight {
+  border-right: 2px solid #1e293b;
+}
+
+.cellBorderBottom {
+  border-bottom: 2px solid #1e293b;
+}
+
+.cellFixed {
+  background: #f8fafc;
+
+  .cellValue {
+    color: #1e293b;
+    font-weight: 700;
+  }
+}
+
+.cellSelected {
+  background: #dbeafe !important;
+}
+
+.cellHighlight {
+  background: #eff6ff;
+}
+
+.cellError {
+  .cellValue {
+    color: #dc2626;
+  }
+}
+
+.cellValue {
+  font-size: clamp(14px, 4vw, 22px);
+  font-weight: 600;
+  color: #2563eb;
+  line-height: 1;
+}
+
+.cellNotes {
+  display: grid;
+  width: 90%;
+  height: 90%;
+  gap: 0;
+}
+
+.noteDigit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(6px, 1.8vw, 9px);
+  color: #64748b;
+  line-height: 1;
+}
+
+.pad {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: min(100%, 420px);
+}
+
+.padBtn {
+  height: 44px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.padBtnActive {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.padBtnDone {
+  opacity: 0.4;
+}
+
+.headerBtn {
+  padding: 5px 10px !important;
+  font-size: 12px !important;
+  white-space: nowrap;
+}
+
+.headerBtnActive {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+.winBody {
+  text-align: center;
+  padding: 8px 0 4px;
+
+  p {
+    margin: 8px 0;
+    color: #475569;
+    font-size: 14px;
+  }
+}
+
+.winIcon {
+  font-size: 48px;
+  color: #22c55e;
+  margin-bottom: 8px;
+}
