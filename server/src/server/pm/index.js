@@ -11,7 +11,7 @@ import { computeColorGroups, getProjectColorMap } from '../../utils/workspaceCol
 import { getColorCache } from '../../utils/jsonFile.js';
 import { makeRunKey, parseRunKey } from '../../utils/runKey.js';
 import { decodeOutput } from '../../utils/decodeOutput.js';
-import { appendCommandLog, ensureCommandLog, getCommandLogs } from '../../utils/commandLogs.js';
+import { appendCommandLog, ensureCommandLog, getCommandLogs ,clearCommandLog} from '../../utils/commandLogs.js';
 import { resolveExistingProjectPath, spawnProjectScript } from '../../utils/projectCommand.js';
 
 let projectList = getProjectList();
@@ -206,6 +206,7 @@ app.post('/api/project/stopCommand', async (req, res) => {
     }
     appendCommandLog(resolvedPath, value, { text: '\n⏹ 已手动停止', type: 'error' });
     currentChild[key] = undefined;
+    clearCommandLog(resolvedPath,value,);
     res.send({ msg: '', code: 0, success: killRes, data: killRes });
   } else {
     res.send({ msg: '此项目可能未运行或出错', code: 2, success: false, data: key });

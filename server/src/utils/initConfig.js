@@ -8,6 +8,8 @@ import {
   setProjectsData,
 } from './jsonFile.js';
 
+const sortScript = ["dev","start",'build','server','preview']
+
 function parseScripts(projectPath, soltScript = []) {
   const pkgPath = path.join(projectPath, 'package.json');
   if (!fileExists(pkgPath)) return [];

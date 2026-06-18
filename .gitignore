@@ -4,3 +4,4 @@ html/assets/
 .idea/
 .DS_Store
 *.log
+nohup.out
