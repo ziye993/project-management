@@ -1,45 +1,73 @@
-import { useState } from 'react'
-import { buildApiDocsUrl, fetchOpenAPISpec, parseOpenAPISpec } from '../../../utils/openapi'
+import { useEffect, useState } from 'react'
+import {
+  buildApiDocsUrl,
+  fetchOpenAPISpec,
+  isFetchableSourceUrl,
+  parseApiDocsUrl,
+  parseOpenAPISpec,
+} from '../../../utils/openapi'
+import {
+  addSwaggerHistory,
+  loadSwaggerHistory,
+  loadSwaggerSession,
+  saveSwaggerSession,
+  type SwaggerHistoryEntry,
+} from '../../../utils/swaggerStorage'
 import { ApiDocViewer } from './ApiDocViewer'
 import { DocTabs } from './DocTabs'
 import { UrlForm } from './UrlForm'
-import { createDocTab, type DocTab } from '../../../type/docTab.ts'
+import { createDocTab, createTabLabel, type DocTab } from '../../../type/docTab.ts'
 import styles from './index.module.less'
 import UserHeader from '../../../compomeents/UserHeader/index.tsx'
 import PageHeader from '../../../compomeents/PageHeader/index.tsx'
 
 function Swagger() {
-  const [tabs, setTabs] = useState<DocTab[]>([])
-  const [activeTabId, setActiveTabId] = useState<string | null>(null)
-  const [formExpanded, setFormExpanded] = useState(true)
-  const [loading, setLoading] = useState(false)
+  const [initialSession] = useState(() => loadSwaggerSession())
+  const [tabs, setTabs] = useState<DocTab[]>(initialSession?.tabs ?? [])
+  const [activeTabId, setActiveTabId] = useState<string | null>(initialSession?.activeTabId ?? null)
+  const [formExpanded, setFormExpanded] = useState(() => (initialSession?.tabs.length ?? 0) === 0)
+  const [fetchLoading, setFetchLoading] = useState(false)
+  const [refreshingTabId, setRefreshingTabId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [history, setHistory] = useState<SwaggerHistoryEntry[]>(() => loadSwaggerHistory())
 
-  const addTab = (spec: DocTab['spec'], sourceUrl: string) => {
+  useEffect(() => {
+    saveSwaggerSession(tabs, activeTabId)
+  }, [tabs, activeTabId])
+
+  const addTab = (
+    spec: DocTab['spec'],
+    sourceUrl: string,
+    meta?: { baseUrl: string; group: string },
+  ) => {
     const tab = createDocTab(spec, sourceUrl)
     setTabs((prev) => [...prev, tab])
     setActiveTabId(tab.id)
     setFormExpanded(false)
     setError(null)
+
+    if (meta) {
+      setHistory(addSwaggerHistory(spec, sourceUrl, meta.baseUrl, meta.group))
+    }
   }
 
   const handleFetch = async (baseUrl: string, group: string) => {
-    setLoading(true)
+    setFetchLoading(true)
     setError(null)
 
     try {
       const docsUrl = buildApiDocsUrl(baseUrl, group)
       const data = await fetchOpenAPISpec(docsUrl)
-      addTab(data, docsUrl)
+      addTab(data, docsUrl, { baseUrl, group })
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败')
     } finally {
-      setLoading(false)
+      setFetchLoading(false)
     }
   }
 
   const handlePaste = (json: string) => {
-    setLoading(true)
+    setFetchLoading(true)
     setError(null)
 
     try {
@@ -48,7 +76,36 @@ function Swagger() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '解析失败')
     } finally {
-      setLoading(false)
+      setFetchLoading(false)
+    }
+  }
+
+  const handleHistorySelect = (entry: SwaggerHistoryEntry) => {
+    void handleFetch(entry.baseUrl, entry.group)
+  }
+
+  const handleRefreshTab = async (tabId: string) => {
+    const tab = tabs.find((t) => t.id === tabId)
+    if (!tab || !isFetchableSourceUrl(tab.sourceUrl)) return
+
+    setRefreshingTabId(tabId)
+    setError(null)
+
+    try {
+      const data = await fetchOpenAPISpec(tab.sourceUrl)
+      const label = createTabLabel(data, tab.sourceUrl)
+      setTabs((prev) =>
+        prev.map((t) => (t.id === tabId ? { ...t, spec: data, label } : t)),
+      )
+
+      const parsed = parseApiDocsUrl(tab.sourceUrl)
+      if (parsed) {
+        setHistory(addSwaggerHistory(data, tab.sourceUrl, parsed.baseUrl, parsed.group))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '刷新失败')
+    } finally {
+      setRefreshingTabId(null)
     }
   }
 
@@ -70,19 +127,23 @@ function Swagger() {
     })
   }
 
-  const showWelcome = tabs.length === 0 && !loading
+  const showWelcome = tabs.length === 0 && !fetchLoading
   const showForm = tabs.length === 0 || formExpanded
 
   return (
     <div className={styles.app}>
       <UserHeader className={styles.userHeader}>
         <PageHeader>
-          {showForm && <UrlForm
-            onFetch={handleFetch}
-            onPaste={handlePaste}
-            loading={loading}
-            compact={tabs.length > 0}
-          />}
+          {showForm && (
+            <UrlForm
+              onFetch={handleFetch}
+              onPaste={handlePaste}
+              loading={fetchLoading}
+              compact={tabs.length > 0}
+              history={history}
+              onHistorySelect={handleHistorySelect}
+            />
+          )}
           {tabs.length > 0 && (
             <DocTabs
               tabs={tabs}
@@ -104,28 +165,6 @@ function Swagger() {
           )}
         </PageHeader>
       </UserHeader>
-      {/* <header
-        className={`${styles.appHeader} ${tabs.length > 0 ? styles.hasTabs : ''} ${!showForm ? styles.formCollapsed : ''}`}
-      >
-        <div className={styles.headerTop}>
-          <h1 className={styles.appTitle}>API 文档查看器</h1>
-
-
-        </div>
-
-        {showWelcome && (
-          <p className={styles.headerDesc}>输入服务地址，自动拉取 OpenAPI 文档并格式化展示</p>
-        )}
-
-        {showForm && (
-          <UrlForm
-            onFetch={handleFetch}
-            onPaste={handlePaste}
-            loading={loading}
-            compact={tabs.length > 0}
-          />
-        )}
-      </header> */}
 
       {error && (
         <div className={styles.errorBanner} role="alert">
@@ -140,7 +179,13 @@ function Swagger() {
             className={styles.docPanelItem}
             hidden={tab.id !== activeTabId}
           >
-            <ApiDocViewer spec={tab.spec} sourceUrl={tab.sourceUrl} />
+            <ApiDocViewer
+              spec={tab.spec}
+              sourceUrl={tab.sourceUrl}
+              canRefresh={isFetchableSourceUrl(tab.sourceUrl)}
+              refreshing={refreshingTabId === tab.id}
+              onRefresh={() => void handleRefreshTab(tab.id)}
+            />
           </div>
         ))}
 

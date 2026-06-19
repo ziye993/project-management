@@ -16,11 +16,11 @@ await import('./server/index.js');
 
 app.use(express.static(getHtmlDir()));
 
-app.get(/.*/, (req, res) => {
+app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(getHtmlDir(), 'index.html'));
 });
 
-const port = 30000;
+const port = 30014;
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`Project management running at http://localhost:${port}`);

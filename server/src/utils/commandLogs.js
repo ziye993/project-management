@@ -3,16 +3,23 @@ import { readJSONFile, writeJSONFile } from './jsonFile.js';
 const LOGS_FILE = 'command-logs.json';
 const MAX_LOG_LINES = 500;
 
-let logsCache = null;
+let logsCache = {};
 
 export function getCommandLogs(refresh = false) {
-  if (!refresh && logsCache) return logsCache;
-  logsCache = readJSONFile(LOGS_FILE, {});
+  // if (!refresh && logsCache) return logsCache;
+  // // logsCache = readJSONFile(LOGS_FILE, {});
+  // logsCache={};
   return logsCache;
 }
 
 function persistLogs() {
-  writeJSONFile(LOGS_FILE, logsCache || {});
+  // writeJSONFile(LOGS_FILE, logsCache || {});
+}
+
+export function clearCommandLog(key, command) {
+  if (logsCache?.[key]?.[command]) {
+    logsCache[key][command].logs = [];
+  }
 }
 
 export function appendCommandLog(projectPath, command, entry) {
@@ -25,7 +32,6 @@ export function appendCommandLog(projectPath, command, entry) {
     logs[projectPath][command].logs.shift();
   }
 
-  persistLogs();
   return logs;
 }
 

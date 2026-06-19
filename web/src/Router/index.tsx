@@ -122,6 +122,11 @@ const Routers = () => {
     return <RouterItem level={0} router={routerReduce} />
 }
 
+export function useRouterIds() {
+    const { routerIds } = useContext(RouterContext);
+    return routerIds;
+}
+
 export function useNavigate() {
     const { data, onPopState } = useContext(RouterContext);
 

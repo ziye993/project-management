@@ -69,9 +69,36 @@
   font-size: 13px;
   font-weight: 500;
   transition: all 0.2s;
+  flex-shrink: 0;
 
   &:hover {
     background: rgba(224, 231, 255, 0.9);
+  }
+}
+
+.sortOrderBox {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px 20px;
+  align-items: flex-start;
+}
+
+.sortTextarea {
+  flex: 1;
+  min-height: 120px;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  background: rgba(248, 250, 252, 0.8);
+  color: #334155;
+  resize: vertical;
+  line-height: 1.6;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(129, 140, 248, 0.45);
   }
 }
 

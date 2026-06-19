@@ -1,17 +1,17 @@
 import path from 'path';
 import { getProjectsData, getColorCache, setColorCache } from './jsonFile.js';
 
-const LIGHT_COLORS = [
-  '#FFFDE7',
-  '#E8F5E9',
-  '#E3F2FD',
-  '#FFF3E0',
-  '#F3E5F5',
-  '#FCE4EC',
-  '#E0F2F1',
-  '#EFEBE9',
-  '#F9FBE7',
-  '#FBE9E7',
+const GROUP_COLORS = [
+  '#F4D03F',
+  '#58D68D',
+  '#5DADE2',
+  '#F5B041',
+  '#BB8FCE',
+  '#F1948A',
+  '#48C9B0',
+  '#BDC3C7',
+  '#A9DFBF',
+  '#F0B27A',
 ];
 
 export function computeColorGroups() {
@@ -36,7 +36,7 @@ export function computeColorGroups() {
   for (const [parentPath, projects] of parentMap.entries()) {
     groups.push({
       parentPath,
-      color: LIGHT_COLORS[colorIndex % LIGHT_COLORS.length],
+      color: GROUP_COLORS[colorIndex % GROUP_COLORS.length],
       projects,
     });
     colorIndex += 1;
