@@ -3,8 +3,11 @@ import path from 'path';
 import multer from 'multer';
 import app from '../../app.js';
 import { getShareDir } from '../../initDataStorage.js';
-import { buildAccessLinks, buildAccessLinksRelative } from '../../utils/accessLinks.js';
+import { buildAccessLinksRelative } from '../../utils/accessLinks.js';
 import { getConfig } from '../../utils/jsonFile.js';
+import { fixFilenameEncoding } from '../../utils/filenameEncoding.js';
+
+const CHAT_FOLDER = 'chat';
 
 function safeJoin(base, relative) {
   const target = path.normalize(path.join(base, relative || ''));
@@ -25,7 +28,9 @@ const shareStorage = multer.diskStorage({
     }
   },
   filename(req, file, cb) {
-    cb(null, file.originalname);
+    const original = fixFilenameEncoding(file.originalname);
+    const name = req.body?.source === 'chat' ? `${Date.now()}-${original}` : original;
+    cb(null, name);
   },
 });
 
@@ -33,23 +38,26 @@ const shareUpload = multer({ storage: shareStorage }).array('files');
 
 app.post('/api/share/list', (req, res) => {
   try {
-    const { relativePath = '' } = req.body;
+    const chatOnly = req.body?.chatOnly === true;
+    const relativePath = chatOnly ? CHAT_FOLDER : (req.body?.relativePath || '');
     const dir = safeJoin(getShareDir(), relativePath);
     if (!fs.existsSync(dir)) {
-      return res.json({ success: true, code: 0, data: { items: [], currentPath: relativePath }, msg: '' });
+      return res.json({ success: true, code: 0, data: { items: [], currentPath: relativePath, chatOnly }, msg: '' });
     }
     const config = getConfig();
     const prefix = config.shareRequestPath || '/static/share';
-    const items = fs.readdirSync(dir, { withFileTypes: true }).map(entry => {
+    let items = fs.readdirSync(dir, { withFileTypes: true }).map(entry => {
       const rel = path.join(relativePath, entry.name).replace(/\\/g, '/');
       const full = path.join(dir, entry.name);
       const stat = fs.statSync(full);
+      const isChat = rel === CHAT_FOLDER || rel.startsWith(`${CHAT_FOLDER}/`);
       return {
         name: entry.name,
         isDirectory: entry.isDirectory(),
         relativePath: rel,
         size: entry.isDirectory() ? 0 : stat.size,
         modifiedAt: stat.mtimeMs,
+        source: isChat ? 'chat' : 'normal',
         downloadLinks: entry.isDirectory() ? [] : buildAccessLinksRelative(prefix, rel),
       };
     }).sort((a, b) => {
@@ -58,7 +66,11 @@ app.post('/api/share/list', (req, res) => {
       return a.name.localeCompare(b.name);
     });
 
-    res.json({ success: true, code: 0, data: { items, currentPath: relativePath }, msg: '' });
+    if (!chatOnly && !relativePath) {
+      items = items.filter(item => item.relativePath !== CHAT_FOLDER);
+    }
+
+    res.json({ success: true, code: 0, data: { items, currentPath: relativePath, chatOnly }, msg: '' });
   } catch (e) {
     res.status(400).json({ success: false, code: 1, msg: e.message, data: null });
   }
@@ -79,9 +91,22 @@ app.post('/api/share/mkdir', (req, res) => {
 app.post('/api/share/upload', (req, res) => {
   shareUpload(req, res, err => {
     if (err) return res.status(400).json({ success: false, msg: err.message });
+    const config = getConfig();
+    const prefix = config.shareRequestPath || '/static/share';
+    const relativePath = req.body?.relativePath || '';
     res.json({
       success: true, code: 0,
-      data: (req.files || []).map(f => ({ name: f.originalname, size: f.size })),
+      data: (req.files || []).map(f => {
+        const rel = path.join(relativePath, f.filename).replace(/\\/g, '/');
+        return {
+          name: f.filename,
+          originalName: f.originalname,
+          size: f.size,
+          relativePath: rel,
+          source: req.body?.source === 'chat' ? 'chat' : 'normal',
+          downloadLinks: buildAccessLinksRelative(prefix, rel),
+        };
+      }),
       msg: '上传成功',
     });
   });

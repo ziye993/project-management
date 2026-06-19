@@ -174,6 +174,7 @@ export function getUnreadCount(userId, convId) {
 function previewText(msg) {
   if (msg.type === 'image') return '[图片]';
   if (msg.type === 'video') return '[视频]';
+  if (msg.type === 'file') return '[文件]';
   return msg.content?.slice(0, 80) || '';
 }
 

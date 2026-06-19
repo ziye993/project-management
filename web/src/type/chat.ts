@@ -1,4 +1,4 @@
-export type MessageType = 'text' | 'image' | 'video';
+export type MessageType = 'text' | 'image' | 'video' | 'file';
 
 export interface ChatIdentity {
   deviceId: string;

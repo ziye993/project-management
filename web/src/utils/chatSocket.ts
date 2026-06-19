@@ -80,11 +80,11 @@ export function updateChatProfile(payload: { username?: string; avatar?: string 
   socket?.emit('updateProfile', payload);
 }
 
-export function sendPrivateMsg(toUserId: string, content: string, type: 'text' | 'image' | 'video' = 'text') {
+export function sendPrivateMsg(toUserId: string, content: string, type: 'text' | 'image' | 'video' | 'file' = 'text') {
   socket?.emit('privateMsg', { toUserId, content, type });
 }
 
-export function sendGroupMsg(groupId: string, content: string, type: 'text' | 'image' | 'video' = 'text') {
+export function sendGroupMsg(groupId: string, content: string, type: 'text' | 'image' | 'video' | 'file' = 'text') {
   socket?.emit('groupMsg', { groupId, content, type });
 }
 

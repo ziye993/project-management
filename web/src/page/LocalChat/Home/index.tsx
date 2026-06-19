@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from 'react';
 import {
   clearChatHandlers,
   connectChatSocket,
@@ -15,10 +15,10 @@ import {
   startConversation,
 } from '../../../utils/chatSocket';
 import { loadChatIdentity } from '../../../utils/chatIdentity';
+import { fileNameFromUrl, getClipboardFiles, uploadChatFile } from '../../../utils/chatFileUpload';
 import { useNavigate } from '../../../Router';
-import { baseServerIp, upload } from '../../../server';
 import type { ActiveChat, ChatGroup, ChatMessage, ChatUser, Conversation } from '../../../type/chat';
-import { MessageOutlined, PictureOutlined, SendOutlined, TeamOutlined, VideoCameraOutlined } from '@ant-design/icons';
+import { FileOutlined, MessageOutlined, PaperClipOutlined, PictureOutlined, SendOutlined, TeamOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import Button from '../../../UiComponents/Button';
 import Modal from '../../../UiComponents/Modal';
 import message from '../../../UiComponents/Modal/message';
@@ -89,6 +89,7 @@ export default function LocalChatHome() {
   const msgEndRef = useRef<HTMLDivElement>(null);
   const picInputRef = useRef<HTMLInputElement>(null);
   const vidInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const activeChatRef = useRef<ActiveChat | null>(null);
   const selfIdRef = useRef('');
 
@@ -286,26 +287,26 @@ export default function LocalChatHome() {
     setInput('');
   };
 
-  const uploadMedia = async (file: File, type: 'image' | 'video') => {
+  const sendChatFile = async (file: File) => {
     if (!activeChat) return;
-    const formData = new FormData();
-    formData.append('files', file);
-    const endpoint = type === 'image' ? '/upload/uploadPic?source=chat' : '/upload/uploadMov?source=chat';
     try {
-      const res = await upload(endpoint, formData);
-      const item = res?.data?.[res.data.length - 1] || res?.data;
-      const urlPath = type === 'image'
-        ? `/static/pic/${item.storedName || item.filename}`
-        : `/static/mov/${item.storedName || item.filename}`;
-      const fullUrl = `${baseServerIp}${urlPath}`;
+      const { url, type } = await uploadChatFile(file);
       if (activeChat.type === 'private') {
-        sendPrivateMsg(activeChat.targetId, fullUrl, type);
+        sendPrivateMsg(activeChat.targetId, url, type);
       } else {
-        sendGroupMsg(activeChat.targetId, fullUrl, type);
+        sendGroupMsg(activeChat.targetId, url, type);
       }
     } catch {
       message.error('上传失败');
     }
+  };
+
+  const handlePaste = (e: ClipboardEvent) => {
+    if (!activeChat) return;
+    const files = getClipboardFiles(e.clipboardData);
+    if (!files.length) return;
+    e.preventDefault();
+    files.forEach(f => sendChatFile(f));
   };
 
   const createGroup = () => {
@@ -332,6 +333,11 @@ export default function LocalChatHome() {
           )}
           {msg.type === 'video' && (
             <video src={msg.content} controls className={styles.msgVideo} />
+          )}
+          {msg.type === 'file' && (
+            <a href={msg.content} target="_blank" rel="noopener noreferrer" className={styles.msgFile}>
+              <FileOutlined /> {fileNameFromUrl(msg.content)}
+            </a>
           )}
           <span className={styles.msgTime}>{formatTime(msg.time)}</span>
         </div>
@@ -396,29 +402,37 @@ export default function LocalChatHome() {
               {messages.map(renderMessage)}
               <div ref={msgEndRef} />
             </div>
-            <div className={styles.inputBar}>
+            <div className={styles.inputBar} onPaste={handlePaste}>
               <input ref={picInputRef} type="file" accept="image/*" hidden onChange={e => {
                 const f = e.target.files?.[0];
-                if (f) uploadMedia(f, 'image');
+                if (f) sendChatFile(f);
                 e.target.value = '';
               }} />
               <input ref={vidInputRef} type="file" accept="video/*" hidden onChange={e => {
                 const f = e.target.files?.[0];
-                if (f) uploadMedia(f, 'video');
+                if (f) sendChatFile(f);
                 e.target.value = '';
               }} />
-              <button type="button" className={styles.toolBtn} onClick={() => picInputRef.current?.click()}>
+              <input ref={fileInputRef} type="file" hidden onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) sendChatFile(f);
+                e.target.value = '';
+              }} />
+              <button type="button" className={styles.toolBtn} onClick={() => picInputRef.current?.click()} title="发送图片">
                 <PictureOutlined />
               </button>
-              <button type="button" className={styles.toolBtn} onClick={() => vidInputRef.current?.click()}>
+              <button type="button" className={styles.toolBtn} onClick={() => vidInputRef.current?.click()} title="发送视频">
                 <VideoCameraOutlined />
+              </button>
+              <button type="button" className={styles.toolBtn} onClick={() => fileInputRef.current?.click()} title="发送文件">
+                <PaperClipOutlined />
               </button>
               <input
                 className={styles.textInput}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendText())}
-                placeholder="输入消息..."
+                placeholder="输入消息，可直接粘贴文件..."
               />
               <button type="button" className={styles.sendBtn} onClick={sendText}>
                 <SendOutlined />
