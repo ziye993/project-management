@@ -8,6 +8,9 @@ function GameLayoutInner(props: { children?: React.ReactNode }) {
   const routerIds = useRouterIds();
   const { actions } = useGameLayoutActions();
   const isSudoku = routerIds.includes('sudoku');
+  const isGomoku = routerIds.includes('gomoku');
+  const inGame = isSudoku || isGomoku;
+  const title = isSudoku ? '数独' : isGomoku ? '五子棋' : '游戏';
 
   return (
     <div className={styles.shell}>
@@ -16,14 +19,14 @@ function GameLayoutInner(props: { children?: React.ReactNode }) {
           <button type="button" className={styles.navBtn} onClick={() => push('/')}>
             <HomeOutlined /> 首页
           </button>
-          {isSudoku && (
+          {inGame && (
             <button type="button" className={styles.navBtn} onClick={() => push('/game/home')}>
               游戏列表
             </button>
           )}
         </div>
         <div className={styles.title}>
-          <PlayCircleOutlined /> {isSudoku ? '数独' : '游戏'}
+          <PlayCircleOutlined /> {title}
         </div>
         <div className={styles.actions}>{actions}</div>
       </header>

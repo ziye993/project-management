@@ -1,5 +1,4 @@
-import { Server } from 'socket.io';
-import server from '../../serverHttp.js';
+import { io } from '../socketIo.js';
 import {
   addMessage,
   clearUnread,
@@ -17,10 +16,6 @@ import {
   updateUserProfile,
   upsertUser,
 } from './storage.js';
-
-const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
-});
 
 const onlineSockets = new Map();
 const socketMeta = new Map();

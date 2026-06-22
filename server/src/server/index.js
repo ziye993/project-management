@@ -1,6 +1,7 @@
 import './porxyStatic/index.js';
 import './pm/index.js';
 import './localhostChat/index.js';
+import './gomoku/index.js';
 import './file/index.js';
 import './upload/index.js';
 import './upload/chunkUpload.js';

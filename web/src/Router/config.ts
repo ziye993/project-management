@@ -15,6 +15,7 @@ import Swagger from "../page/swagger/home";
 import GameLayout from "../page/Game/Layout";
 import GameHome from "../page/Game/Home";
 import SudokuHome from "../page/Game/Sudoku";
+import GomokuHome from "../page/Game/Gomoku";
 
 const router: TRouter = [{
     path: '/',
@@ -69,6 +70,7 @@ const router: TRouter = [{
     children: [
         { path: '/home', components: GameHome },
         { path: '/sudoku', components: SudokuHome },
+        { path: '/gomoku', components: GomokuHome },
     ]
 }, {
     path: '/localChat',
