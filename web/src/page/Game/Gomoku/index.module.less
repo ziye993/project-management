@@ -1,0 +1,390 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 32px;
+}
+
+.lobby {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cardDesc {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
+}
+
+.btnSecondary {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+
+  &:hover:not(:disabled) {
+    background: #e2e8f0;
+  }
+}
+
+.btnDanger {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+
+  &:hover:not(:disabled) {
+    background: #fee2e2;
+  }
+}
+
+.joinRow {
+  display: flex;
+  gap: 10px;
+}
+
+.roomInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 16px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 600;
+
+  &:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  }
+}
+
+.roomCode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: #f0fdf4;
+  border: 2px dashed #86efac;
+  border-radius: 12px;
+}
+
+.roomCodeText {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  color: #15803d;
+}
+
+.waiting {
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.lanList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lanItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.lanUrl {
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+  text-align: right;
+  flex: 1;
+}
+
+.statusBar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  flex-wrap: wrap;
+}
+
+.playerInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.stoneDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.black {
+  background: radial-gradient(circle at 35% 35%, #555, #111);
+  box-shadow: inset -1px -1px 2px rgba(255, 255, 255, 0.15);
+}
+
+.white {
+  background: radial-gradient(circle at 35% 35%, #fff, #d4d4d4);
+  border: 1px solid #cbd5e1;
+}
+
+.turnHint {
+  font-size: 13px;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.turnHintWait {
+  color: #94a3b8;
+}
+
+.boardWrap {
+  width: 100%;
+  max-width: min(100%, 560px);
+  aspect-ratio: 1;
+  padding: 12px;
+  background: linear-gradient(145deg, #eab308, #ca8a04);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.board {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  position: relative;
+  background: #d4a017;
+}
+
+.cell {
+  position: relative;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  &:hover:not(:disabled)::after {
+    content: '';
+    position: absolute;
+    inset: 20%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.gridLineH,
+.gridLineV {
+  position: absolute;
+  background: #5c4a1a;
+  pointer-events: none;
+}
+
+.gridLineH {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.gridLineV {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.stone {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.stoneBlack {
+  background: radial-gradient(circle at 32% 28%, #666, #0a0a0a);
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.stoneWhite {
+  background: radial-gradient(circle at 32% 28%, #fff, #c8c8c8);
+  box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.lastMove {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 28%;
+    border-radius: 50%;
+    border: 2px solid #ef4444;
+    pointer-events: none;
+    z-index: 3;
+  }
+}
+
+.winCell {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(34, 197, 94, 0.35);
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 32px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.modalDesc {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.connecting {
+  text-align: center;
+  padding: 48px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.error {
+  width: 100%;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #dc2626;
+  font-size: 13px;
+}
