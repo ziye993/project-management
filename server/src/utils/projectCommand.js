@@ -26,11 +26,13 @@ export function resolveExistingProjectPath(projectPath) {
 export function spawnProjectScript(projectPath, scriptName) {
   const cwd = resolveExistingProjectPath(projectPath);
 
+  const isWin = process.platform === 'win32';
   return spawn('npm', ['run', scriptName], {
     cwd,
     shell: true,
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
     env: process.env,
+    detached: !isWin,
   });
 }

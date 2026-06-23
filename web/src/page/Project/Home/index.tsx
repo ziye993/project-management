@@ -6,6 +6,7 @@ import {
   forceRefreshList as _forceRefreshList,
   runCom,
   stopCommand,
+  closeCommand,
   getRunningList,
   getLogs,
   getColorGroups,
@@ -198,6 +199,10 @@ export default function ProjectManage() {
       path: currentProject.path,
     });
     if (!data.success) return;
+    if (logRef.current?.[currentProject?.path]?.[item.value]) {
+      logRef.current[currentProject.path][item.value].logs.push({ text: '\n⏹ 已暂停', type: 'error' });
+    }
+    setRefCount(prev => prev + 1);
     setProjectData(prev => {
       const nPrev = { ...prev };
       nPrev.projectList[currentProjectIndex].scripts?.forEach(_ => {
@@ -211,13 +216,11 @@ export default function ProjectManage() {
   }
 
   const close = async (item: any) => {
-    if (item.running) {
-      const data = await stopCommand({
-        ...item,
-        path: currentProject.path,
-      });
-      if (!data.success) return;
-    }
+    const data = await closeCommand({
+      ...item,
+      path: currentProject.path,
+    });
+    if (!data.success) return;
     setProjectData(prev => {
       const nPrev = { ...prev };
       nPrev.projectList[currentProjectIndex].scripts?.forEach(_ => {
@@ -228,9 +231,9 @@ export default function ProjectManage() {
       });
       return nPrev
     });
-    setRefCount(prev => prev + 1); 
-    if (logRef.current?.[currentProject?.path]?.[item.value]?.logs) {
-      logRef.current[currentProject?.path][item.value].logs = [];
+    setRefCount(prev => prev + 1);
+    if (logRef.current?.[currentProject?.path]?.[item.value]) {
+      logRef.current[currentProject.path][item.value].logs = [];
     }
   }
 

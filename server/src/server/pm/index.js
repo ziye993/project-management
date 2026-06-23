@@ -18,7 +18,7 @@ let projectList = getProjectList();
 let currentChild = {};
 const logs = getCommandLogs(true);
 
-const cleanup = () => {
+const cleanup = async () => {
   const keys = Object.keys(currentChild).filter(k => !!currentChild[k]);
   if (!keys.length) return;
 
@@ -26,8 +26,8 @@ const cleanup = () => {
   let successCount = 0;
   for (const key of keys) {
     try {
-      currentChild[key].kill('SIGTERM');
-      successCount += 1;
+      const killed = await killChild(currentChild[key], 'SIGTERM');
+      if (killed) successCount += 1;
     } catch (error) {
       console.log(error);
     }
@@ -36,8 +36,8 @@ const cleanup = () => {
   console.log(`Cleanup done: ${successCount}/${keys.length}`);
 };
 
-process.on('SIGINT', () => { cleanup(); process.exit(); });
-process.on('SIGTERM', () => { cleanup(); process.exit(); });
+process.on('SIGINT', () => { cleanup().then(() => process.exit()); });
+process.on('SIGTERM', () => { cleanup().then(() => process.exit()); });
 
 function ok(res, data, msg = '') {
   res.json({ msg, data, success: true, code: 0 });
@@ -187,6 +187,22 @@ app.post('/api/project/runCommand', (req, res) => {
   });
 });
 
+async function terminateRunningCommand(resolvedPath, value) {
+  const key = makeRunKey(resolvedPath, value);
+  const child = currentChild?.[key];
+  if (!child) return { ok: false, key, killed: false };
+
+  let killRes = await killChild(child, 'SIGINT');
+  if (!killRes) {
+    killRes = await killChild(child, 'SIGTERM');
+  }
+  if (!killRes) {
+    killRes = await killChild(child, 'SIGKILL');
+  }
+  currentChild[key] = undefined;
+  return { ok: true, key, killed: killRes };
+}
+
 app.post('/api/project/stopCommand', async (req, res) => {
   const { value, path: projectPath } = req.body;
   if (!value || !projectPath) {
@@ -198,19 +214,28 @@ app.post('/api/project/stopCommand', async (req, res) => {
   } catch (error) {
     return res.send({ msg: error.message, code: 1, success: false, data: null });
   }
-  const key = makeRunKey(resolvedPath, value);
-  if (currentChild?.[key]) {
-    let killRes = await killChild(currentChild[key], 'SIGINT');
-    if (!killRes) {
-      killRes = await killChild(currentChild[key], 'SIGTERM');
-    }
-    appendCommandLog(resolvedPath, value, { text: '\n⏹ 已手动停止', type: 'error' });
-    currentChild[key] = undefined;
-    clearCommandLog(resolvedPath,value,);
-    res.send({ msg: '', code: 0, success: killRes, data: killRes });
-  } else {
-    res.send({ msg: '此项目可能未运行或出错', code: 2, success: false, data: key });
+  const result = await terminateRunningCommand(resolvedPath, value);
+  if (!result.ok) {
+    return res.send({ msg: '此项目可能未运行或出错', code: 2, success: false, data: result.key });
   }
+  appendCommandLog(resolvedPath, value, { text: '\n⏹ 已暂停', type: 'error' });
+  res.send({ msg: '', code: 0, success: result.killed, data: result.killed });
+});
+
+app.post('/api/project/closeCommand', async (req, res) => {
+  const { value, path: projectPath } = req.body;
+  if (!value || !projectPath) {
+    return res.status(400).send({ success: false, code: 1, msg: '缺少参数', data: null });
+  }
+  let resolvedPath;
+  try {
+    resolvedPath = resolveExistingProjectPath(projectPath);
+  } catch (error) {
+    return res.send({ msg: error.message, code: 1, success: false, data: null });
+  }
+  const result = await terminateRunningCommand(resolvedPath, value);
+  clearCommandLog(resolvedPath, value);
+  res.send({ msg: '', code: 0, success: true, data: result.killed });
 });
 
 app.post('/api/project/getRunningList', (req, res) => {

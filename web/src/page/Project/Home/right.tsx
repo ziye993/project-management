@@ -21,7 +21,8 @@ export default function Right(props: IProps) {
             <p className={styles.emptyHint}>暂无运行记录</p>
         )}
         {runningScripts.map(_ => {
-            return <div key={_.value} className={`${styles.itemBox} ${styles.runningItemBox} ${_?.checked ? styles.checkedItem : ''}`} onClick={() => { setCommandChecked(_) }}>
+            const statusClass = _.running ? styles.runningActive : styles.runningPaused;
+            return <div key={_.value} className={`${styles.itemBox} ${styles.runningItemBox} ${statusClass} ${_?.checked ? styles.checkedItem : ''}`} onClick={() => { setCommandChecked(_) }}>
                 <span>{_.label}</span>
                 <div>
                     {_.running && !_.connect && (

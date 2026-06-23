@@ -18,6 +18,10 @@ export const stopCommand = async (param: { path: string; value: string }) => {
   return await post(basePath + '/stopCommand', param)
 }
 
+export const closeCommand = async (param: { path: string; value: string }) => {
+  return await post(basePath + '/closeCommand', param)
+}
+
 export const getRunningList = async () => {
   return await post(basePath + '/getRunningList')
 }

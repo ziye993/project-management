@@ -197,8 +197,6 @@
 
 .runningItemBox {
   cursor: default;
-  border-left-color: #6ee7b7;
-  background: color-mix(in srgb, #6ee7b7 8%, white);
 
   span {
     display: inline-block;
@@ -219,6 +217,20 @@
     &:hover {
       color: #6366f1;
     }
+  }
+}
+
+.runningActive {
+  border-left-color: #34d399;
+  background: color-mix(in srgb, #6ee7b7 8%, white);
+}
+
+.runningPaused {
+  border-left-color: #94a3b8;
+  background: color-mix(in srgb, #cbd5e1 12%, white);
+
+  span {
+    color: @text-muted;
   }
 }
 
