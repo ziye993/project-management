@@ -18,7 +18,7 @@ let projectList = getProjectList();
 let currentChild = {};
 const logs = getCommandLogs(true);
 
-const cleanup = async () => {
+export async function cleanupProjectProcesses() {
   const keys = Object.keys(currentChild).filter(k => !!currentChild[k]);
   if (!keys.length) return;
 
@@ -34,10 +34,10 @@ const cleanup = async () => {
   }
   currentChild = {};
   console.log(`Cleanup done: ${successCount}/${keys.length}`);
-};
+}
 
-process.on('SIGINT', () => { cleanup().then(() => process.exit()); });
-process.on('SIGTERM', () => { cleanup().then(() => process.exit()); });
+process.on('SIGINT', () => { cleanupProjectProcesses().then(() => process.exit()); });
+process.on('SIGTERM', () => { cleanupProjectProcesses().then(() => process.exit()); });
 
 function ok(res, data, msg = '') {
   res.json({ msg, data, success: true, code: 0 });

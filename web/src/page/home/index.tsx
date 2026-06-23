@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import UserHeader from '../../compomeents/UserHeader';
+import ShutdownButton from '../../compomeents/ShutdownButton';
 import styles from './index.module.less';
 import {
   AlignLeftOutlined,
@@ -110,7 +111,7 @@ export default function ZiyeHome() {
     <div className={styles.box}>
       <div className={styles.ambientBg} aria-hidden />
       <div className={styles.pageInner}>
-        <UserHeader className={styles.userHeader} />
+        <UserHeader className={styles.userHeader} actions={<ShutdownButton />} />
         <main className={styles.main}>
           {/*<section className={styles.hero}>*/}
           {/*  <p className={styles.heroTag}>本地工作台</p>*/}

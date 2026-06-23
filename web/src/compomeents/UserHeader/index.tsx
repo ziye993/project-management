@@ -4,6 +4,7 @@ import styles from './index.module.less'
 interface IProps {
     className?: string;
     children?: React.ReactNode;
+    actions?: React.ReactNode;
 }
 
 export default function UserHeader(props: IProps) {
@@ -11,6 +12,6 @@ export default function UserHeader(props: IProps) {
         <div className={styles.otherChildren}>
             {props.children}
         </div>
-        {/* <div className={styles.brand}>项目管理</div> */}
+        {props.actions ? <div className={styles.actions}>{props.actions}</div> : null}
     </div>
 }
