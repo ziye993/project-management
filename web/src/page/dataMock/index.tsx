@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   buildApiDocsUrl,
+  collectMockableEndpoints,
   fetchOpenAPISpec,
   getResponseJsonSchema,
   parseApiDocsUrl,
@@ -21,6 +22,13 @@ import {
   saveSwaggerSession,
   type SwaggerHistoryEntry,
 } from '../../utils/swaggerStorage'
+import {
+  endpointRouteKey,
+  findRunningMock,
+  loadEndpointRules,
+  saveEndpointRules,
+  type MockSessionInfo,
+} from '../../utils/dataMockStorage'
 import { createDocTab, type DocTab } from '../../type/docTab'
 import { post } from '../../server'
 import { UrlForm } from '../swagger/home/UrlForm'
@@ -29,7 +37,7 @@ import UserHeader from '../../compomeents/UserHeader/index.tsx'
 import PageHeader from '../../compomeents/PageHeader/index.tsx'
 import { EndpointPicker } from './EndpointPicker'
 import { FieldRuleEditor } from './FieldRuleEditor'
-import { MockControlPanel } from './MockControlPanel'
+import { MockControlPanel, MockServicePanel, RunningMockList } from './MockControlPanel'
 import styles from './index.module.less'
 
 type PagePhase = 'load' | 'pick' | 'configure'
@@ -37,6 +45,17 @@ type PagePhase = 'load' | 'pick' | 'configure'
 function getBaseUrlFromTab(tab: DocTab): string {
   const parsed = parseApiDocsUrl(tab.sourceUrl)
   return parsed?.baseUrl ?? ''
+}
+
+function buildMockBaseUrlClient(baseUrl: string): string {
+  try {
+    const u = new URL(baseUrl)
+    const port = u.port || (u.protocol === 'https:' ? '443' : '80')
+    const cp = u.pathname.replace(/\/+$/, '')
+    return `http://127.0.0.1:${port}${cp}`
+  } catch {
+    return ''
+  }
 }
 
 function DataMock() {
@@ -49,12 +68,12 @@ function DataMock() {
   const [formExpanded, setFormExpanded] = useState(() => (initialSession?.tabs.length ?? 0) === 0)
   const [history, setHistory] = useState<SwaggerHistoryEntry[]>(() => loadSwaggerHistory())
   const [fetchLoading, setFetchLoading] = useState(false)
+  const [mockLoading, setMockLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<ParsedEndpoint | null>(null)
   const [fieldRules, setFieldRules] = useState<FieldRulesMap>({})
   const [arrayLengths, setArrayLengths] = useState<ArrayLengthsMap>({})
-  const [mockId, setMockId] = useState<string | null>(null)
-  const [mockUrl, setMockUrl] = useState<string | null>(null)
+  const [runningMocks, setRunningMocks] = useState<MockSessionInfo[]>([])
 
   const activeTab = useMemo(() => {
     if (!tabs.length) return null
@@ -63,24 +82,49 @@ function DataMock() {
 
   const spec = activeTab?.spec ?? null
   const baseUrl = activeTab ? getBaseUrlFromTab(activeTab) : ''
+  const sourceUrl = activeTab?.sourceUrl ?? ''
+
+  const mockableEndpoints = useMemo(
+    () => (spec ? collectMockableEndpoints(spec) : []),
+    [spec],
+  )
+
+  const serviceRunningMocks = useMemo(
+    () => runningMocks.filter((m) => m.baseUrl === baseUrl || m.sourceUrl === sourceUrl),
+    [runningMocks, baseUrl, sourceUrl],
+  )
+
+  const runningKeys = useMemo(
+    () => new Set(serviceRunningMocks.map((m) => endpointRouteKey(m.method, m.path))),
+    [serviceRunningMocks],
+  )
+
+  const mockBaseUrl = useMemo(() => {
+    if (serviceRunningMocks[0]?.mockBaseUrl) return serviceRunningMocks[0].mockBaseUrl
+    return baseUrl ? buildMockBaseUrlClient(baseUrl) : null
+  }, [serviceRunningMocks, baseUrl])
+
+  const currentRunningMock = useMemo(() => {
+    if (!selected) return null
+    return findRunningMock(serviceRunningMocks, selected.method, selected.path, baseUrl) ?? null
+  }, [serviceRunningMocks, selected, baseUrl])
+
+  const refreshMockStatus = useCallback(async () => {
+    try {
+      const res = await post('/mock/status')
+      setRunningMocks(res.data?.running ?? [])
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   useEffect(() => {
     saveSwaggerSession(tabs, activeTabId)
   }, [tabs, activeTabId])
 
   useEffect(() => {
-    void post('/mock/status').then((res) => {
-      const running = res.data?.running?.[0]
-      if (running) {
-        setMockId(running.mockId)
-        setMockUrl(
-          typeof window !== 'undefined'
-            ? `${window.location.protocol}//${window.location.host}${running.mockPath.replace(/\{[^}]+\}/g, '1')}`
-            : null,
-        )
-      }
-    }).catch(() => {})
-  }, [])
+    void refreshMockStatus()
+  }, [refreshMockStatus])
 
   const responseSchemaRaw = useMemo(() => {
     if (!spec || !selected) return null
@@ -104,15 +148,15 @@ function DataMock() {
 
   const addTab = (
     data: OpenAPISpec,
-    sourceUrl: string,
+    url: string,
     meta?: { baseUrl: string; group: string },
   ) => {
-    const tab = createDocTab(data, sourceUrl)
+    const tab = createDocTab(data, url)
     setTabs((prev) => [...prev, tab])
     activateTab(tab)
 
     if (meta) {
-      setHistory(addSwaggerHistory(data, sourceUrl, meta.baseUrl, meta.group))
+      setHistory(addSwaggerHistory(data, url, meta.baseUrl, meta.group))
     }
   }
 
@@ -131,8 +175,6 @@ function DataMock() {
     setFetchLoading(true)
     setError(null)
     setSelected(null)
-    setMockId(null)
-    setMockUrl(null)
 
     try {
       const data = await fetchOpenAPISpec(docsUrl)
@@ -202,10 +244,8 @@ function DataMock() {
 
   const handleSelectEndpoint = (endpoint: ParsedEndpoint) => {
     setSelected(endpoint)
-    setMockId(null)
-    setMockUrl(null)
 
-    if (!spec) {
+    if (!spec || !activeTab) {
       setPhase('pick')
       return
     }
@@ -217,19 +257,65 @@ function DataMock() {
     }
 
     const resolved = resolveSchema(spec, rawSchema)
-    setFieldRules(buildDefaultFieldRules(resolved))
-    setArrayLengths(buildDefaultArrayLengths(resolved))
+    const saved = loadEndpointRules(activeTab.sourceUrl, endpoint.method, endpoint.path)
+    setFieldRules(saved?.fieldRules ?? buildDefaultFieldRules(resolved))
+    setArrayLengths(saved?.arrayLengths ?? buildDefaultArrayLengths(resolved))
     setPhase('configure')
   }
 
-  const handleMockStarted = ({ mockId: id, mockUrl: url }: { mockId: string; mockUrl: string }) => {
-    setMockId(id)
-    setMockUrl(url)
+  const persistCurrentRules = useCallback(() => {
+    if (!selected || !activeTab) return
+    saveEndpointRules(
+      activeTab.sourceUrl,
+      selected.method,
+      selected.path,
+      fieldRules,
+      arrayLengths,
+    )
+  }, [selected, activeTab, fieldRules, arrayLengths])
+
+  useEffect(() => {
+    persistCurrentRules()
+  }, [persistCurrentRules])
+
+  const handleStartAll = async () => {
+    if (!baseUrl || !spec || !activeTab) return
+    setMockLoading(true)
+    try {
+      const endpointRules: Record<string, { fieldRules: FieldRulesMap; arrayLengths: ArrayLengthsMap }> = {}
+      for (const ep of mockableEndpoints) {
+        const saved = loadEndpointRules(activeTab.sourceUrl, ep.method, ep.path)
+        endpointRules[endpointRouteKey(ep.method, ep.path)] = {
+          fieldRules: saved?.fieldRules ?? buildDefaultFieldRules(ep.responseSchema),
+          arrayLengths: saved?.arrayLengths ?? buildDefaultArrayLengths(ep.responseSchema),
+        }
+      }
+      await post('/mock/startAll', {
+        baseUrl,
+        sourceUrl: activeTab.sourceUrl,
+        spec,
+        endpointRules,
+      })
+      await refreshMockStatus()
+    } finally {
+      setMockLoading(false)
+    }
   }
 
-  const handleMockStopped = () => {
-    setMockId(null)
-    setMockUrl(null)
+  const handleStopAll = async () => {
+    if (!activeTab) return
+    setMockLoading(true)
+    try {
+      await post('/mock/stopAll', { baseUrl, sourceUrl: activeTab.sourceUrl })
+      await refreshMockStatus()
+    } finally {
+      setMockLoading(false)
+    }
+  }
+
+  const handleStopOne = async (mockId: string) => {
+    await post('/mock/stop', { mockId })
+    await refreshMockStatus()
   }
 
   const showForm = tabs.length === 0 || formExpanded
@@ -282,7 +368,7 @@ function DataMock() {
             <div className={styles.emptyIcon}>🎭</div>
             <p>输入服务地址后加载 OpenAPI，选择接口并配置 Mock 规则</p>
             <p className={styles.emptyHint}>
-              与 Swagger 共用文档缓存，已在 Swagger 加载过的文档可直接使用
+              与 Swagger 共用文档缓存；Mock 在 localhost 原端口监听，支持多接口并行
             </p>
           </div>
         )}
@@ -293,14 +379,28 @@ function DataMock() {
               <EndpointPicker
                 spec={spec}
                 selected={selected}
+                runningKeys={runningKeys}
                 onSelect={handleSelectEndpoint}
               />
             </aside>
 
             <section className={styles.configColumn}>
+              <MockServicePanel
+                baseUrl={baseUrl}
+                sourceUrl={sourceUrl}
+                mockBaseUrl={mockBaseUrl}
+                runningCount={serviceRunningMocks.length}
+                totalMockable={mockableEndpoints.length}
+                onStartAll={handleStartAll}
+                onStopAll={handleStopAll}
+                loading={mockLoading}
+              />
+
+              <RunningMockList running={serviceRunningMocks} onStop={(id) => void handleStopOne(id)} />
+
               {!selected && (
                 <div className={styles.placeholder}>
-                  请从左侧选择一个接口
+                  请从左侧选择一个接口，或点击「Mock 全部接口」
                 </div>
               )}
 
@@ -315,6 +415,7 @@ function DataMock() {
                   <div className={styles.selectedEndpoint}>
                     <span className={styles.methodBadge}>{selected.method.toUpperCase()}</span>
                     <code>{selected.path}</code>
+                    {currentRunningMock && <span className={styles.mockingBadge}>Mock 中</span>}
                   </div>
 
                   <FieldRuleEditor
@@ -330,14 +431,12 @@ function DataMock() {
                     method={selected.method}
                     path={selected.path}
                     baseUrl={baseUrl}
+                    sourceUrl={sourceUrl}
                     fieldRules={fieldRules}
                     arrayLengths={arrayLengths}
                     responseSchema={responseSchema as Record<string, unknown>}
-                    mockId={mockId}
-                    mockUrl={mockUrl}
-                    running={!!mockId}
-                    onStarted={handleMockStarted}
-                    onStopped={handleMockStopped}
+                    runningMock={currentRunningMock}
+                    onChanged={() => void refreshMockStatus()}
                   />
                 </>
               )}

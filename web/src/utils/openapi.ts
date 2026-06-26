@@ -199,3 +199,31 @@ export function getResponseJsonSchema(spec: OpenAPISpec, operation: Operation): 
 
   return pickJsonContent(response.content)?.schema ?? null
 }
+
+export interface MockableEndpoint {
+  path: string
+  method: string
+  operation: Operation
+  responseSchema: SchemaObject
+}
+
+export function collectMockableEndpoints(spec: OpenAPISpec): MockableEndpoint[] {
+  const list: MockableEndpoint[] = []
+
+  for (const [path, pathItem] of Object.entries(spec.paths)) {
+    for (const method of HTTP_METHODS) {
+      const operation = pathItem[method as keyof typeof pathItem] as Operation | undefined
+      if (!operation) continue
+      const raw = getResponseJsonSchema(spec, operation)
+      if (!raw) continue
+      list.push({
+        path,
+        method,
+        operation,
+        responseSchema: resolveSchema(spec, raw),
+      })
+    }
+  }
+
+  return list
+}

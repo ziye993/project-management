@@ -5,6 +5,7 @@ import {
   filterEndpoints,
   groupEndpointsByTag,
 } from '../../utils/openapi'
+import { endpointRouteKey } from '../../utils/dataMockStorage'
 import styles from './index.module.less'
 
 const METHOD_COLORS: Record<string, string> = {
@@ -18,10 +19,11 @@ const METHOD_COLORS: Record<string, string> = {
 interface EndpointPickerProps {
   spec: OpenAPISpec
   selected: ParsedEndpoint | null
+  runningKeys: Set<string>
   onSelect: (endpoint: ParsedEndpoint) => void
 }
 
-export function EndpointPicker({ spec, selected, onSelect }: EndpointPickerProps) {
+export function EndpointPicker({ spec, selected, runningKeys, onSelect }: EndpointPickerProps) {
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState<string | null>(null)
 
@@ -75,21 +77,25 @@ export function EndpointPicker({ spec, selected, onSelect }: EndpointPickerProps
             const isSelected =
               selected?.path === ep.path && selected?.method === ep.method
             const methodClass = METHOD_COLORS[ep.method] ?? styles.methodDefault
+            const isMocking = runningKeys.has(endpointRouteKey(ep.method, ep.path))
 
             return (
               <button
                 key={`${ep.method}-${ep.path}`}
                 type="button"
-                className={`${styles.endpointPickItem} ${isSelected ? styles.selected : ''}`}
+                className={`${styles.endpointPickItem} ${isSelected ? styles.selected : ''} ${isMocking ? styles.mocking : ''}`}
                 onClick={() => onSelect(ep)}
               >
                 <span className={`${styles.methodBadge} ${methodClass}`}>
                   {ep.method.toUpperCase()}
                 </span>
-                <code className={styles.endpointPath}>{ep.path}</code>
-                <span className={styles.endpointSummary}>
-                  {ep.operation.summary ?? ep.operation.operationId ?? '—'}
-                </span>
+                <div className={styles.endpointPickMain}>
+                  <code className={styles.endpointPath}>{ep.path}</code>
+                  <span className={styles.endpointSummary}>
+                    {ep.operation.summary ?? ep.operation.description ?? ep.operation.operationId ?? '—'}
+                  </span>
+                </div>
+                {isMocking && <span className={styles.mockingBadge}>Mock</span>}
               </button>
             )
           })}

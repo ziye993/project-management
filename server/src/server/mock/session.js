@@ -1,27 +1,21 @@
-/** MVP: only one mock session at a time; starting a new mock stops the previous one. */
-let activeSession = null;
+/** 多 Mock 会话；按 baseUrl 端口在 localhost 上监听（与目标服务同端口，仅 IP 不同）。 */
 
-export function getActiveSession() {
-  return activeSession;
-}
-
-export function setActiveSession(session) {
-  activeSession = session;
-}
-
-export function clearActiveSession() {
-  activeSession = null;
+export function parseBaseUrl(baseUrl) {
+  try {
+    const u = new URL(baseUrl);
+    const port = u.port || (u.protocol === 'https:' ? '443' : '80');
+    return {
+      port: Number(port),
+      contextPath: u.pathname.replace(/\/+$/, '') || '',
+      mockHost: '127.0.0.1',
+    };
+  } catch {
+    return { port: 80, contextPath: '', mockHost: '127.0.0.1' };
+  }
 }
 
 export function extractContextPath(baseUrl) {
-  try {
-    const u = new URL(baseUrl);
-    return u.pathname.replace(/\/+$/, '') || '';
-  } catch {
-    const trimmed = String(baseUrl || '').replace(/\/+$/, '');
-    if (trimmed.startsWith('/')) return trimmed;
-    return '';
-  }
+  return parseBaseUrl(baseUrl).contextPath;
 }
 
 export function buildMockPath(contextPath, openApiPath) {
@@ -44,4 +38,65 @@ export function buildPathRegex(fullPath) {
 
 export function buildExamplePath(fullPath) {
   return fullPath.replace(/\{[^}]+\}/g, '1');
+}
+
+export function buildMockUrl(baseUrl, openApiPath) {
+  const { port, contextPath, mockHost } = parseBaseUrl(baseUrl);
+  const mockPath = buildMockPath(contextPath, openApiPath);
+  const examplePath = buildExamplePath(mockPath);
+  return `http://${mockHost}:${port}${examplePath}`;
+}
+
+export function buildMockBaseUrl(baseUrl) {
+  const { port, contextPath, mockHost } = parseBaseUrl(baseUrl);
+  const cp = contextPath.startsWith('/') ? contextPath : contextPath ? `/${contextPath}` : '';
+  return `http://${mockHost}:${port}${cp}`;
+}
+
+export function routeKey(method, openApiPath) {
+  return `${String(method).toLowerCase()}:${openApiPath}`;
+}
+
+export function createSessionPayload({
+  mockId,
+  method,
+  openApiPath,
+  baseUrl,
+  fieldRules = {},
+  arrayLengths = {},
+  responseSchema,
+  sourceUrl = '',
+}) {
+  const { port, contextPath } = parseBaseUrl(baseUrl);
+  const mockPath = buildMockPath(contextPath, openApiPath);
+  return {
+    mockId,
+    method: String(method).toLowerCase(),
+    openApiPath,
+    baseUrl,
+    sourceUrl,
+    port,
+    contextPath,
+    mockPath,
+    pathRegex: buildPathRegex(mockPath),
+    fieldRules,
+    arrayLengths,
+    responseSchema,
+    startedAt: Date.now(),
+  };
+}
+
+export function toPublicSession(session) {
+  return {
+    mockId: session.mockId,
+    method: session.method,
+    path: session.openApiPath,
+    baseUrl: session.baseUrl,
+    sourceUrl: session.sourceUrl,
+    mockPath: session.mockPath,
+    mockUrl: buildMockUrl(session.baseUrl, session.openApiPath),
+    mockBaseUrl: buildMockBaseUrl(session.baseUrl),
+    port: session.port,
+    startedAt: session.startedAt,
+  };
 }
