@@ -386,7 +386,7 @@ export function FieldRuleEditor({
     <div className={styles.ruleEditor}>
       <h3 className={styles.sectionTitle}>响应字段规则</h3>
       <p className={styles.sectionHint}>
-        对象会展开全部子字段；基础类型数组只需配置一个元素规则；对象数组配置元素内各字段规则。
+        未单独配置的字段优先使用「系统配置 → Mock 公共字段默认值」；否则按类型随机生成。数组内字段可使用自增、时间偏移等规则。
       </p>
       <SchemaRuleNode
         spec={spec}

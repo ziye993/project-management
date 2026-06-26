@@ -25,3 +25,9 @@ export const setPublicBaseUrl = async (param: { publicBaseUrl: string }) => {
 export const setCommandSortOrder = async (param: { commandSortOrder: string[] }) => {
   return await post(basePath + '/setCommandSortOrder', param);
 }
+
+import type { MockFieldDefaults } from '../type/mockDefaults'
+
+export const setMockFieldDefaults = async (param: { mockFieldDefaults: MockFieldDefaults }) => {
+  return await post(basePath + '/setMockFieldDefaults', param);
+}

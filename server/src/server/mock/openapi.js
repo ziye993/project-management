@@ -86,11 +86,8 @@ export function getResponseJsonSchema(spec, operation) {
   return pickJsonContent(response.content)?.schema ?? null;
 }
 
-export function buildDefaultFieldRules(schema) {
-  const rules = {};
-  if (schema?.properties?.code) rules.code = { mode: 'fixed', value: 0 };
-  if (schema?.properties?.msg) rules.msg = { mode: 'fixed', value: '' };
-  return rules;
+export function buildDefaultFieldRules(_schema) {
+  return {};
 }
 
 export function collectMockableEndpoints(spec) {

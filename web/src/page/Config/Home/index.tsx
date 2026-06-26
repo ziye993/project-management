@@ -8,11 +8,17 @@ import {
   getConfig,
   setCommandSortOrder,
   setFileUploadPath,
+  setMockFieldDefaults,
   setMovUploadPath,
   setPicUploadPath,
   setPublicBaseUrl,
 } from '../../../server/setConfig';
 import PageHeader from "../../../compomeents/PageHeader";
+import {
+  EMPTY_MOCK_FIELD_DEFAULTS,
+  mockFieldDefaultsFromConfig,
+  type MockFieldDefaults,
+} from '../../../type/mockDefaults';
 
 type ConfigState = {
   picUploadPath?: string;
@@ -21,6 +27,7 @@ type ConfigState = {
   publicBaseUrl?: string;
   commandSortOrder?: string[];
   filesRoot?: string;
+  mockFieldDefaults?: MockFieldDefaults;
 };
 
 export default function ConfigHome() {
@@ -28,6 +35,7 @@ export default function ConfigHome() {
   const [config, setConfigState] = useState<ConfigState>({});
   const [publicUrl, setPublicUrl] = useState('');
   const [commandSortText, setCommandSortText] = useState('');
+  const [mockDefaults, setMockDefaults] = useState<MockFieldDefaults>(EMPTY_MOCK_FIELD_DEFAULTS);
   const apiFun = useRef<(param: { uploadPath: string }) => Promise<any>>(async () => ({}));
   const filesRoot = config.filesRoot;
 
@@ -37,6 +45,7 @@ export default function ConfigHome() {
       setConfigState(res.data);
       setPublicUrl(res.data.publicBaseUrl || '');
       setCommandSortText((res.data.commandSortOrder || ['dev', 'start', 'build', 'server', 'preview']).join('\n'));
+      setMockDefaults(mockFieldDefaultsFromConfig(res.data.mockFieldDefaults));
     }
   };
 
@@ -138,6 +147,77 @@ export default function ConfigHome() {
                 loadConfig();
               }}
             >保存</button>
+          </div>
+        </div>
+        <div className={`${shellStyles.panel} ${styles.configItemBox}`}>
+          <span className={styles.configItemTitle}>Mock 公共字段默认值</span>
+          <p className={styles.hint}>
+            数据 Mock 未单独配置的字段将使用此处默认值；留空则仍按类型随机生成。message 同时作用于 msg / message 字段。
+          </p>
+          <div className={styles.mockDefaultsForm}>
+            <label className={styles.mockFieldRow}>
+              <span>code</span>
+              <input
+                className={styles.input}
+                type="number"
+                value={mockDefaults.code ?? ''}
+                onChange={(e) => setMockDefaults((prev) => ({ ...prev, code: e.target.value }))}
+                placeholder="如 0"
+              />
+            </label>
+            <label className={styles.mockFieldRow}>
+              <span>success</span>
+              <select
+                className={styles.input}
+                value={String(mockDefaults.success ?? '')}
+                onChange={(e) => setMockDefaults((prev) => ({ ...prev, success: e.target.value }))}
+              >
+                <option value="">留空（随机）</option>
+                <option value="true">true</option>
+                <option value="false">false</option>
+              </select>
+            </label>
+            <label className={styles.mockFieldRow}>
+              <span>message</span>
+              <input
+                className={styles.input}
+                type="text"
+                value={mockDefaults.message ?? ''}
+                onChange={(e) => setMockDefaults((prev) => ({ ...prev, message: e.target.value }))}
+                placeholder='如 "" 或 ok'
+              />
+            </label>
+            <div className={styles.mockFieldGroup}>
+              <span className={styles.mockFieldGroupTitle}>result 分页（字段存在时生效）</span>
+              {(['size', 'total', 'current', 'pages'] as const).map((key) => (
+                <label key={key} className={styles.mockFieldRow}>
+                  <span>{key}</span>
+                  <input
+                    className={styles.input}
+                    type="number"
+                    value={mockDefaults.result?.[key] ?? ''}
+                    onChange={(e) =>
+                      setMockDefaults((prev) => ({
+                        ...prev,
+                        result: { ...prev.result, [key]: e.target.value },
+                      }))
+                    }
+                    placeholder="留空则随机"
+                  />
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              className={styles.saveBtn}
+              onClick={async () => {
+                await setMockFieldDefaults({ mockFieldDefaults: mockDefaults });
+                message.success('Mock 默认值已保存');
+                loadConfig();
+              }}
+            >
+              保存
+            </button>
           </div>
         </div>
       </div>

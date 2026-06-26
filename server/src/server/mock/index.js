@@ -3,6 +3,12 @@ import app from '../../app.js';
 import { generateResponse } from './generateResponse.js';
 import { buildMockBaseUrl, toPublicSession } from './session.js';
 import {
+  buildDefaultFieldRules,
+  collectMockableEndpoints,
+  endpointRouteKey,
+} from './openapi.js';
+import { getMockGlobalDefaults } from './mockConfig.js';
+import {
   addManySessions,
   addOrUpdateSession,
   listSessions,
@@ -51,12 +57,6 @@ app.post('/api/mock/start', async (req, res) => {
     sendErr(res, err instanceof Error ? err.message : '启动 Mock 失败', 500);
   }
 });
-
-import {
-  buildDefaultFieldRules,
-  collectMockableEndpoints,
-  endpointRouteKey,
-} from './openapi.js';
 
 app.post('/api/mock/startAll', async (req, res) => {
   try {
@@ -125,7 +125,13 @@ app.post('/api/mock/status', (_req, res) => {
 app.post('/api/mock/preview', (req, res) => {
   const { responseSchema, fieldRules = {}, arrayLengths = {} } = req.body ?? {};
   if (!responseSchema) return sendErr(res, '缺少 responseSchema');
-  sendOk(res, { body: generateResponse(responseSchema, { fieldRules, arrayLengths }) });
+  sendOk(res, {
+    body: generateResponse(responseSchema, {
+      fieldRules,
+      arrayLengths,
+      globalDefaults: getMockGlobalDefaults(),
+    }),
+  });
 });
 
 await restorePersistedSessions();

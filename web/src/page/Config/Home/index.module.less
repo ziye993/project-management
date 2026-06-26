@@ -138,3 +138,37 @@
     }
   }
 }
+
+.mockDefaultsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 20px 20px;
+}
+
+.mockFieldRow {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 10px;
+  align-items: center;
+
+  > span {
+    font-size: 13px;
+    color: #64748b;
+  }
+}
+
+.mockFieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.25);
+}
+
+.mockFieldGroupTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}

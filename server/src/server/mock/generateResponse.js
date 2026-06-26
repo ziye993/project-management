@@ -1,3 +1,5 @@
+import { resolveGlobalFieldDefault } from './fieldDefaults.js';
+
 const DEFAULT_ARRAY_LENGTH = 5;
 
 function pickRandom(arr) {
@@ -98,7 +100,7 @@ function mergeAllOf(schemas) {
 }
 
 function generateFromSchema(schema, ctx) {
-  const { fieldRules, arrayLengths, path = '', arrayIndex = null } = ctx;
+  const { fieldRules, arrayLengths, globalDefaults, path = '', arrayIndex = null } = ctx;
   if (!schema || typeof schema !== 'object') return null;
 
   if (schema.allOf?.length) {
@@ -116,6 +118,9 @@ function generateFromSchema(schema, ctx) {
   const rule = getRule(fieldRules, path);
   const ruled = applyRule(rule, schema, arrayIndex);
   if (ruled !== null) return ruled;
+
+  const globalVal = resolveGlobalFieldDefault(path, globalDefaults, schema);
+  if (globalVal !== undefined) return globalVal;
 
   if (schema.type === 'array' || schema.items) {
     const length = getArrayLength(arrayLengths, path);
@@ -145,6 +150,6 @@ function generateFromSchema(schema, ctx) {
   return randomValue(schema);
 }
 
-export function generateResponse(responseSchema, { fieldRules = {}, arrayLengths = {} } = {}) {
-  return generateFromSchema(responseSchema, { fieldRules, arrayLengths });
+export function generateResponse(responseSchema, { fieldRules = {}, arrayLengths = {}, globalDefaults = null } = {}) {
+  return generateFromSchema(responseSchema, { fieldRules, arrayLengths, globalDefaults });
 }

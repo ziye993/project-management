@@ -2,6 +2,7 @@ import http from 'http';
 import express from 'express';
 import cors from 'cors';
 import { generateResponse } from './generateResponse.js';
+import { getMockGlobalDefaults } from './mockConfig.js';
 
 /** 同端口共用一个 HTTP 服务（进程内，非 fork 子进程）；主进程退出时统一关闭。 */
 const portServers = new Map();
@@ -20,6 +21,7 @@ function createPortApp(port, matchSession) {
     const body = generateResponse(session.responseSchema, {
       fieldRules: session.fieldRules,
       arrayLengths: session.arrayLengths,
+      globalDefaults: getMockGlobalDefaults(),
     });
     res.json(body);
   });

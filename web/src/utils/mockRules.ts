@@ -23,15 +23,8 @@ export function arrayItemsPath(arrayPath: string): string {
   return `${arrayPath}[]`
 }
 
-export function buildDefaultFieldRules(schema: SchemaObject): FieldRulesMap {
-  const rules: FieldRulesMap = {}
-  if (schema.properties?.code) {
-    rules.code = { mode: 'fixed', value: 0 }
-  }
-  if (schema.properties?.msg) {
-    rules.msg = { mode: 'fixed', value: '' }
-  }
-  return rules
+export function buildDefaultFieldRules(_schema: SchemaObject): FieldRulesMap {
+  return {}
 }
 
 export function buildDefaultArrayLengths(_schema: SchemaObject): ArrayLengthsMap {
