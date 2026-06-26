@@ -7,6 +7,7 @@ import cache from './cache.js';
 import { getHtmlDir } from './paths.js';
 import { initDataStorage } from './initDataStorage.js';
 import { startMetricsCollector } from './utils/systemMetrics.js';
+import { SERVER_PORT } from './const.js';
 
 initDataStorage();
 startMetricsCollector(5000);
@@ -20,9 +21,7 @@ app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(getHtmlDir(), 'index.html'));
 });
 
-const port = 30014;
-
-server.listen(port, '0.0.0.0', () => {
-  console.log(`Project management running at http://localhost:${port}`);
-  openUrl(port);
+server.listen(SERVER_PORT, '0.0.0.0', () => {
+  console.log(`Project management running at http://localhost:${SERVER_PORT}`);
+  openUrl(SERVER_PORT);
 });

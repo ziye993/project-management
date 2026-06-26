@@ -3,9 +3,12 @@ import type { OpenAPISpec, ParsedEndpoint } from '../../../type/openapi'
 import {
   buildApiUrl,
   formatJsLiteral,
-  getParametersSample,
   getRequestBodySample,
 } from '../../../utils/schemaSample'
+import {
+  getRequestTsInterface,
+  getResponse200TsInterface,
+} from '../../../utils/schemaTypeScript'
 import { CopyButton } from './CopyButton'
 import { SchemaTree } from './SchemaTree'
 import styles from './index.module.less'
@@ -57,14 +60,14 @@ export function EndpointCard({ spec, endpoint, serverUrl }: EndpointCardProps) {
     [bodySample],
   )
 
-  const paramsSample = useMemo(
-    () => getParametersSample(spec, operation),
-    [spec, operation],
+  const requestTsText = useMemo(
+    () => getRequestTsInterface(spec, path, operation),
+    [spec, path, operation],
   )
 
-  const paramsCopyText = useMemo(
-    () => (paramsSample ? formatJsLiteral(paramsSample) : ''),
-    [paramsSample],
+  const responseTsText = useMemo(
+    () => getResponse200TsInterface(spec, path, operation),
+    [spec, path, operation],
   )
 
   return (
@@ -87,32 +90,17 @@ export function EndpointCard({ spec, endpoint, serverUrl }: EndpointCardProps) {
           {bodyCopyText && (
             <CopyButton text={bodyCopyText} label="复制入参" title={bodyCopyText} />
           )}
-          {!bodyCopyText && paramsCopyText && (
-            <CopyButton text={paramsCopyText} label="复制入参" title={paramsCopyText} />
+          {/* {requestTsText && (
+            <CopyButton text={requestTsText} label="复制 TS 入参" title={requestTsText} />
           )}
+          {responseTsText && (
+            <CopyButton text={responseTsText} label="复制 TS 出参" title={responseTsText} />
+          )} */}
         </div>
       </div>
 
       {expanded && (
         <div className={styles.endpointBody}>
-          <div className={styles.endpointCopyBar}>
-            <div className={styles.copyPreview}>
-              <span className={styles.detailLabel}>API</span>
-              <code>{apiCopyText}</code>
-            </div>
-            <CopyButton text={apiCopyText} label="复制 API" />
-          </div>
-
-          {bodyCopyText && (
-            <div className={styles.endpointCopyBar}>
-              <div className={styles.copyPreview}>
-                <span className={styles.detailLabel}>入参</span>
-                <code>{bodyCopyText}</code>
-              </div>
-              <CopyButton text={bodyCopyText} label="复制入参" />
-            </div>
-          )}
-
           {operation.description && operation.description !== operation.summary && (
             <p className={styles.endpointDescription}>{operation.description}</p>
           )}
@@ -128,7 +116,11 @@ export function EndpointCard({ spec, endpoint, serverUrl }: EndpointCardProps) {
             <section className={styles.detailSection}>
               <div className={styles.sectionHeader}>
                 <h4>请求参数</h4>
-                {paramsCopyText && <CopyButton text={paramsCopyText} label="复制入参" />}
+                {requestTsText && (
+                  <div className={styles.sectionActions}>
+                    <CopyButton text={requestTsText} label="复制 TS 类型" title={requestTsText} />
+                  </div>
+                )}
               </div>
               <table className={styles.paramTable}>
                 <thead>
@@ -160,7 +152,12 @@ export function EndpointCard({ spec, endpoint, serverUrl }: EndpointCardProps) {
                   请求体
                   {operation.requestBody.required && <span className={styles.requiredTag}>必填</span>}
                 </h4>
-                {bodyCopyText && <CopyButton text={bodyCopyText} label="复制入参" />}
+                <div className={styles.sectionActions}>
+                  {bodyCopyText && <CopyButton text={bodyCopyText} label="复制入参" />}
+                  {requestTsText && (
+                    <CopyButton text={requestTsText} label="复制 TS 类型" title={requestTsText} />
+                  )}
+                </div>
               </div>
               {Object.entries(operation.requestBody.content).map(([mediaType, content]) => (
                 <div key={mediaType} className={styles.mediaBlock}>
@@ -176,12 +173,17 @@ export function EndpointCard({ spec, endpoint, serverUrl }: EndpointCardProps) {
             {Object.entries(operation.responses).map(([status, response]) => (
               <div key={status} className={styles.responseBlock}>
                 <div className={styles.responseHeader}>
-                  <span
-                    className={`${styles.statusCode} ${STATUS_CLASSES[status.charAt(0)] ?? ''}`}
-                  >
-                    {status}
-                  </span>
-                  <span>{response.description}</span>
+                  <div className={styles.responseHeaderMain}>
+                    <span
+                      className={`${styles.statusCode} ${STATUS_CLASSES[status.charAt(0)] ?? ''}`}
+                    >
+                      {status}
+                    </span>
+                    <span>{response.description}</span>
+                  </div>
+                  {status === '200' && responseTsText && (
+                    <CopyButton text={responseTsText} label="复制 TS 类型" title={responseTsText} />
+                  )}
                 </div>
                 {response.content &&
                   Object.entries(response.content).map(([mediaType, content]) => (

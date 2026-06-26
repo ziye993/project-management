@@ -1,6 +1,6 @@
 import message from "../UiComponents/Modal/message";
 
-const origin = typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:30000';
+const origin = typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:30014';
 
 export const baseUrl = `${origin}/api`;
 export const baseServerIp = origin;

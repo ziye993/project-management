@@ -1,8 +1,7 @@
 import os from 'os';
+import { SERVER_PORT } from '../const.js';
 import { getConfig } from './jsonFile.js';
 import { encodeUrlPath, encodeUrlPathRelative } from './filenameEncoding.js';
-
-const PORT = 30000;
 
 export function getLanAddresses() {
   const nets = os.networkInterfaces();
@@ -33,20 +32,20 @@ export function buildAccessLinks(requestPath, storedName) {
   links.push({
     type: 'localhost',
     label: '本机 localhost',
-    url: `http://localhost:${PORT}${urlPath}`,
+    url: `http://localhost:${SERVER_PORT}${urlPath}`,
   });
 
   links.push({
     type: 'localhost',
     label: '本机 127.0.0.1',
-    url: `http://127.0.0.1:${PORT}${urlPath}`,
+    url: `http://127.0.0.1:${SERVER_PORT}${urlPath}`,
   });
 
   for (const lan of getLanAddresses()) {
     links.push({
       type: 'lan',
       label: `局域网 ${lan.address} (${lan.name})`,
-      url: `http://${lan.address}:${PORT}${urlPath}`,
+      url: `http://${lan.address}:${SERVER_PORT}${urlPath}`,
     });
   }
 
@@ -69,20 +68,20 @@ export function buildAccessLinksRelative(base, relativePath) {
   links.push({
     type: 'localhost',
     label: '本机 localhost',
-    url: `http://localhost:${PORT}${urlPath}`,
+    url: `http://localhost:${SERVER_PORT}${urlPath}`,
   });
 
   links.push({
     type: 'localhost',
     label: '本机 127.0.0.1',
-    url: `http://127.0.0.1:${PORT}${urlPath}`,
+    url: `http://127.0.0.1:${SERVER_PORT}${urlPath}`,
   });
 
   for (const lan of getLanAddresses()) {
     links.push({
       type: 'lan',
       label: `局域网 ${lan.address} (${lan.name})`,
-      url: `http://${lan.address}:${PORT}${urlPath}`,
+      url: `http://${lan.address}:${SERVER_PORT}${urlPath}`,
     });
   }
 

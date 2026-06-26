@@ -1,3 +1,5 @@
+export const SERVER_PORT = 30014;
+
 export let cachePicListKey = "PicListCache";  // 缓存Pic key
 
 export const PATH_CACHE_KEY = 'fileSystemList';

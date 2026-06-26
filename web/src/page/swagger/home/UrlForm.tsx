@@ -15,8 +15,8 @@ export function UrlForm({
   onFetch,
   loading,
   compact = false,
-  history = [],
-  onHistorySelect,
+  // history = [],
+  // onHistorySelect,
 }: UrlFormProps) {
   const [baseUrl, setBaseUrl] = useState('http://10.1.101.54:8208/dmom-mes')
   const [group, setGroup] = useState('应用')
@@ -27,11 +27,11 @@ export function UrlForm({
     onFetch(baseUrl.trim(), group.trim() || '应用')
   }
 
-  const handleHistoryClick = (entry: SwaggerHistoryEntry) => {
-    setBaseUrl(entry.baseUrl)
-    setGroup(entry.group)
-    onHistorySelect?.(entry)
-  }
+  // const handleHistoryClick = (entry: SwaggerHistoryEntry) => {
+  //   setBaseUrl(entry.baseUrl)
+  //   setGroup(entry.group)
+  //   onHistorySelect?.(entry)
+  // }
 
   return (
     <div className={`${styles.urlFormWrapper} ${compact ? styles.compact : ''}`}>
@@ -65,25 +65,7 @@ export function UrlForm({
         </button>
       </form>
 
-      {history.length > 0 && (
-        <div className={styles.historySection}>
-          <span className={styles.historyLabel}>历史记录</span>
-          <div className={styles.historyList}>
-            {history.map((entry) => (
-              <button
-                key={entry.sourceUrl}
-                type="button"
-                className={styles.historyItem}
-                title={entry.sourceUrl}
-                disabled={loading}
-                onClick={() => handleHistoryClick(entry)}
-              >
-                {entry.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      
     </div>
   )
 }
