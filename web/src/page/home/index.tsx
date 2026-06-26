@@ -12,6 +12,7 @@ import {
   PartitionOutlined, PercentageOutlined,
   PlayCircleOutlined,
   RightOutlined,
+  ApiOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '../../Router';
 
@@ -96,6 +97,14 @@ const entries: EntryItem[] = [
     icon: <PercentageOutlined />,
     path: '/swagger',
     accent: 'swagger',
+  },
+  {
+    id: 10,
+    name: '数据 Mock',
+    desc: '根据 Swagger 文档启动 Mock 服务，按字段规则返回 JSON',
+    icon: <ApiOutlined />,
+    path: '/dataMock',
+    accent: 'teal',
   },
 ];
 

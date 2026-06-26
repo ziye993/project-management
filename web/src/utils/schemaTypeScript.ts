@@ -1,5 +1,5 @@
 import type { OpenAPISpec, Operation, SchemaObject } from '../type/openapi'
-import { getRefName, resolveSchema } from './openapi'
+import { getRefName, getResponseJsonSchema, resolveSchema } from './openapi'
 
 function toPascalCase(segment: string): string {
   return segment
@@ -211,14 +211,8 @@ export function getRequestTsInterface(
   return buildInterface(pathToInterfaceName(path, 'In'), lines)
 }
 
-function getResponse200Schema(operation: Operation): SchemaObject | null {
-  const response = operation.responses['200']
-  if (!response?.content) return null
-
-  const jsonContent =
-    response.content['application/json'] ?? Object.values(response.content)[0]
-
-  return jsonContent?.schema ?? null
+function getResponse200Schema(spec: OpenAPISpec, operation: Operation): SchemaObject | null {
+  return getResponseJsonSchema(spec, operation)
 }
 
 export function getResponse200TsInterface(
@@ -226,7 +220,7 @@ export function getResponse200TsInterface(
   path: string,
   operation: Operation,
 ): string | null {
-  const schema = getResponse200Schema(operation)
+  const schema = getResponse200Schema(spec, operation)
   if (!schema) return null
 
   const lines = schemaToInterfaceLines(spec, schema)

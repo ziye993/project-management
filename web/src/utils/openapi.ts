@@ -4,6 +4,8 @@ import type {
   ParsedEndpoint,
   PathItem,
   SchemaObject,
+  MediaType,
+  Response,
 } from '../type/openapi'
 
 const HTTP_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'] as const
@@ -158,4 +160,42 @@ export function countEndpoints(groups: Map<string, ParsedEndpoint[]>): number {
   let count = 0
   for (const endpoints of groups.values()) count += endpoints.length
   return count
+}
+
+function resolveResponse(spec: OpenAPISpec, response: Response): Response {
+  const ref = (response as Response & { $ref?: string }).$ref
+  if (!ref) return response
+
+  const resolved = resolveRef(spec, ref)
+  if (resolved && typeof resolved === 'object') {
+    return resolved as unknown as Response
+  }
+  return response
+}
+
+function pickJsonContent(content: Record<string, MediaType>): MediaType | undefined {
+  if (content['application/json']?.schema) return content['application/json']
+
+  for (const [type, media] of Object.entries(content)) {
+    if (type.includes('json') && media.schema) return media
+  }
+
+  if (content['*/*']?.schema) return content['*/*']
+
+  return Object.values(content).find((c) => c.schema)
+}
+
+/** Extract 200/201/default response JSON schema (supports wildcard content type, $ref, charset suffix). */
+export function getResponseJsonSchema(spec: OpenAPISpec, operation: Operation): SchemaObject | null {
+  const raw =
+    operation.responses['200'] ??
+    operation.responses['201'] ??
+    operation.responses.default
+
+  if (!raw) return null
+
+  const response = resolveResponse(spec, raw)
+  if (!response.content) return null
+
+  return pickJsonContent(response.content)?.schema ?? null
 }

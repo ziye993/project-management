@@ -1,3 +1,5 @@
+import './openapiProxy/index.js';
+import './mock/index.js';
 import './porxyStatic/index.js';
 import './pm/index.js';
 import './localhostChat/index.js';

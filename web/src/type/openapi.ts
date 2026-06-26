@@ -9,6 +9,7 @@ export interface OpenAPISpec {
   paths: Record<string, PathItem>
   components?: {
     schemas?: Record<string, SchemaObject>
+    responses?: Record<string, Response>
     securitySchemes?: Record<string, SecurityScheme>
   }
   security?: Array<Record<string, string[]>>
@@ -57,6 +58,7 @@ export interface MediaType {
 export interface Response {
   description: string
   content?: Record<string, MediaType>
+  $ref?: string
 }
 
 export interface SchemaObject {
@@ -68,6 +70,8 @@ export interface SchemaObject {
   items?: SchemaObject
   required?: string[]
   enum?: unknown[]
+  example?: unknown
+  default?: unknown
   allOf?: SchemaObject[]
   oneOf?: SchemaObject[]
   anyOf?: SchemaObject[]

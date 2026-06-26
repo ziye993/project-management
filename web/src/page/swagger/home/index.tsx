@@ -81,6 +81,13 @@ function Swagger() {
   }
 
   const handleHistorySelect = (entry: SwaggerHistoryEntry) => {
+    const cached = tabs.find((t) => t.sourceUrl === entry.sourceUrl)
+    if (cached) {
+      setActiveTabId(cached.id)
+      setFormExpanded(false)
+      setError(null)
+      return
+    }
     void handleFetch(entry.baseUrl, entry.group)
   }
 
