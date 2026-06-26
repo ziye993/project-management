@@ -1,4 +1,5 @@
-import type { SchemaObject } from '../type/openapi'
+import type { OpenAPISpec, SchemaObject } from '../type/openapi'
+import { resolveSchema } from './openapi'
 
 export type FieldRuleMode = 'default' | 'fixed' | 'random' | 'increment' | 'now' | 'timeOffset'
 
@@ -71,4 +72,49 @@ export function inferLeafType(schema: SchemaObject): string {
   if (schema.type === 'number') return 'number'
   if (schema.type === 'string') return 'string'
   return schema.type ?? 'any'
+}
+
+export function isPrimitiveSchema(schema: SchemaObject): boolean {
+  const t = inferLeafType(schema)
+  return t === 'string' || t === 'number' || t === 'integer' || t === 'boolean' || t === 'enum'
+}
+
+export function isObjectSchema(schema: SchemaObject): boolean {
+  if (schema.properties && Object.keys(schema.properties).length > 0) return true
+  if (schema.type === 'object' && !schema.items) return true
+  return false
+}
+
+export function mergeAllOfSchema(spec: OpenAPISpec, schema: SchemaObject): SchemaObject {
+  const resolved = resolveSchema(spec, schema)
+  if (!resolved.allOf?.length) return resolved
+
+  const merged: SchemaObject = { type: 'object', properties: {}, required: [] }
+  for (const part of resolved.allOf) {
+    const p = mergeAllOfSchema(spec, part)
+    if (p.properties) {
+      merged.properties = { ...merged.properties, ...p.properties }
+    }
+    if (p.required?.length) {
+      merged.required = [...new Set([...(merged.required ?? []), ...p.required])]
+    }
+  }
+
+  return {
+    ...resolved,
+    type: 'object',
+    properties: merged.properties,
+    required: merged.required,
+    allOf: undefined,
+  }
+}
+
+export function normalizeSchema(spec: OpenAPISpec, schema: SchemaObject): SchemaObject {
+  let normalized = mergeAllOfSchema(spec, schema)
+  if (normalized.oneOf?.length) {
+    normalized = mergeAllOfSchema(spec, normalized.oneOf[0])
+  } else if (normalized.anyOf?.length) {
+    normalized = mergeAllOfSchema(spec, normalized.anyOf[0])
+  }
+  return normalized
 }

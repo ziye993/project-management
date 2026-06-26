@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
 import type { OpenAPISpec, SchemaObject } from '../../type/openapi'
-import { resolveSchema } from '../../utils/openapi'
 import {
   arrayItemsPath,
   getArrayLength,
   inferLeafType,
+  isObjectSchema,
+  isPrimitiveSchema,
   joinFieldPath,
+  normalizeSchema,
   setArrayLength,
   setFieldRule,
   type ArrayLengthsMap,
@@ -190,6 +192,45 @@ function LeafRuleInput({
   )
 }
 
+function ObjectProperties({
+  spec,
+  properties,
+  path,
+  depth,
+  fieldRules,
+  arrayLengths,
+  onFieldRulesChange,
+  onArrayLengthsChange,
+}: {
+  spec: OpenAPISpec
+  properties: Record<string, SchemaObject>
+  path: string
+  depth: number
+  fieldRules: FieldRulesMap
+  arrayLengths: ArrayLengthsMap
+  onFieldRulesChange: (rules: FieldRulesMap) => void
+  onArrayLengthsChange: (lengths: ArrayLengthsMap) => void
+}) {
+  return (
+    <>
+      {Object.entries(properties).map(([key, prop]) => (
+        <SchemaRuleNode
+          key={key}
+          spec={spec}
+          schema={prop}
+          name={key}
+          path={joinFieldPath(path, key)}
+          depth={depth}
+          fieldRules={fieldRules}
+          arrayLengths={arrayLengths}
+          onFieldRulesChange={onFieldRulesChange}
+          onArrayLengthsChange={onArrayLengthsChange}
+        />
+      ))}
+    </>
+  )
+}
+
 function SchemaRuleNode({
   spec,
   schema,
@@ -211,54 +252,17 @@ function SchemaRuleNode({
   onFieldRulesChange: (rules: FieldRulesMap) => void
   onArrayLengthsChange: (lengths: ArrayLengthsMap) => void
 }) {
-  const resolved = resolveSchema(spec, schema)
-  const { type, properties, items, allOf, oneOf, anyOf } = resolved
+  const resolved = normalizeSchema(spec, schema)
+  const { type, properties, items } = resolved
 
   const handleRuleChange = (fieldPath: string, rule: FieldRule | null) => {
     onFieldRulesChange(setFieldRule(fieldRules, fieldPath, rule))
   }
 
-  if (allOf?.length) {
-    return (
-      <>
-        {allOf.map((part, i) => (
-          <SchemaRuleNode
-            key={i}
-            spec={spec}
-            schema={part}
-            name={name}
-            path={path}
-            depth={depth}
-            fieldRules={fieldRules}
-            arrayLengths={arrayLengths}
-            onFieldRulesChange={onFieldRulesChange}
-            onArrayLengthsChange={onArrayLengthsChange}
-          />
-        ))}
-      </>
-    )
-  }
-
-  if (oneOf?.length || anyOf?.length) {
-    const variants = oneOf ?? anyOf!
-    return (
-      <SchemaRuleNode
-        spec={spec}
-        schema={variants[0]}
-        name={name}
-        path={path}
-        depth={depth}
-        fieldRules={fieldRules}
-        arrayLengths={arrayLengths}
-        onFieldRulesChange={onFieldRulesChange}
-        onArrayLengthsChange={onArrayLengthsChange}
-      />
-    )
-  }
-
   if (type === 'array' || items) {
     const length = getArrayLength(arrayLengths, path)
     const itemsPath = arrayItemsPath(path)
+    const itemSchema = items ? normalizeSchema(spec, items) : null
 
     return (
       <div className={styles.ruleNode} style={{ paddingLeft: depth * 14 }}>
@@ -283,10 +287,40 @@ function SchemaRuleNode({
             </label>
           </div>
         )}
-        {items && (
+
+        {itemSchema && isPrimitiveSchema(itemSchema) && (
+          <div className={styles.ruleLeaf} style={{ paddingLeft: (depth + 1) * 14 }}>
+            <span className={styles.arrayItemLabel}>[元素]</span>
+            <span className={styles.typeBadge}>{inferLeafType(itemSchema)}</span>
+            <LeafRuleInput
+              path={itemsPath}
+              schema={itemSchema}
+              rule={fieldRules[itemsPath]}
+              onChange={handleRuleChange}
+            />
+          </div>
+        )}
+
+        {itemSchema && isObjectSchema(itemSchema) && (
+          <div className={styles.ruleChildren}>
+            <ObjectProperties
+              spec={spec}
+              properties={itemSchema.properties ?? {}}
+              path={itemsPath}
+              depth={depth + 1}
+              fieldRules={fieldRules}
+              arrayLengths={arrayLengths}
+              onFieldRulesChange={onFieldRulesChange}
+              onArrayLengthsChange={onArrayLengthsChange}
+            />
+          </div>
+        )}
+
+        {itemSchema && !isPrimitiveSchema(itemSchema) && !isObjectSchema(itemSchema) && (
           <SchemaRuleNode
             spec={spec}
-            schema={items}
+            schema={itemSchema}
+            name="[元素]"
             path={itemsPath}
             depth={depth + 1}
             fieldRules={fieldRules}
@@ -309,20 +343,16 @@ function SchemaRuleNode({
           </div>
         )}
         <div className={styles.ruleChildren}>
-          {Object.entries(properties ?? {}).map(([key, prop]) => (
-            <SchemaRuleNode
-              key={key}
-              spec={spec}
-              schema={prop}
-              name={key}
-              path={joinFieldPath(path, key)}
-              depth={depth + 1}
-              fieldRules={fieldRules}
-              arrayLengths={arrayLengths}
-              onFieldRulesChange={onFieldRulesChange}
-              onArrayLengthsChange={onArrayLengthsChange}
-            />
-          ))}
+          <ObjectProperties
+            spec={spec}
+            properties={properties ?? {}}
+            path={path}
+            depth={depth + 1}
+            fieldRules={fieldRules}
+            arrayLengths={arrayLengths}
+            onFieldRulesChange={onFieldRulesChange}
+            onArrayLengthsChange={onArrayLengthsChange}
+          />
         </div>
       </div>
     )
@@ -350,13 +380,13 @@ export function FieldRuleEditor({
   onFieldRulesChange,
   onArrayLengthsChange,
 }: FieldRuleEditorProps) {
-  const resolved = useMemo(() => resolveSchema(spec, schema), [spec, schema])
+  const resolved = useMemo(() => normalizeSchema(spec, schema), [spec, schema])
 
   return (
     <div className={styles.ruleEditor}>
       <h3 className={styles.sectionTitle}>响应字段规则</h3>
       <p className={styles.sectionHint}>
-        未配置的字段将按类型随机生成；数组内字段可使用自增、时间偏移等规则。
+        对象会展开全部子字段；基础类型数组只需配置一个元素规则；对象数组配置元素内各字段规则。
       </p>
       <SchemaRuleNode
         spec={spec}
