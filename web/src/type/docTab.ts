@@ -5,6 +5,8 @@ export interface DocTab {
   label: string
   sourceUrl: string
   spec: OpenAPISpec
+  /** Document-level Cookie header value for try requests */
+  cookie?: string
 }
 
 export function createTabId(): string {
@@ -31,11 +33,12 @@ export function createTabLabel(spec: OpenAPISpec, sourceUrl: string): string {
   return title
 }
 
-export function createDocTab(spec: OpenAPISpec, sourceUrl: string): DocTab {
+export function createDocTab(spec: OpenAPISpec, sourceUrl: string, cookie = ''): DocTab {
   return {
     id: createTabId(),
     label: createTabLabel(spec, sourceUrl),
     sourceUrl,
     spec,
+    cookie,
   }
 }

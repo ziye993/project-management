@@ -1,5 +1,6 @@
 import { ReloadOutlined } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
+import type { MockFieldDefaults } from '../../../type/mockDefaults'
 import type { OpenAPISpec } from '../../../type/openapi'
 import {
   countEndpoints,
@@ -12,6 +13,9 @@ import styles from './index.module.less'
 interface ApiDocViewerProps {
   spec: OpenAPISpec
   sourceUrl: string
+  cookie?: string
+  onCookieChange?: (cookie: string) => void
+  fieldDefaults?: MockFieldDefaults | null
   canRefresh?: boolean
   refreshing?: boolean
   onRefresh?: () => void
@@ -20,6 +24,9 @@ interface ApiDocViewerProps {
 export function ApiDocViewer({
   spec,
   sourceUrl,
+  cookie = '',
+  onCookieChange,
+  fieldDefaults,
   canRefresh = false,
   refreshing = false,
   onRefresh,
@@ -89,6 +96,21 @@ export function ApiDocViewer({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <div className={styles.cookieToolbar}>
+          <label className={styles.cookieToolbarLabel} htmlFor="doc-cookie">
+            Cookie
+          </label>
+          <input
+            id="doc-cookie"
+            type="text"
+            className={styles.cookieToolbarInput}
+            value={cookie}
+            onChange={(e) => onCookieChange?.(e.target.value)}
+            placeholder="sessionId=xxx; token=yyy"
+            spellCheck={false}
+            title="文档级别 Cookie，试请求时自动带上"
+          />
+        </div>
         {search && (
           <span className={styles.searchHint}>
             找到 {filteredCount} 个匹配接口
@@ -136,6 +158,8 @@ export function ApiDocViewer({
               spec={spec}
               endpoint={ep}
               serverUrl={spec.servers?.[0]?.url}
+              cookie={cookie}
+              fieldDefaults={fieldDefaults}
             />
           ))}
         </main>

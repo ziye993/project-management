@@ -22,6 +22,10 @@ export default defineConfig({
         target: 'http://127.0.0.1:30014',
         changeOrigin: true,
       },
+      '/openapi-api-proxy': {
+        target: 'http://127.0.0.1:30014',
+        changeOrigin: true,
+      },
     },
   },
   build: {

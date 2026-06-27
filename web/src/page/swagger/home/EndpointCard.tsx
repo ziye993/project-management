@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import type { MockFieldDefaults } from '../../../type/mockDefaults'
 import type { OpenAPISpec, ParsedEndpoint } from '../../../type/openapi'
 import {
   buildApiUrl,
@@ -11,6 +12,7 @@ import {
 } from '../../../utils/schemaTypeScript'
 import { CopyButton } from './CopyButton'
 import { SchemaTree } from './SchemaTree'
+import { TryRequestPanel } from './TryRequestPanel'
 import styles from './index.module.less'
 
 const METHOD_COLORS: Record<string, string> = {
@@ -33,9 +35,11 @@ interface EndpointCardProps {
   spec: OpenAPISpec
   endpoint: ParsedEndpoint
   serverUrl?: string
+  cookie?: string
+  fieldDefaults?: MockFieldDefaults | null
 }
 
-export function EndpointCard({ spec, endpoint, serverUrl }: EndpointCardProps) {
+export function EndpointCard({ spec, endpoint, serverUrl, cookie, fieldDefaults }: EndpointCardProps) {
   const [expanded, setExpanded] = useState(false)
   const { path, method, operation } = endpoint
   const methodClass = METHOD_COLORS[method] ?? styles.methodDefault
@@ -219,6 +223,16 @@ export function EndpointCard({ spec, endpoint, serverUrl }: EndpointCardProps) {
               </div>
             </section>
           )}
+
+          <TryRequestPanel
+            spec={spec}
+            operation={operation}
+            method={method}
+            path={path}
+            serverUrl={serverUrl}
+            cookie={cookie}
+            fieldDefaults={fieldDefaults}
+          />
         </div>
       )}
     </div>

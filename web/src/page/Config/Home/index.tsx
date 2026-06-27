@@ -152,7 +152,7 @@ export default function ConfigHome() {
         <div className={`${shellStyles.panel} ${styles.configItemBox}`}>
           <span className={styles.configItemTitle}>Mock 公共字段默认值</span>
           <p className={styles.hint}>
-            数据 Mock 未单独配置的字段将使用此处默认值；留空则仍按类型随机生成。message 同时作用于 msg / message 字段。
+            数据 Mock 与 Swagger 试请求未单独配置的字段将使用此处默认值；留空则仍按类型/schema 生成。message 同时作用于 msg / message 字段；分页字段 current / size 等也会匹配 result 下的同名配置。
           </p>
           <div className={styles.mockDefaultsForm}>
             <label className={styles.mockFieldRow}>

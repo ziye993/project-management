@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { getConfig } from '../../../server/setConfig'
+import type { MockFieldDefaults } from '../../../type/mockDefaults'
 import {
   buildApiDocsUrl,
   fetchOpenAPISpec,
@@ -30,10 +32,19 @@ function Swagger() {
   const [refreshingTabId, setRefreshingTabId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [history, setHistory] = useState<SwaggerHistoryEntry[]>(() => loadSwaggerHistory())
+  const [fieldDefaults, setFieldDefaults] = useState<MockFieldDefaults | null>(null)
 
   useEffect(() => {
     saveSwaggerSession(tabs, activeTabId)
   }, [tabs, activeTabId])
+
+  useEffect(() => {
+    void getConfig().then((res) => {
+      if (res?.data?.mockFieldDefaults) {
+        setFieldDefaults(res.data.mockFieldDefaults)
+      }
+    })
+  }, [])
 
   const addTab = (
     spec: DocTab['spec'],
@@ -116,6 +127,10 @@ function Swagger() {
     }
   }
 
+  const handleCookieChange = (tabId: string, cookie: string) => {
+    setTabs((prev) => prev.map((t) => (t.id === tabId ? { ...t, cookie } : t)))
+  }
+
   const handleCloseTab = (id: string) => {
     setTabs((prev) => {
       const index = prev.findIndex((t) => t.id === id)
@@ -189,6 +204,9 @@ function Swagger() {
             <ApiDocViewer
               spec={tab.spec}
               sourceUrl={tab.sourceUrl}
+              cookie={tab.cookie ?? ''}
+              onCookieChange={(cookie) => handleCookieChange(tab.id, cookie)}
+              fieldDefaults={fieldDefaults}
               canRefresh={isFetchableSourceUrl(tab.sourceUrl)}
               refreshing={refreshingTabId === tab.id}
               onRefresh={() => void handleRefreshTab(tab.id)}
