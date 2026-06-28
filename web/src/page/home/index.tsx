@@ -13,6 +13,7 @@ import {
   PlayCircleOutlined,
   RightOutlined,
   ApiOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '../../Router';
 
@@ -105,6 +106,14 @@ const entries: EntryItem[] = [
     icon: <ApiOutlined />,
     path: '/dataMock',
     accent: 'teal',
+  },
+  {
+    id: 11,
+    name: '日志管理',
+    desc: '多租户日志收集、查询与 Key 管理',
+    icon: <FileTextOutlined />,
+    path: '/log',
+    accent: 'slate',
   },
 ];
 

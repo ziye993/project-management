@@ -10,3 +10,4 @@ import './upload/chunkUpload.js';
 import './config/index.js';
 import './system/index.js';
 import './share/index.js';
+import './log/index.js';

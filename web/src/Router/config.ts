@@ -17,6 +17,11 @@ import GameLayout from "../page/Game/Layout";
 import GameHome from "../page/Game/Home";
 import SudokuHome from "../page/Game/Sudoku";
 import GomokuHome from "../page/Game/Gomoku";
+import LogLayout from "../page/Log/Layout";
+import LogHome from "../page/Log/Home";
+import LogQuery from "../page/Log/Query";
+import LogTenants from "../page/Log/Tenants";
+import LogWorkspace from "../page/Log/Workspace";
 
 const router: TRouter = [{
     path: '/',
@@ -86,6 +91,16 @@ const router: TRouter = [{
     children: [
         { path: '/home', components: LocalChatHome },
         { path: '/profile', components: LocalChatProfile },
+    ]
+}, {
+    path: '/log',
+    components: LogLayout,
+    redirect: 'home',
+    children: [
+        { path: '/home', components: LogHome },
+        { path: '/query', components: LogQuery },
+        { path: '/tenants', components: LogTenants },
+        { path: '/workspace', components: LogWorkspace },
     ]
 }, {
     path: '/404',

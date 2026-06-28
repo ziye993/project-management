@@ -1,46 +1,24 @@
-import app from "../../app";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import cron from 'node-cron';
+import app from '../../app.js';
+import './postLog.js';
+import './manage/org.js';
+import './manage/project.js';
+import './manage/key.js';
+import './manage/logQuery.js';
+import { cleanupOldLogs } from './utils/retention.js';
+import { fail, ok } from './utils/response.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+cron.schedule('0 0 * * 1', () => {
+  cleanupOldLogs().catch(() => {});
+});
 
-const configPath = "../../../data/log.txt";
-const logPath = path.resolve(__dirname, configPath);
-
-app.post("/api/log/postLog", (req, res) => {
-  const { log } = req.body;
-  if (!log) {
-    return res.status(400).json({ error: "Log is required" });
-  }
-  let _log = log;
-  const timestamp = new Date().toISOString();
+app.post('/api/log/manage/retention/run', async (req, res) => {
   try {
-    _log = JSON.parse(log);
-    _log.timestamp = timestamp;
-    _log = JSON.stringify(_log);
-  } catch (error) {}
-  const logEntry = `${_log}\n`;
-  fs.appendFile(logPath, logEntry, (err) => {
-    if (err) {
-      return res.status(500).json({ error: "Failed to write log" });
-    }
-    res.status(200).json({ message: "Log saved successfully" });
-  });
+    const deleted = await cleanupOldLogs();
+    ok(res, { deleted });
+  } catch (err) {
+    fail(res, 500, 9, err.message || '清理失败');
+  }
 });
 
-app.get("api/log/getLog", (req, res) => {
-  fs.readFile(logPath, "utf8", (err, data) => {
-    if (err)
-      return res
-        .status(500)
-        .json({
-          success: false,
-          code: 1,
-          data: null,
-          msg: "Failed to read log file",
-        });
-    res.status(200).send({ success: true, data: data, code: 0, msg: "" });
-  });
-});
+console.log('[LogService] 日志中心模块已注册');
