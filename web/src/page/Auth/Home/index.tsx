@@ -90,7 +90,7 @@ export default function AuthHome() {
                 <td>{row.is_super_admin ? '是' : '否'}</td>
                 <td>{row.create_time}</td>
                 <td>
-                  <button type="button" onClick={() => push('/auth/home/detail', { userId: row.id })}>授权管理</button>
+                  <button type="button" onClick={() => push('/auth/detail', { userId: row.id })}>授权管理</button>
                 </td>
               </tr>
             ))}

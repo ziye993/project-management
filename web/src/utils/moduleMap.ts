@@ -32,7 +32,7 @@ export const PATH_MODULE_MAP: Record<string, string> = {
   '/planeEditor/home': 'planeEditor',
   '/auth': 'auth',
   '/auth/home': 'auth',
-  '/auth/home/detail': 'auth',
+  '/auth/detail': 'auth',
 };
 
 export function resolveModuleKey(pathname: string): string | null {

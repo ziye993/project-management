@@ -116,7 +116,7 @@ const router: TRouter = [{
     redirect: 'home',
     children: [
         { path: '/home', components: AuthHome },
-        { path: '/home/detail', components: AuthUserDetail },
+        { path: '/detail', components: AuthUserDetail },
     ]
 }, {
     path: '/404',
