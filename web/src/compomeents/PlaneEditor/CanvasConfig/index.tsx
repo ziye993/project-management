@@ -1,17 +1,16 @@
 import styles from '../index.module.less';
-import { Form, InputNumber, Select, Button, Modal } from 'antd';
 import { useState } from 'react';
-import type { FormInstance } from 'antd';
+import Modal from '../../../UiComponents/Modal';
+import Button from '../../../UiComponents/Button';
 import { themeOptions, getThemePageDefaults } from '../themes';
 import { EViewDatatype } from '../themes/types';
 import type { PlanePageConfig, TConfigRef } from '../themes/types';
 
 interface CanvasConfigProps {
-  form: FormInstance<Partial<PlanePageConfig>>;
+  pageConfig: PlanePageConfig;
   onChange: (value: Partial<PlanePageConfig>) => void | Promise<void>;
   getConfig: (type: EViewDatatype) => TConfigRef[];
   saveData: () => void | Promise<void>;
-  pageConfig: PlanePageConfig;
 }
 
 export default function CanvasConfig(props: CanvasConfigProps) {
@@ -19,29 +18,49 @@ export default function CanvasConfig(props: CanvasConfigProps) {
   const [previewType, setPreviewType] = useState<'ins' | 'nes'>('ins');
   const [configPreview, setConfigPreview] = useState<TConfigRef[]>([]);
   const [loading, setLoading] = useState(false);
+  const { pageConfig } = props;
+
+  const patchConfig = async (patch: Partial<PlanePageConfig>) => {
+    setLoading(true);
+    const themeDefaults = patch.theme != null ? getThemePageDefaults(patch.theme) : {};
+    await props.onChange({ ...pageConfig, ...patch, ...themeDefaults });
+    setLoading(false);
+  };
 
   return (
     <div className={styles.configBox}>
-      <Form
-        form={props.form}
-        layout="inline"
-        onValuesChange={async (_, value: Partial<PlanePageConfig>) => {
-          setLoading(true);
-          const themeDefaults = getThemePageDefaults(value.theme ?? 'rect');
-          await props.onChange({ ...value, ...themeDefaults });
-          setLoading(false);
-        }}
-      >
-        <Form.Item label="画布长" name="width" initialValue={1920}>
-          <InputNumber disabled={loading} />
-        </Form.Item>
-        <Form.Item label="画布宽" name="height" initialValue={1080}>
-          <InputNumber disabled={loading} />
-        </Form.Item>
-        <Form.Item label="主题" name="theme" initialValue="rect">
-          <Select disabled={loading} style={{ width: 140 }} options={themeOptions} />
-        </Form.Item>
-      </Form>
+      <div className={styles.inlineForm}>
+        <label className={styles.fieldInline}>
+          <span>画布长</span>
+          <input
+            type="number"
+            disabled={loading}
+            value={pageConfig.width}
+            onChange={e => patchConfig({ width: Number(e.target.value) || 0 })}
+          />
+        </label>
+        <label className={styles.fieldInline}>
+          <span>画布宽</span>
+          <input
+            type="number"
+            disabled={loading}
+            value={pageConfig.height}
+            onChange={e => patchConfig({ height: Number(e.target.value) || 0 })}
+          />
+        </label>
+        <label className={styles.fieldInline}>
+          <span>主题</span>
+          <select
+            disabled={loading}
+            value={pageConfig.theme}
+            onChange={e => patchConfig({ theme: e.target.value })}
+          >
+            {themeOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
       <Button
         onClick={() => {
           setConfigPreview(props.getConfig(EViewDatatype.INS));
@@ -50,37 +69,37 @@ export default function CanvasConfig(props: CanvasConfigProps) {
       >
         查看配置
       </Button>
-      <Button type="primary" style={{ marginLeft: 16 }} onClick={() => props.saveData()}>
+      <Button color="primary" style={{ marginLeft: 16 }} onClick={() => props.saveData()}>
         保存
       </Button>
       <Modal
-        title="配置预览"
         open={open}
-        onCancel={() => setOpen(false)}
-        okText="保存"
-        onOk={() => {
+        title="配置预览"
+        onClose={() => setOpen(false)}
+        onOK={() => {
           props.saveData();
           setOpen(false);
         }}
         width={720}
       >
-        数据类型：
-        <Select
-          style={{ width: 140, marginLeft: 8 }}
-          options={[
-            { label: '平面数据', value: 'ins' },
-            { label: '嵌套数据', value: 'nes' },
-          ]}
-          value={previewType}
-          onChange={v => {
-            setPreviewType(v);
-            setConfigPreview(
-              props.getConfig(v === 'ins' ? EViewDatatype.INS : EViewDatatype.NES),
-            );
-          }}
-        />
+        <label className={styles.previewType}>
+          数据类型：
+          <select
+            value={previewType}
+            onChange={e => {
+              const v = e.target.value as 'ins' | 'nes';
+              setPreviewType(v);
+              setConfigPreview(
+                props.getConfig(v === 'ins' ? EViewDatatype.INS : EViewDatatype.NES),
+              );
+            }}
+          >
+            <option value="ins">平面数据</option>
+            <option value="nes">嵌套数据</option>
+          </select>
+        </label>
         <pre className={styles.jsonView}>
-          {JSON.stringify({ ...props.pageConfig, data: configPreview }, null, 2)}
+          {JSON.stringify({ ...pageConfig, data: configPreview }, null, 2)}
         </pre>
       </Modal>
     </div>

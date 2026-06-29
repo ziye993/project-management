@@ -1,7 +1,7 @@
 import styles from '../index.module.less';
-import { useEffect, useImperativeHandle, forwardRef, useRef, useState } from 'react';
-import { Input, Select, Space, Button, Form, InputNumber, ColorPicker } from 'antd';
+import { useEffect, useImperativeHandle, forwardRef, useRef, useState, useCallback } from 'react';
 import { CloseOutlined, SettingOutlined } from '@ant-design/icons';
+import Button from '../../../UiComponents/Button';
 import type { TConfigRef } from '../themes/types';
 import { EViewDatatype } from '../themes/types';
 import { getMockStationsForDevice } from '../mock';
@@ -23,48 +23,107 @@ interface DevSettingProps {
   getConfig: (type: EViewDatatype) => TConfigRef[];
 }
 
-const FormItem = Form.Item;
+interface FormState {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  content?: string;
+  background?: string;
+  backgroundHex?: string;
+  parentId?: string | number;
+  textsContent?: string;
+  textX?: number;
+  textY?: number;
+}
+
+function rgbToHex(rgb?: string) {
+  if (!rgb) return '#354866';
+  if (rgb.startsWith('#')) return rgb;
+  const m = rgb.match(/\d+/g);
+  if (!m || m.length < 3) return '#354866';
+  return `#${m.slice(0, 3).map(n => Number(n).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function hexToRgb(hex: string) {
+  const h = hex.replace('#', '');
+  if (h.length !== 6) return hex;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgb(${r},${g},${b})`;
+}
 
 function DevSetting(props: DevSettingProps, ref: React.Ref<{ update: (ele: ElementConfig) => void }>) {
   const { currentConfig, deleteElement } = props;
-  const [form] = Form.useForm();
+  const [form, setForm] = useState<FormState>({});
   const [stations, setStations] = useState<MockStation[]>([]);
   const updateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [collapsed, setCollapsed] = useState(false);
 
+  const emitChange = useCallback((values: FormState, base: ElementConfig) => {
+    const { textX, textY, width, height, x, y, textsContent, content, backgroundHex, parentId } = values;
+    props.onChange?.({
+      ...base,
+      content,
+      width,
+      height,
+      parentId,
+      position: { ...base.position, x, y },
+      background: backgroundHex ? hexToRgb(backgroundHex) : values.background,
+      texts: [
+        {
+          parentId: base.id,
+          index: 0,
+          id: `${base.id}-t0`,
+          type: 'text',
+          size: 14,
+          position: { x: textX, y: textY },
+          content: textsContent,
+        },
+      ],
+    } as ElementConfig);
+  }, [props.onChange]);
+
+  const updateField = (patch: Partial<FormState>) => {
+    setForm(prev => {
+      const next = { ...prev, ...patch };
+      if (currentConfig) emitChange(next, currentConfig);
+      return next;
+    });
+  };
+
   const fillForm = (config?: ElementConfig | null) => {
+    const cfg = config ?? currentConfig;
     const {
       texts = [],
       position = {},
       width,
       height,
       content,
-      id,
-      type = 'text',
       background,
       parentId,
-    } = (config ?? currentConfig) || {};
+    } = cfg || {};
 
-    form.setFieldsValue({
+    setForm({
       x: position?.x,
       y: position?.y,
       width,
       height,
       content,
-      id,
       background,
-      type,
+      backgroundHex: rgbToHex(background),
       parentId,
       textsContent: texts?.[0]?.content,
       textX: texts?.[0]?.position?.x,
       textY: texts?.[0]?.position?.y,
     });
 
-    if (!config?.key && !currentConfig?.key) {
+    if (!cfg?.key) {
       setStations([]);
       return;
     }
-    const list = getMockStationsForDevice(currentConfig?.key);
+    const list = getMockStationsForDevice(cfg.key);
     setStations(list.filter(s => !props.hasElement(s.siteName)));
   };
 
@@ -79,6 +138,10 @@ function DevSetting(props: DevSettingProps, ref: React.Ref<{ update: (ele: Eleme
     },
   }));
 
+  const parentOptions = props
+    .getConfig(EViewDatatype.INS)
+    .filter(c => c.id !== currentConfig?.id);
+
   return (
     <div
       className={`${styles.devSettingBox} ${collapsed ? styles.devSettingClose : ''}`}
@@ -87,97 +150,106 @@ function DevSetting(props: DevSettingProps, ref: React.Ref<{ update: (ele: Eleme
       <div className={styles.openIcon} onClick={() => setCollapsed(v => !v)}>
         {collapsed ? <SettingOutlined /> : <CloseOutlined />}
       </div>
-      <Form
-        form={form}
-        onValuesChange={(_, values) => {
-          if (!currentConfig) return;
-          const { textX, textY, width, height, x, y, textsContent, content, background, parentId } = values;
-          props.onChange?.({
-            ...currentConfig,
-            content,
-            width,
-            height,
-            parentId,
-            position: { ...currentConfig.position, x, y },
-            background:
-              typeof background === 'string'
-                ? background
-                : `rgb(${background?.metaColor?.r},${background?.metaColor?.g},${background?.metaColor?.b})`,
-            texts: [
-              {
-                parentId: currentConfig.id,
-                index: 0,
-                id: `${currentConfig.id}-t0`,
-                type: 'text',
-                size: 14,
-                position: { x: textX, y: textY },
-                content: textsContent,
-              },
-            ],
-          } as ElementConfig);
-        }}
-      >
+      <form className={styles.nativeForm} onSubmit={e => e.preventDefault()}>
         <h3 className={styles.title}>基础配置</h3>
-        <FormItem label="标识">
-          <Input readOnly value={currentConfig?.key || ''} disabled />
-        </FormItem>
-        <FormItem label="标题" name="content">
-          <Input />
-        </FormItem>
-        <Space>
-          <FormItem label="长" name="width">
-            <InputNumber />
-          </FormItem>
-          <FormItem label="宽" name="height">
-            <InputNumber />
-          </FormItem>
-        </Space>
-        <Space>
-          <FormItem label="坐标X" name="x">
-            <InputNumber />
-          </FormItem>
-          <FormItem label="坐标Y" name="y">
-            <InputNumber />
-          </FormItem>
-        </Space>
-        <FormItem label="背景色" name="background">
-          <ColorPicker defaultFormat="rgb" format="rgb" />
-        </FormItem>
-        <FormItem label="父级" name="parentId">
-          <Select
-            popupMatchSelectWidth={false}
-            allowClear
-            options={
-              props
-                .getConfig(EViewDatatype.INS)
-                .filter(c => c.id !== currentConfig?.id)
-                .map(c => ({
-                  label: (
-                    <p className={styles.labelBox}>
-                      <span className={styles.labelContent}>{c.content}</span>
-                      <span className={styles.labelKey}>代码:{c.key}</span>
-                    </p>
-                  ),
-                  value: c.id,
-                })) || []
-            }
+        <label className={styles.formField}>
+          <span>标识</span>
+          <input readOnly disabled value={currentConfig?.key || ''} />
+        </label>
+        <label className={styles.formField}>
+          <span>标题</span>
+          <input
+            value={form.content ?? ''}
+            onChange={e => updateField({ content: e.target.value })}
           />
-        </FormItem>
+        </label>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            <span>长</span>
+            <input
+              type="number"
+              value={form.width ?? ''}
+              onChange={e => updateField({ width: Number(e.target.value) })}
+            />
+          </label>
+          <label className={styles.formField}>
+            <span>宽</span>
+            <input
+              type="number"
+              value={form.height ?? ''}
+              onChange={e => updateField({ height: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            <span>坐标X</span>
+            <input
+              type="number"
+              value={form.x ?? ''}
+              onChange={e => updateField({ x: Number(e.target.value) })}
+            />
+          </label>
+          <label className={styles.formField}>
+            <span>坐标Y</span>
+            <input
+              type="number"
+              value={form.y ?? ''}
+              onChange={e => updateField({ y: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <label className={styles.formField}>
+          <span>背景色</span>
+          <input
+            type="color"
+            value={form.backgroundHex ?? '#354866'}
+            onChange={e => updateField({ backgroundHex: e.target.value })}
+          />
+        </label>
+        <label className={styles.formField}>
+          <span>父级</span>
+          <select
+            value={form.parentId ?? ''}
+            onChange={e => updateField({ parentId: e.target.value || undefined })}
+          >
+            <option value="">无</option>
+            {parentOptions.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.content} (代码:{c.key})
+              </option>
+            ))}
+          </select>
+        </label>
 
         {currentConfig?.type === 'box' && (
           <div className={styles.textsBox}>
             <h3 className={styles.title}>文本配置</h3>
-            <FormItem label="内容" name="textsContent">
-              <Input />
-            </FormItem>
-            <Space>
-              <FormItem label="坐标X" name="textX">
-                <InputNumber />
-              </FormItem>
-              <FormItem label="坐标Y" name="textY">
-                <InputNumber />
-              </FormItem>
-            </Space>
+            <label className={styles.formField}>
+              <span>内容</span>
+              <input
+                value={form.textsContent ?? ''}
+                onChange={e => updateField({ textsContent: e.target.value })}
+              />
+            </label>
+            <div className={styles.formRow}>
+              <label className={styles.formField}>
+                <span>坐标X</span>
+                <input
+                  type="number"
+                  value={form.textX ?? ''}
+                  onChange={e => updateField({ textX: Number(e.target.value) })}
+                />
+              </label>
+              <label className={styles.formField}>
+                <span>坐标Y</span>
+                <input
+                  type="number"
+                  value={form.textY ?? ''}
+                  onChange={e => updateField({ textY: Number(e.target.value) })}
+                />
+              </label>
+            </div>
           </div>
         )}
 
@@ -206,13 +278,13 @@ function DevSetting(props: DevSettingProps, ref: React.Ref<{ update: (ele: Eleme
             ))}
           </div>
         </div>
-      </Form>
+      </form>
       <div className={styles.bottomBox}>
         <Button
           className={styles.deleteBut}
           onClick={() => {
             if (currentConfig && deleteElement?.(currentConfig)) {
-              form.resetFields();
+              setForm({});
             }
           }}
         >

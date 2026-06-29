@@ -7,12 +7,13 @@ import './manage/key.js';
 import './manage/logQuery.js';
 import { cleanupOldLogs } from './utils/retention.js';
 import { fail, ok } from './utils/response.js';
+import { authenticateToken, requireRealSuperAdmin } from '../../middleware/auth.js';
 
 cron.schedule('0 0 * * 1', () => {
   cleanupOldLogs().catch(() => {});
 });
 
-app.post('/api/log/manage/retention/run', async (req, res) => {
+app.post('/api/log/manage/retention/run', authenticateToken, requireRealSuperAdmin, async (req, res) => {
   try {
     const deleted = await cleanupOldLogs();
     ok(res, { deleted });

@@ -1,120 +1,167 @@
 import jwt from 'jsonwebtoken';
-import db from "../../db/index.js";
-import {veriCodeToEmail, sendVerificationCode} from "./maill.js";
+import bcrypt from 'bcrypt';
+import pool from '../../db/logDb.js';
+import { JWT_SECRET } from '../../config/deployment.js';
+import { getClientIp } from '../../middleware/access.js';
+import {
+  checkLoginRateLimit,
+  recordLoginFailure,
+  clearLoginAttempts,
+} from '../../utils/loginRateLimit.js';
+import { loadUserPermissions } from '../../middleware/auth.js';
+import { sendVerificationCode } from './maill.js';
+import { decryptLoginPassword, getPasswordPublicKey } from '../../utils/passwordCrypto.js';
 
-const jwtKey = 'ziye993';
+const JWT_EXPIRES = '7d';
 
-const excludeRouter = ["/user/login", "/user/sendEmailCode"];
+function isSecureRequest(req) {
+  return req.secure === true || req.headers['x-forwarded-proto'] === 'https';
+}
 
-// 生成 JWT 令牌
-function generateToken(user, time) {
-  return jwt.sign(
-    user,
-    jwtKey, // 生产环境应使用环境变量存储密钥
-    {expiresIn: time || '7d'}
+function setToken(res, req, user) {
+  const token = jwt.sign(
+    { id: user.id, username: user.username, is_super_admin: !!user.is_super_admin },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES },
   );
-}
-
-// 验证令牌的中间件
-export function authenticateToken(req, res, next) {
-  if (excludeRouter.includes(req.url)) {
-    next();
-    return;
-  }
-  const token = req?.cookies?.token;
-  if (!token) {
-    return res.status(401).json({data: null, code: 'NOT_TOKEN', msg: '未提供令牌', success: false});
-  }
-
-  jwt.verify(token, jwtKey, (err, user) => {
-    if (err) {
-      return res.status(403).json({data: null, code: 'INVALID_TOKEN', msg: '无效令牌', success: false});
-    }
-    req.user = user;
-    next();
-  });
-}
-
-const setToken = (res, info, time) => {
-  const defaultTime = time || 1000 * 60 * 60 * 24 * 7
-  const token = generateToken(info, Math.floor(time / 1000));
   res.cookie('token', token, {
-    httpOnly: true, // 防止XSS
-    // secure: process.env.NODE_ENV === 'production', // 仅在HTTPS连接中发送cookie
-    maxAge: defaultTime, // 7 天
-    sameSite: 'lax',  // lax 可以跨域发送 POST 请求
-    // sameSite: 'strict' // 防止CSRF
-    secure: false
+    httpOnly: true,
+    secure: isSecureRequest(req),
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax',
   });
 }
 
-export const loginToToken = async (req, res) => {
-  if (req.user) {
-    const [userInfo] = await db.select('select * from ziyeUser where id = @id', {id: req.user.id});
-    if (!userInfo) return res.status(200).json({data: null, msg: "登陆失败", code: 1, success: false});
-    setToken(res, userInfo);
-    res.status(200).json({
-      success: true,
-      message: 'success',
-      code: 0,
-      data: {username: userInfo.username, email: userInfo.email, id: userInfo.id}
-    })
-  }
+function sanitizeUser(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    is_super_admin: !!user.is_super_admin,
+  };
 }
+
+export const getPublicKey = (req, res) => {
+  res.status(200).json({
+    success: true,
+    code: 0,
+    msg: 'success',
+    data: { publicKey: getPasswordPublicKey() },
+  });
+};
 
 export const login = async (req, res) => {
   try {
-    const {username, password, email, code} = req.body;
-    if (!username || !password) { // 非空验证
-      return res.status(400).json({message: '认证失败,请输入用户名和密码！', code: 3});
+    const { username, password, encrypted } = req.body || {};
+    if (!username || !password) {
+      return res.status(400).json({ success: false, code: 1, msg: '请输入用户名和密码', data: null });
     }
-    if (email && !code) { //注册，但是没有验证码
-      return res.status(400).json({message: '认证失败,请输入验证码！', code: 4});
-    }
-    if (email && code && username && password) { // 注册，或者更新密码
-      const emailRes = veriCodeToEmail(email, code);
-      if (emailRes.code === 0) {  // 修改 密码
-        const [userInfo] = await db.select("select * from ziyeUser where username = @username and email = @email", {
-          email,
-          username
-        });
-        if (!userInfo) [userInfo] =await db.add('ziyeUser', {username, password, email});
-        else await db.update('ziyeUser', {username}, {password});
-        setToken(res, userInfo);
-        return res.status(200).json({
-          message: 'success',
-          code: 0,
-          success: true,
-          data: {username: userInfo.username, email: userInfo.email, id: userInfo.id}
-        })
+
+    let plainPassword = password;
+    if (encrypted) {
+      try {
+        plainPassword = decryptLoginPassword(password);
+      } catch {
+        return res.status(400).json({ success: false, code: 1, msg: '密码解密失败', data: null });
       }
-      return res.status(400).json({message: '认证失败，验证码错误', code: 6});
     }
-    if (username && password && !email) { //登陆
-      const [userInfo] = await db.select('select * from ziyeUser where username = @username and password = @password', {username, password});
-      if (userInfo) {
-        setToken(res, userInfo);
-        return res.status(200).json({
-          message: 'success',
-          code: 0,
-          success: true,
-          data: {username: userInfo.username, email: userInfo.email, id: userInfo.id}
-        })
-      }
-      return res.status(200).json({message: '用户名或密码错误！', code: 1})
+
+    const ip = getClientIp(req);
+    const rateCheck = checkLoginRateLimit(ip, username);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({
+        success: false,
+        code: 'LOGIN_RATE_LIMITED',
+        msg: '登录失败次数过多，请15分钟后再试',
+        data: null,
+      });
     }
-    return res.status(400).json({message: '认证失败', code: 2});
+
+    const [rows] = await pool.execute(
+      'SELECT id, username, password_hash, email, status, is_super_admin FROM sys_user WHERE username = ?',
+      [username],
+    );
+    const user = rows[0];
+    if (!user || user.status !== 1) {
+      recordLoginFailure(ip, username);
+      return res.status(200).json({ success: false, code: 1, msg: '用户名或密码错误', data: null });
+    }
+
+    const match = await bcrypt.compare(plainPassword, user.password_hash);
+
+      const hash = await bcrypt.hash('123456', 10);
+      console.log('hash', hash, 'plainPassword',plainPassword,'user?.password_hash', user?.password_hash);
+    if (!match) {
+      recordLoginFailure(ip, username);
+      return res.status(200).json({ success: false, code: 1, msg: '用户名或密码错误', data: null });
+    }
+
+    clearLoginAttempts(ip, username);
+    setToken(res, req, user);
+    const perms = await loadUserPermissions(user.id);
+
+    return res.status(200).json({
+      success: true,
+      code: 0,
+      msg: 'success',
+      data: {
+        ...sanitizeUser(user),
+        orgPermissions: perms.orgPermissions,
+        projectPermissions: perms.projectPermissions,
+      },
+    });
   } catch (error) {
-    return res.status(500).json({message: '登录失败', error: error.message, code: 2});
+    console.error('[login]', error);
+    return res.status(500).json({ success: false, code: 2, msg: '登录失败', data: null });
   }
-}
+};
+
+export const logout = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: isSecureRequest(req),
+    sameSite: 'lax',
+  });
+  res.status(200).json({ success: true, code: 0, msg: '已退出', data: null });
+};
+
+export const me = async (req, res) => {
+  const token = req?.cookies?.token;
+  if (!token) {
+    return res.status(401).json({ success: false, code: 'NOT_TOKEN', msg: '未登录', data: null });
+  }
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    const [rows] = await pool.execute(
+      'SELECT id, username, email, status, is_super_admin FROM sys_user WHERE id = ?',
+      [payload.id],
+    );
+    const user = rows[0];
+    if (!user || user.status !== 1) {
+      return res.status(403).json({ success: false, code: 'INVALID_USER', msg: '用户无效', data: null });
+    }
+
+    const perms = await loadUserPermissions(user.id);
+    return res.status(200).json({
+      success: true,
+      code: 0,
+      msg: '',
+      data: {
+        ...sanitizeUser(user),
+        orgPermissions: perms.orgPermissions,
+        projectPermissions: perms.projectPermissions,
+      },
+    });
+  } catch {
+    return res.status(403).json({ success: false, code: 'INVALID_TOKEN', msg: '无效令牌', data: null });
+  }
+};
 
 export const sendEmailCode = async (req, res) => {
-  if (!req.body.email) {
-    res.status(400).json({message: 'not Email', code: 1});
-    return
+  if (!req.body?.email) {
+    return res.status(400).json({ success: false, code: 1, msg: 'not Email', data: null });
   }
   const data = await sendVerificationCode(req.body.email);
-  res.status(200).json({...data, code: data.success ? 0 : 2, success: data.success});
-}
-
+  res.status(200).json({ ...data, code: data.success ? 0 : 2, success: data.success });
+};

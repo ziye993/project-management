@@ -69,6 +69,117 @@
   gap: 8px;
 }
 
+.inlineForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.fieldInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #334155;
+
+  span {
+    white-space: nowrap;
+  }
+
+  input,
+  select {
+    padding: 4px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    min-width: 80px;
+  }
+
+  select {
+    min-width: 120px;
+  }
+}
+
+.previewType {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+
+  select {
+    padding: 4px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+  }
+}
+
+.tabBar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 6px;
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: #64748b;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+}
+
+.tabBtnActive {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.nativeForm {
+  width: 100%;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #64748b;
+
+  input,
+  select {
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1e293b;
+  }
+
+  input[type='color'] {
+    padding: 2px;
+    height: 32px;
+    cursor: pointer;
+  }
+}
+
+.formRow {
+  display: flex;
+  gap: 8px;
+
+  .formField {
+    flex: 1;
+  }
+}
+
 .jsonView {
   background: #f6f8fa;
   padding: 12px;
@@ -122,12 +233,6 @@
   max-width: 300px;
   max-height: 1000px;
   transition: all 0.2s;
-
-  :global {
-    .ant-form-item {
-      margin-bottom: 10px;
-    }
-  }
 
   .bottomBox {
     width: 100%;

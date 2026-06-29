@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { RouterStatus, type _IReductRouter, type _IRouter, type TReductRouter, type TRouter } from "./type";
 import { completeRouterConfig, formatRouterAddKey } from "./utils";
+import RouteGuard from "./RouteGuard";
 
 type TRouterIds = (string | number)[];
 
@@ -144,6 +145,8 @@ export function useNavigate() {
 export default function Router(props: { router: TRouter }) {
     const { router } = props;
     return <RouterProvider router={[...router]}>
-        <Routers />
+        <RouteGuard>
+            <Routers />
+        </RouteGuard>
     </RouterProvider>
 }

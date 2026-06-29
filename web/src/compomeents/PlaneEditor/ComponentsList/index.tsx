@@ -1,6 +1,5 @@
 import styles from '../index.module.less';
-import { Tabs } from 'antd';
-import type { TabsProps } from 'antd';
+import { useState } from 'react';
 import type { TConfigRef } from '../themes/types';
 import type { MockDevice } from '../mock';
 
@@ -19,12 +18,27 @@ const baseItems = [
 
 export default function ComponentsList(props: ComponentsListProps) {
   const availableDevices = props.deviceList.filter(d => !props.hasElement(d.value));
+  const [activeTab, setActiveTab] = useState<'devices' | 'presets'>('devices');
 
-  const items: TabsProps['items'] = [
-    {
-      key: '1',
-      label: '设备',
-      children: (
+  return (
+    <div className={styles.componentsListBox} ref={props.componentsRef}>
+      <div className={styles.tabBar}>
+        <button
+          type="button"
+          className={`${styles.tabBtn} ${activeTab === 'devices' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('devices')}
+        >
+          设备
+        </button>
+        <button
+          type="button"
+          className={`${styles.tabBtn} ${activeTab === 'presets' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('presets')}
+        >
+          预设元素
+        </button>
+      </div>
+      {activeTab === 'devices' && (
         <div className={styles.devList}>
           {availableDevices.map((device, index) => (
             <div
@@ -43,12 +57,8 @@ export default function ComponentsList(props: ComponentsListProps) {
             </div>
           ))}
         </div>
-      ),
-    },
-    {
-      key: '2',
-      label: '预设元素',
-      children: (
+      )}
+      {activeTab === 'presets' && (
         <div className={styles.devList}>
           {baseItems.map((item, index) => (
             <div
@@ -69,13 +79,7 @@ export default function ComponentsList(props: ComponentsListProps) {
             </div>
           ))}
         </div>
-      ),
-    },
-  ];
-
-  return (
-    <div className={styles.componentsListBox} ref={props.componentsRef}>
-      <Tabs defaultActiveKey="1" items={items} />
+      )}
     </div>
   );
 }

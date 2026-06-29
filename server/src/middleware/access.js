@@ -1,0 +1,163 @@
+import { isIPv4, isIPv6 } from 'node:net';
+import { DEPLOYMENT_ROLE } from '../config/deployment.js';
+
+const LOCAL_MODULES = [
+  'project', 'image', 'television', 'config', 'serverInfo', 'LANSharing',
+  'swagger', 'dataMock', 'game', 'localChat', 'planeEditor',
+];
+
+const PUBLIC_ALWAYS = ['game', 'localChat'];
+const PUBLIC_NEVER = ['project', 'config', 'dataMock', 'swagger', 'planeEditor'];
+
+function normalizeIp(raw) {
+  if (!raw) return '';
+  let ip = String(raw).trim();
+  if (ip.startsWith('::ffff:')) ip = ip.slice(7);
+  if (ip === '::1') return '127.0.0.1';
+  return ip;
+}
+
+export function getClientIp(req) {
+  const realIp = req.headers['x-real-ip'];
+  if (realIp) return normalizeIp(realIp);
+
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const first = String(forwarded).split(',')[0].trim();
+    if (first) return normalizeIp(first);
+  }
+
+  return normalizeIp(req.socket?.remoteAddress || req.ip || '');
+}
+
+function isPrivateIpv4(ip) {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return false;
+  const [a, b] = parts;
+  if (a === 10) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 127) return true;
+  return false;
+}
+
+function isPrivateIpv6(ip) {
+  const lower = ip.toLowerCase();
+  if (lower === '::1') return true;
+  if (lower.startsWith('fc') || lower.startsWith('fd')) return true;
+  if (lower.startsWith('fe80')) return true;
+  return false;
+}
+
+export function resolveChannel(ip) {
+  const normalized = normalizeIp(ip);
+  if (normalized === '127.0.0.1') return 'local';
+  if (isIPv4(normalized)) {
+    if (normalized === '127.0.0.1' || isPrivateIpv4(normalized)) {
+      return normalized === '127.0.0.1' ? 'local' : 'lan';
+    }
+    return 'public';
+  }
+  if (isIPv6(normalized)) {
+    if (normalized === '::1') return 'local';
+    if (isPrivateIpv6(normalized)) return 'lan';
+    return 'public';
+  }
+  return 'public';
+}
+
+export function isLogServerTrusted(req) {
+  const channel = req.channel || resolveChannel(getClientIp(req));
+  return (channel === 'local' || channel === 'lan') && DEPLOYMENT_ROLE === 'log_server';
+}
+
+export function isLocalAgentTrusted(req) {
+  const channel = req.channel || resolveChannel(getClientIp(req));
+  return channel === 'local' || channel === 'lan';
+}
+
+export function computeVisibleModules({
+  channel,
+  deploymentRole,
+  isAuthenticated,
+  isSuperAdmin,
+  orgPermissions,
+}) {
+  const hasOrg = Array.isArray(orgPermissions) && orgPermissions.length > 0;
+  const canSeeLog = isAuthenticated && (isSuperAdmin || hasOrg);
+
+  if (channel === 'local' || channel === 'lan') {
+    const modules = [...LOCAL_MODULES];
+    if (canSeeLog) modules.push('log');
+    if (deploymentRole === 'log_server') modules.push('auth');
+    return modules;
+  }
+
+  const modules = [...PUBLIC_ALWAYS];
+  if (isAuthenticated && isSuperAdmin) {
+    modules.push('serverInfo', 'image', 'television', 'LANSharing', 'log');
+    if (deploymentRole === 'log_server') modules.push('auth');
+  } else if (isAuthenticated && hasOrg) {
+    modules.push('log');
+  }
+
+  return modules.filter(m => !PUBLIC_NEVER.includes(m));
+}
+
+function rw(read = true, write = true) {
+  return { read, write };
+}
+
+export function computeModuleCapabilities({
+  channel,
+  deploymentRole,
+  isAuthenticated,
+  isSuperAdmin,
+  orgPermissions,
+  visibleModules,
+}) {
+  const caps = {};
+  const hasOrg = Array.isArray(orgPermissions) && orgPermissions.length > 0;
+  const hasManage = isSuperAdmin || orgPermissions?.some(p => p.role === 'manage');
+
+  for (const key of visibleModules) {
+    if (channel === 'local' || channel === 'lan') {
+      if (key === 'log') {
+        caps[key] = isAuthenticated
+          ? rw(true, isSuperAdmin || hasManage)
+          : rw(false, false);
+      } else if (key === 'auth') {
+        caps[key] = rw(true, true);
+      } else {
+        caps[key] = rw(true, true);
+      }
+      continue;
+    }
+
+    if (key === 'serverInfo') {
+      caps[key] = rw(true, false);
+    } else if (['image', 'television', 'LANSharing'].includes(key)) {
+      caps[key] = isSuperAdmin ? rw(true, true) : rw(false, false);
+    } else if (key === 'log') {
+      caps[key] = isAuthenticated
+        ? rw(true, isSuperAdmin || hasManage)
+        : rw(false, false);
+    } else if (key === 'auth') {
+      caps[key] = deploymentRole === 'log_server' && isSuperAdmin ? rw(true, true) : rw(false, false);
+    } else {
+      caps[key] = rw(true, true);
+    }
+  }
+
+  return caps;
+}
+
+export function attachAccessMeta(req, _res, next) {
+  const ip = getClientIp(req);
+  req.clientIp = ip;
+  req.channel = resolveChannel(ip);
+  req.deploymentRole = DEPLOYMENT_ROLE;
+  next();
+}
+
+export { LOCAL_MODULES, PUBLIC_ALWAYS, PUBLIC_NEVER };

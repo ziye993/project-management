@@ -3,22 +3,17 @@ import { CopyOutlined } from '@ant-design/icons';
 import Modal from '../../../UiComponents/Modal';
 import message from '../../../UiComponents/Modal/message';
 import {
-  listOrgs,
-  getOrgDetail,
-  listProjects,
-  createProject,
-  toggleProjectStatus,
-  listKeys,
-  createKey,
-  toggleKeyStatus,
-  deleteKey,
   type OrgItem,
   type ProjectItem,
   type ApiKeyItem,
 } from '../../../server/log';
+import { useLogApi } from '../../../hooks/useLogApi';
+import { useAuth } from '../../../hooks/useAuth';
 import shared from '../shared.module.less';
 
 export default function LogWorkspace() {
+  const logApi = useLogApi();
+  const { canManageLog } = useAuth();
   const [orgs, setOrgs] = useState<OrgItem[]>([]);
   const [orgId, setOrgId] = useState<number | ''>('');
   const [orgDetail, setOrgDetail] = useState<any>(null);
@@ -36,18 +31,18 @@ export default function LogWorkspace() {
   const [plainKey, setPlainKey] = useState('');
 
   useEffect(() => {
-    listOrgs({ page: 1, pageSize: 500 }).then(res => {
+    logApi.listOrgs({ page: 1, pageSize: 500 }).then(res => {
       const items = res.data?.list || [];
       setOrgs(items);
       if (items.length && !orgId) setOrgId(items[0].id);
     }).catch(() => {});
-  }, []);
+  }, [logApi]);
 
   const loadProjects = useCallback(async () => {
     if (!orgId) return;
     const [detailRes, projRes] = await Promise.all([
-      getOrgDetail(orgId),
-      listProjects(orgId),
+      logApi.getOrgDetail(orgId),
+      logApi.listProjects(orgId),
     ]);
     setOrgDetail(detailRes.data);
     const projs: ProjectItem[] = projRes.data || [];
@@ -55,12 +50,12 @@ export default function LogWorkspace() {
 
     const keyEntries = await Promise.all(
       projs.map(async p => {
-        const res = await listKeys(p.id);
+        const res = await logApi.listKeys(p.id);
         return [p.id, res.data || []] as const;
       }),
     );
     setKeysMap(Object.fromEntries(keyEntries));
-  }, [orgId]);
+  }, [orgId, logApi]);
 
   useEffect(() => {
     loadProjects();
@@ -72,7 +67,7 @@ export default function LogWorkspace() {
       message.error('请填写项目名称和编码');
       return;
     }
-    await createProject({
+    await logApi.createProject({
       orgId,
       project_name: projectForm.project_name,
       project_code: projectForm.project_code,
@@ -92,7 +87,7 @@ export default function LogWorkspace() {
 
   const saveKey = async () => {
     if (!keyProjectId) return;
-    const res = await createKey({
+    const res = await logApi.createKey({
       projectId: keyProjectId,
       key_name: keyForm.key_name || undefined,
       expire_time: keyForm.expire_time || undefined,
@@ -114,19 +109,19 @@ export default function LogWorkspace() {
   };
 
   const toggleProject = async (id: number) => {
-    await toggleProjectStatus(id);
+    await logApi.toggleProjectStatus(id);
     message.success('项目状态已切换');
     loadProjects();
   };
 
   const toggleKey = async (id: number) => {
-    await toggleKeyStatus(id);
+    await logApi.toggleKeyStatus(id);
     message.success('Key 状态已切换');
     loadProjects();
   };
 
   const removeKey = async (id: number) => {
-    await deleteKey(id);
+    await logApi.deleteKey(id);
     message.success('Key 已删除');
     loadProjects();
   };
@@ -142,7 +137,7 @@ export default function LogWorkspace() {
             ))}
           </select>
         </div>
-        <button type="button" className={shared.btn} onClick={() => { setProjectForm({ project_name: '', project_code: '', description: '' }); setProjectModalOpen(true); }}>
+        <button type="button" className={shared.btn} disabled={!canManageLog} onClick={() => { setProjectForm({ project_name: '', project_code: '', description: '' }); setProjectModalOpen(true); }}>
           新建项目
         </button>
       </div>
@@ -173,8 +168,8 @@ export default function LogWorkspace() {
               </span>
             </div>
             <div className={shared.actions}>
-              <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => openCreateKey(project.id)}>新建 Key</button>
-              <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => toggleProject(project.id)}>
+              <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} disabled={!canManageLog} onClick={() => openCreateKey(project.id)}>新建 Key</button>
+              <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} disabled={!canManageLog} onClick={() => toggleProject(project.id)}>
                 {project.status === 1 ? '禁用项目' : '启用项目'}
               </button>
             </div>
@@ -207,10 +202,10 @@ export default function LogWorkspace() {
                     <td>{key.create_time}</td>
                     <td>
                       <div className={shared.actions}>
-                        <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => toggleKey(key.id)}>
+                        <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} disabled={!canManageLog} onClick={() => toggleKey(key.id)}>
                           {key.status === 1 ? '禁用' : '启用'}
                         </button>
-                        <button type="button" className={`${shared.btn} ${shared.btnDanger} ${shared.btnSmall}`} onClick={() => removeKey(key.id)}>删除</button>
+                        <button type="button" className={`${shared.btn} ${shared.btnDanger} ${shared.btnSmall}`} disabled={!canManageLog} onClick={() => removeKey(key.id)}>删除</button>
                       </div>
                     </td>
                   </tr>

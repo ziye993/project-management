@@ -1,4 +1,5 @@
 import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import app from './app.js';
 import server from './serverHttp.js';
@@ -8,12 +9,6 @@ import { getHtmlDir } from './paths.js';
 import { initDataStorage } from './initDataStorage.js';
 import { startMetricsCollector } from './utils/systemMetrics.js';
 import { SERVER_PORT } from './const.js';
-import {fileURLToPath} from "url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const dotenv = (await import('dotenv')).default;
-dotenv.config({ path: path.join(__dirname, 'server', '.env') });
 
 initDataStorage();
 startMetricsCollector(5000);

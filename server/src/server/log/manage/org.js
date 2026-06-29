@@ -1,8 +1,10 @@
 import app from '../../../app.js';
 import pool from '../../../db/logDb.js';
 import { fail, ok } from '../utils/response.js';
+import { authenticateToken, requireOrgPermission, auditLog } from '../../../middleware/auth.js';
+import { assertOrgAccess, getAccessibleOrgIds } from '../utils/permissions.js';
 
-app.post('/api/log/manage/org/list', async (req, res) => {
+app.post('/api/log/manage/org/list', authenticateToken, async (req, res) => {
   try {
     const { orgName, status, page = 1, pageSize = 20 } = req.body || {};
     const p = Math.max(1, parseInt(page, 10) || 1);
@@ -19,6 +21,15 @@ app.post('/api/log/manage/org/list', async (req, res) => {
     if (status !== undefined && status !== null && status !== '') {
       conditions.push('o.status = ?');
       params.push(parseInt(status, 10));
+    }
+
+    const accessible = getAccessibleOrgIds(req);
+    if (accessible !== null) {
+      if (!accessible.length) {
+        return ok(res, { list: [], total: 0, page: p, pageSize: ps });
+      }
+      conditions.push(`o.id IN (${accessible.map(() => '?').join(',')})`);
+      params.push(...accessible);
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -46,10 +57,11 @@ app.post('/api/log/manage/org/list', async (req, res) => {
   }
 });
 
-app.post('/api/log/manage/org/detail', async (req, res) => {
+app.post('/api/log/manage/org/detail', authenticateToken, async (req, res) => {
   try {
     const { id } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
+    if (!assertOrgAccess(req, id, 'view')) return fail(res, 403, 2, '无权访问该组织');
 
     const [rows] = await pool.execute(
       `SELECT o.*,
@@ -66,8 +78,12 @@ app.post('/api/log/manage/org/detail', async (req, res) => {
   }
 });
 
-app.post('/api/log/manage/org/create', async (req, res) => {
+app.post('/api/log/manage/org/create', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
   try {
+    if (!req.user?.is_super_admin) {
+      return fail(res, 403, 2, '仅超级管理员可创建组织');
+    }
+
     const { org_name, contact_name, contact_phone, remark } = req.body || {};
     if (!org_name || !String(org_name).trim()) {
       return fail(res, 400, 1, 'org_name 必填');
@@ -79,6 +95,7 @@ app.post('/api/log/manage/org/create', async (req, res) => {
       [org_name.trim(), contact_name || null, contact_phone || null, remark || null],
     );
 
+    await auditLog(req, 'org.create', 'org', result.insertId, { org_name });
     ok(res, { id: result.insertId });
   } catch (err) {
     console.error('[org/create]', err);
@@ -86,10 +103,11 @@ app.post('/api/log/manage/org/create', async (req, res) => {
   }
 });
 
-app.post('/api/log/manage/org/update', async (req, res) => {
+app.post('/api/log/manage/org/update', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
   try {
     const { id, org_name, contact_name, contact_phone, remark, status } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
+    if (!assertOrgAccess(req, id, 'manage')) return fail(res, 403, 2, '无权修改该组织');
     if (!org_name || !String(org_name).trim()) {
       return fail(res, 400, 1, 'org_name 必填');
     }
@@ -109,6 +127,7 @@ app.post('/api/log/manage/org/update', async (req, res) => {
     );
 
     if (result.affectedRows === 0) return fail(res, 400, 1, '组织不存在');
+    await auditLog(req, 'org.update', 'org', id, { org_name });
     ok(res, { id });
   } catch (err) {
     console.error('[org/update]', err);
@@ -116,10 +135,11 @@ app.post('/api/log/manage/org/update', async (req, res) => {
   }
 });
 
-app.post('/api/log/manage/org/toggleStatus', async (req, res) => {
+app.post('/api/log/manage/org/toggleStatus', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
   try {
     const { id } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
+    if (!assertOrgAccess(req, id, 'manage')) return fail(res, 403, 2, '无权修改该组织');
 
     const [result] = await pool.execute(
       'UPDATE sys_org SET status = IF(status = 1, 0, 1) WHERE id = ?',
@@ -128,6 +148,7 @@ app.post('/api/log/manage/org/toggleStatus', async (req, res) => {
     if (result.affectedRows === 0) return fail(res, 400, 1, '组织不存在');
 
     const [rows] = await pool.execute('SELECT status FROM sys_org WHERE id = ?', [id]);
+    await auditLog(req, 'org.toggleStatus', 'org', id, { status: rows[0].status });
     ok(res, { id, status: rows[0].status });
   } catch (err) {
     console.error('[org/toggleStatus]', err);

@@ -1,6 +1,6 @@
 import styles from './index.module.less';
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Form, message } from 'antd';
+import message from '../../UiComponents/Modal/message';
 import CanvasConfig from './CanvasConfig';
 import ComponentsList from './ComponentsList';
 import DevSetting, { type ElementConfig } from './DevSetting';
@@ -22,7 +22,6 @@ export default function PlaneEditor() {
   const [resize, setResize] = useState(0);
   const [currentConfig, setCurrentConfig] = useState<TConfigSelf | null>(null);
   const [availableDevices, setAvailableDevices] = useState(mockDevices);
-  const [form] = Form.useForm<Partial<PlanePageConfig>>();
   const [viewSeedId, setViewSeedId] = useState(1);
   const [pageConfig, setPageConfig] = useState<PlanePageConfig>({
     theme: 'rect',
@@ -75,7 +74,6 @@ export default function PlaneEditor() {
     };
     setPageConfig(cfg);
     setCurrentTheme(theme);
-    form.setFieldsValue(cfg);
     setTimeout(() => {
       viewRef.current?.initRender?.(data || []);
       if (width > 0 && height > 0) {
@@ -83,7 +81,7 @@ export default function PlaneEditor() {
       }
       refreshDeviceList();
     }, 0);
-  }, [form, refreshDeviceList]);
+  }, [refreshDeviceList]);
 
   useEffect(() => {
     loadPlaneConfig().then(saved => {
@@ -206,11 +204,10 @@ export default function PlaneEditor() {
     <div className={styles.box}>
       <div className={styles.config}>
         <CanvasConfig
-          form={form}
+          pageConfig={pageConfig}
           onChange={handlePageConfigChange}
           getConfig={getConfig}
           saveData={handleSave}
-          pageConfig={{ ...pageConfig, seedId: viewRef.current?.getSeedId?.() }}
         />
       </div>
       <div className={styles.view}>

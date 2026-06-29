@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import Modal from '../../../UiComponents/Modal';
 import message from '../../../UiComponents/Modal/message';
-import {
-  listOrgs,
-  createOrg,
-  updateOrg,
-  toggleOrgStatus,
-  type OrgItem,
-} from '../../../server/log';
+import { type OrgItem } from '../../../server/log';
+import { useLogApi } from '../../../hooks/useLogApi';
+import { useAuth } from '../../../hooks/useAuth';
 import shared from '../shared.module.less';
 
 type FormState = {
@@ -28,6 +24,8 @@ const emptyForm = (): FormState => ({
 });
 
 export default function LogTenants() {
+  const logApi = useLogApi();
+  const { canManageLog } = useAuth();
   const [list, setList] = useState<OrgItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -38,7 +36,7 @@ export default function LogTenants() {
   const [form, setForm] = useState<FormState>(emptyForm());
 
   const load = useCallback(async (p = page) => {
-    const res = await listOrgs({
+    const res = await logApi.listOrgs({
       orgName: filterName || undefined,
       status: filterStatus === '' ? undefined : filterStatus,
       page: p,
@@ -47,7 +45,7 @@ export default function LogTenants() {
     setList(res.data?.list || []);
     setTotal(res.data?.total || 0);
     setPage(p);
-  }, [filterName, filterStatus, page, pageSize]);
+  }, [filterName, filterStatus, page, pageSize, logApi]);
 
   useEffect(() => {
     load(1);
@@ -76,7 +74,7 @@ export default function LogTenants() {
       return;
     }
     if (form.id) {
-      await updateOrg({
+      await logApi.updateOrg({
         id: form.id,
         org_name: form.org_name,
         contact_name: form.contact_name,
@@ -86,7 +84,7 @@ export default function LogTenants() {
       });
       message.success('已更新');
     } else {
-      await createOrg({
+      await logApi.createOrg({
         org_name: form.org_name,
         contact_name: form.contact_name,
         contact_phone: form.contact_phone,
@@ -99,7 +97,7 @@ export default function LogTenants() {
   };
 
   const toggle = async (id: number) => {
-    await toggleOrgStatus(id);
+    await logApi.toggleOrgStatus(id);
     message.success('状态已切换');
     load(page);
   };
@@ -122,7 +120,7 @@ export default function LogTenants() {
           </select>
         </div>
         <button type="button" className={shared.btn} onClick={() => load(1)}>查询</button>
-        <button type="button" className={`${shared.btn} ${shared.btnGhost}`} onClick={openCreate}>新建租户</button>
+        <button type="button" className={`${shared.btn} ${shared.btnGhost}`} onClick={openCreate} disabled={!canManageLog}>新建租户</button>
       </div>
 
       <div className={shared.panel}>
@@ -152,8 +150,8 @@ export default function LogTenants() {
                   <td>{row.create_time}</td>
                   <td>
                     <div className={shared.actions}>
-                      <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => openEdit(row)}>编辑</button>
-                      <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => toggle(row.id)}>
+                      <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => openEdit(row)} disabled={!canManageLog}>编辑</button>
+                      <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => toggle(row.id)} disabled={!canManageLog}>
                         {row.status === 1 ? '禁用' : '启用'}
                       </button>
                     </div>

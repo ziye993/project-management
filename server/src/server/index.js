@@ -1,3 +1,4 @@
+import { isLogServer } from '../config/deployment.js';
 import './openapiProxy/index.js';
 import './mock/index.js';
 import './porxyStatic/index.js';
@@ -10,4 +11,9 @@ import './upload/chunkUpload.js';
 import './config/index.js';
 import './system/index.js';
 import './share/index.js';
+import './user/index.js';
 import './log/index.js';
+
+if (isLogServer()) {
+  await import('./auth/index.js');
+}

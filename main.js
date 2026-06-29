@@ -5,6 +5,5 @@ import { setRootDir } from './server/src/paths.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 setRootDir(__dirname);
 
-
-
+await import('./server/src/loadEnv.js');
 await import('./server/src/bootstrap.js');

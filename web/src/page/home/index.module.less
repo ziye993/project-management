@@ -4,6 +4,26 @@
 @panel-bg: rgba(255, 255, 255, 0.82);
 @panel-border: rgba(148, 163, 184, 0.2);
 
+.authBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid @panel-border;
+  border-radius: 8px;
+  background: @panel-bg;
+  color: @text-muted;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.emptyHint {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: @text-soft;
+  padding: 48px 0;
+}
+
 .box {
   width: 100vw;
   min-height: 100vh;

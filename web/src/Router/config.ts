@@ -23,6 +23,8 @@ import LogQuery from "../page/Log/Query";
 import LogTenants from "../page/Log/Tenants";
 import LogWorkspace from "../page/Log/Workspace";
 import PlaneEditorHome from "../page/PlaneEditor/Home";
+import AuthHome from "../page/Auth/Home";
+import AuthUserDetail from "../page/Auth/UserDetail";
 
 const router: TRouter = [{
     path: '/',
@@ -108,6 +110,13 @@ const router: TRouter = [{
     redirect: 'home',
     children: [
         { path: '/home', components: PlaneEditorHome }
+    ]
+}, {
+    path: '/auth',
+    redirect: 'home',
+    children: [
+        { path: '/home', components: AuthHome },
+        { path: '/home/detail', components: AuthUserDetail },
     ]
 }, {
     path: '/404',

@@ -1,5 +1,8 @@
-import { HomeOutlined, FileTextOutlined } from '@ant-design/icons';
+import { useState } from 'react';
+import { HomeOutlined, FileTextOutlined, LoginOutlined } from '@ant-design/icons';
 import { useNavigate, useRouterIds } from '../../../Router';
+import LoginModal from '../../../compomeents/LoginModal';
+import { useAuth } from '../../../hooks/useAuth';
 import styles from './index.module.less';
 
 const NAV_ITEMS = [
@@ -13,6 +16,8 @@ export default function LogLayout(props: { children?: React.ReactNode }) {
   const { push } = useNavigate();
   const routerIds = useRouterIds();
   const current = routerIds[routerIds.length - 1] || 'home';
+  const { isAuthenticated, user, canManageLog } = useAuth();
+  const [loginOpen, setLoginOpen] = useState(false);
 
   return (
     <div className={styles.shell}>
@@ -26,19 +31,32 @@ export default function LogLayout(props: { children?: React.ReactNode }) {
           <FileTextOutlined /> 日志管理
         </div>
         <nav className={styles.nav}>
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.path}
-              type="button"
-              className={`${styles.navLink} ${current === item.match ? styles.navLinkActive : ''}`}
-              onClick={() => push(item.path)}
-            >
-              {item.label}
+          {NAV_ITEMS.map(item => {
+            const isManageNav = item.match === 'tenants' || item.match === 'workspace';
+            if (isManageNav && !canManageLog) return null;
+            return (
+              <button
+                key={item.path}
+                type="button"
+                className={`${styles.navLink} ${current === item.match ? styles.navLinkActive : ''}`}
+                onClick={() => push(item.path)}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+          {!isAuthenticated && (
+            <button type="button" className={styles.loginBtn} onClick={() => setLoginOpen(true)}>
+              <LoginOutlined /> 登录
             </button>
-          ))}
+          )}
+          {isAuthenticated && user && (
+            <span className={styles.userTag}>{user.username}</span>
+          )}
         </nav>
       </header>
       <main className={styles.main}>{props.children}</main>
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </div>
   );
 }

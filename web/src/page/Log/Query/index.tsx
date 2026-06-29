@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import Modal from '../../../UiComponents/Modal';
 import {
-  listLogs,
-  getLogDetail,
-  listOrgs,
-  listProjects,
   type LogItem,
   type OrgItem,
   type ProjectItem,
 } from '../../../server/log';
+import { useLogApi } from '../../../hooks/useLogApi';
 import shared from '../shared.module.less';
 
 const LEVELS = ['', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
@@ -22,6 +19,7 @@ const LEVEL_CLASS: Record<string, string> = {
 };
 
 export default function LogQuery() {
+  const logApi = useLogApi();
   const [orgs, setOrgs] = useState<OrgItem[]>([]);
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [list, setList] = useState<LogItem[]>([]);
@@ -45,10 +43,10 @@ export default function LogQuery() {
   const [detail, setDetail] = useState<any>(null);
 
   useEffect(() => {
-    listOrgs({ page: 1, pageSize: 500 }).then(res => {
+    logApi.listOrgs({ page: 1, pageSize: 500 }).then(res => {
       setOrgs(res.data?.list || []);
     }).catch(() => {});
-  }, []);
+  }, [logApi]);
 
   useEffect(() => {
     if (!orgId) {
@@ -56,13 +54,13 @@ export default function LogQuery() {
       setProjectId('');
       return;
     }
-    listProjects(orgId).then(res => setProjects(res.data || [])).catch(() => {});
-  }, [orgId]);
+    logApi.listProjects(orgId).then(res => setProjects(res.data || [])).catch(() => {});
+  }, [orgId, logApi]);
 
   const load = useCallback(async (p = page) => {
     setLoading(true);
     try {
-      const res = await listLogs({
+      const res = await logApi.listLogs({
         orgId: orgId || undefined,
         projectId: projectId || undefined,
         level: level || undefined,
@@ -80,14 +78,14 @@ export default function LogQuery() {
     } finally {
       setLoading(false);
     }
-  }, [orgId, projectId, level, module, traceId, keyword, startTime, endTime, page, pageSize]);
+  }, [orgId, projectId, level, module, traceId, keyword, startTime, endTime, page, pageSize, logApi]);
 
   useEffect(() => {
     load(1);
   }, []);
 
   const openDetail = async (id: number) => {
-    const res = await getLogDetail(id);
+    const res = await logApi.getLogDetail(id);
     setDetail(res.data);
     setDetailOpen(true);
   };

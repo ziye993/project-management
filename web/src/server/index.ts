@@ -5,6 +5,8 @@ const origin = typeof window !== 'undefined' ? window.location.origin : 'http://
 export const baseUrl = `${origin}/api`;
 export const baseServerIp = origin;
 
+export { postRemote, postLogApi } from './remote';
+
 export const upload = async (url: string, formData: FormData) => {
   const res = await fetch(baseUrl + url, {
     method: 'POST',

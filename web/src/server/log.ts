@@ -1,4 +1,4 @@
-import { post } from '.';
+import { postLogApi } from './remote';
 
 const base = '/log/manage';
 
@@ -49,77 +49,86 @@ export interface LogItem {
   create_time: string;
 }
 
-export const listOrgs = (params: {
-  orgName?: string;
-  status?: number | '';
-  page?: number;
-  pageSize?: number;
-}) => post(`${base}/org/list`, params);
+function logPost(logApiBaseUrl: string, url: string, params: Record<string, unknown> = {}) {
+  return postLogApi(logApiBaseUrl, `${base}${url}`, params);
+}
 
-export const getOrgDetail = (id: number) => post(`${base}/org/detail`, { id });
+export const createLogApi = (logApiBaseUrl: string) => ({
+  listOrgs: (params: {
+    orgName?: string;
+    status?: number | '';
+    page?: number;
+    pageSize?: number;
+  }) => logPost(logApiBaseUrl, '/org/list', params),
 
-export const createOrg = (data: {
-  org_name: string;
-  contact_name?: string;
-  contact_phone?: string;
-  remark?: string;
-}) => post(`${base}/org/create`, data);
+  getOrgDetail: (id: number) => logPost(logApiBaseUrl, '/org/detail', { id }),
 
-export const updateOrg = (data: {
-  id: number;
-  org_name: string;
-  contact_name?: string;
-  contact_phone?: string;
-  remark?: string;
-  status?: number;
-}) => post(`${base}/org/update`, data);
+  createOrg: (data: {
+    org_name: string;
+    contact_name?: string;
+    contact_phone?: string;
+    remark?: string;
+  }) => logPost(logApiBaseUrl, '/org/create', data),
 
-export const toggleOrgStatus = (id: number) => post(`${base}/org/toggleStatus`, { id });
+  updateOrg: (data: {
+    id: number;
+    org_name: string;
+    contact_name?: string;
+    contact_phone?: string;
+    remark?: string;
+    status?: number;
+  }) => logPost(logApiBaseUrl, '/org/update', data),
 
-export const listProjects = (orgId: number) => post(`${base}/project/list`, { orgId });
+  toggleOrgStatus: (id: number) => logPost(logApiBaseUrl, '/org/toggleStatus', { id }),
 
-export const createProject = (data: {
-  orgId: number;
-  project_name: string;
-  project_code: string;
-  description?: string;
-}) => post(`${base}/project/create`, data);
+  listProjects: (orgId: number) => logPost(logApiBaseUrl, '/project/list', { orgId }),
 
-export const updateProject = (data: {
-  id: number;
-  project_name: string;
-  description?: string;
-  status?: number;
-}) => post(`${base}/project/update`, data);
+  createProject: (data: {
+    orgId: number;
+    project_name: string;
+    project_code: string;
+    description?: string;
+  }) => logPost(logApiBaseUrl, '/project/create', data),
 
-export const toggleProjectStatus = (id: number) => post(`${base}/project/toggleStatus`, { id });
+  updateProject: (data: {
+    id: number;
+    project_name: string;
+    description?: string;
+    status?: number;
+  }) => logPost(logApiBaseUrl, '/project/update', data),
 
-export const listKeys = (projectId: number) => post(`${base}/key/list`, { projectId });
+  toggleProjectStatus: (id: number) => logPost(logApiBaseUrl, '/project/toggleStatus', { id }),
 
-export const createKey = (data: {
-  projectId: number;
-  key_name?: string;
-  expire_time?: string;
-  remark?: string;
-}) => post(`${base}/key/create`, data);
+  listKeys: (projectId: number) => logPost(logApiBaseUrl, '/key/list', { projectId }),
 
-export const toggleKeyStatus = (id: number) => post(`${base}/key/toggleStatus`, { id });
+  createKey: (data: {
+    projectId: number;
+    key_name?: string;
+    expire_time?: string;
+    remark?: string;
+  }) => logPost(logApiBaseUrl, '/key/create', data),
 
-export const deleteKey = (id: number) => post(`${base}/key/delete`, { id });
+  toggleKeyStatus: (id: number) => logPost(logApiBaseUrl, '/key/toggleStatus', { id }),
 
-export const listLogs = (params: {
-  orgId?: number;
-  projectId?: number;
-  level?: string;
-  module?: string;
-  traceId?: string;
-  keyword?: string;
-  startTime?: string;
-  endTime?: string;
-  page?: number;
-  pageSize?: number;
-}) => post(`${base}/log/list`, params);
+  deleteKey: (id: number) => logPost(logApiBaseUrl, '/key/delete', { id }),
 
-export const getLogDetail = (id: number) => post(`${base}/log/detail`, { id });
+  listLogs: (params: {
+    orgId?: number;
+    projectId?: number;
+    level?: string;
+    module?: string;
+    traceId?: string;
+    keyword?: string;
+    startTime?: string;
+    endTime?: string;
+    page?: number;
+    pageSize?: number;
+  }) => logPost(logApiBaseUrl, '/log/list', params),
 
-export const runRetention = () => post(`${base}/retention/run`, {});
+  getLogDetail: (id: number) => logPost(logApiBaseUrl, '/log/detail', { id }),
+
+  runRetention: () => logPost(logApiBaseUrl, '/retention/run', {}),
+});
+
+// backward-compatible helpers (require logApiBaseUrl from useAuth)
+export { createLogApi as default };

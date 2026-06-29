@@ -2,11 +2,22 @@ import app from '../../../app.js';
 import pool from '../../../db/logDb.js';
 import { generateApiKey, hashApiKey } from '../utils/keyHash.js';
 import { fail, ok } from '../utils/response.js';
+import { authenticateToken, requireOrgPermission, auditLog } from '../../../middleware/auth.js';
+import { assertOrgAccess } from '../utils/permissions.js';
 
-app.post('/api/log/manage/key/list', async (req, res) => {
+async function getProjectOrgId(projectId) {
+  const [rows] = await pool.execute('SELECT org_id FROM sys_project WHERE id = ?', [projectId]);
+  return rows[0]?.org_id;
+}
+
+app.post('/api/log/manage/key/list', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.body || {};
     if (!projectId) return fail(res, 400, 1, '缺少 projectId 参数');
+
+    const orgId = await getProjectOrgId(projectId);
+    if (!orgId) return fail(res, 400, 1, '项目不存在');
+    if (!assertOrgAccess(req, orgId, 'view')) return fail(res, 403, 2, '无权访问');
 
     const [rows] = await pool.execute(
       `SELECT id, key_name, status, expire_time, last_used_time, last_ip, create_time, remark
@@ -21,13 +32,14 @@ app.post('/api/log/manage/key/list', async (req, res) => {
   }
 });
 
-app.post('/api/log/manage/key/create', async (req, res) => {
+app.post('/api/log/manage/key/create', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
   try {
     const { projectId, key_name, expire_time, remark } = req.body || {};
     if (!projectId) return fail(res, 400, 1, '缺少 projectId 参数');
 
-    const [projRows] = await pool.execute('SELECT id FROM sys_project WHERE id = ?', [projectId]);
-    if (!projRows.length) return fail(res, 400, 1, '项目不存在');
+    const orgId = await getProjectOrgId(projectId);
+    if (!orgId) return fail(res, 400, 1, '项目不存在');
+    if (!assertOrgAccess(req, orgId, 'manage')) return fail(res, 403, 2, '无权操作');
 
     const plainKey = generateApiKey();
     const apiKeyHash = hashApiKey(plainKey);
@@ -38,6 +50,7 @@ app.post('/api/log/manage/key/create', async (req, res) => {
       [projectId, apiKeyHash, key_name || null, expire_time || null, remark || null],
     );
 
+    await auditLog(req, 'key.create', 'key', result.insertId, { projectId });
     ok(res, { id: result.insertId, key: plainKey });
   } catch (err) {
     console.error('[key/create]', err);
@@ -45,10 +58,17 @@ app.post('/api/log/manage/key/create', async (req, res) => {
   }
 });
 
-app.post('/api/log/manage/key/toggleStatus', async (req, res) => {
+app.post('/api/log/manage/key/toggleStatus', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
   try {
     const { id } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
+
+    const [keyRows] = await pool.execute(
+      'SELECT k.project_id, p.org_id FROM sys_api_key k JOIN sys_project p ON p.id = k.project_id WHERE k.id = ?',
+      [id],
+    );
+    if (!keyRows.length) return fail(res, 400, 1, 'Key 不存在');
+    if (!assertOrgAccess(req, keyRows[0].org_id, 'manage')) return fail(res, 403, 2, '无权操作');
 
     const [result] = await pool.execute(
       'UPDATE sys_api_key SET status = IF(status = 1, 0, 1) WHERE id = ?',
@@ -57,6 +77,7 @@ app.post('/api/log/manage/key/toggleStatus', async (req, res) => {
     if (result.affectedRows === 0) return fail(res, 400, 1, 'Key 不存在');
 
     const [rows] = await pool.execute('SELECT status FROM sys_api_key WHERE id = ?', [id]);
+    await auditLog(req, 'key.toggleStatus', 'key', id, { status: rows[0].status });
     ok(res, { id, status: rows[0].status });
   } catch (err) {
     console.error('[key/toggleStatus]', err);
@@ -64,14 +85,22 @@ app.post('/api/log/manage/key/toggleStatus', async (req, res) => {
   }
 });
 
-app.post('/api/log/manage/key/delete', async (req, res) => {
+app.post('/api/log/manage/key/delete', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
   try {
     const { id } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
 
+    const [keyRows] = await pool.execute(
+      'SELECT k.project_id, p.org_id FROM sys_api_key k JOIN sys_project p ON p.id = k.project_id WHERE k.id = ?',
+      [id],
+    );
+    if (!keyRows.length) return fail(res, 400, 1, 'Key 不存在');
+    if (!assertOrgAccess(req, keyRows[0].org_id, 'manage')) return fail(res, 403, 2, '无权操作');
+
     const [result] = await pool.execute('DELETE FROM sys_api_key WHERE id = ?', [id]);
     if (result.affectedRows === 0) return fail(res, 400, 1, 'Key 不存在');
 
+    await auditLog(req, 'key.delete', 'key', id);
     ok(res, { id });
   } catch (err) {
     console.error('[key/delete]', err);

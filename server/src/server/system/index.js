@@ -3,9 +3,70 @@ import app from '../../app.js';
 import server from '../../serverHttp.js';
 import { io } from '../socketIo.js';
 import { cleanupProjectProcesses } from '../pm/index.js';
-import { getLanAddresses, buildAccessLinks } from '../../utils/accessLinks.js';
+import { getLanAddresses } from '../../utils/accessLinks.js';
 import { getServerStatus, getDiskStats } from '../../utils/systemMetrics.js';
 import { getConfig } from '../../utils/jsonFile.js';
+import {
+  computeVisibleModules,
+  computeModuleCapabilities,
+} from '../../middleware/access.js';
+import { optionalAuthenticate } from '../../middleware/auth.js';
+import {
+  DEPLOYMENT_ROLE,
+  resolvePublicBaseUrl,
+  resolveLogApiBaseUrl,
+} from '../../config/deployment.js';
+
+app.post('/api/system/accessContext', optionalAuthenticate, (req, res) => {
+  const isAuthenticated = !!req.user;
+  const isSuperAdmin = !!req.user?.is_super_admin;
+  const orgPermissions = req.orgPermissions || [];
+  const channel = req.channel;
+
+  const visibleModules = computeVisibleModules({
+    channel,
+    deploymentRole: DEPLOYMENT_ROLE,
+    isAuthenticated,
+    isSuperAdmin,
+    orgPermissions,
+  });
+
+  const moduleCapabilities = computeModuleCapabilities({
+    channel,
+    deploymentRole: DEPLOYMENT_ROLE,
+    isAuthenticated,
+    isSuperAdmin,
+    orgPermissions,
+    visibleModules,
+  });
+
+  const publicBaseUrl = resolvePublicBaseUrl(req);
+  const logApiBaseUrl = resolveLogApiBaseUrl(req);
+
+  res.json({
+    success: true,
+    code: 0,
+    msg: '',
+    data: {
+      channel,
+      deploymentRole: DEPLOYMENT_ROLE,
+      publicBaseUrl,
+      logApiBaseUrl,
+      user: isAuthenticated ? {
+        id: req.user.id,
+        username: req.user.username,
+        email: req.user.email,
+        is_super_admin: isSuperAdmin,
+      } : null,
+      isSuperAdmin,
+      orgPermissions,
+      projectPermissions: req.projectPermissions || [],
+      visibleModules,
+      moduleCapabilities,
+      isAuthenticated,
+    },
+  });
+});
 
 app.post('/api/system/getLanAddresses', (req, res) => {
   res.json({ success: true, code: 0, data: getLanAddresses(), msg: '' });
