@@ -6,3 +6,4 @@ data/
 nohup.out
 server/.env
 .env
+doc

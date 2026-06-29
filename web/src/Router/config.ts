@@ -22,6 +22,7 @@ import LogHome from "../page/Log/Home";
 import LogQuery from "../page/Log/Query";
 import LogTenants from "../page/Log/Tenants";
 import LogWorkspace from "../page/Log/Workspace";
+import PlaneEditorHome from "../page/PlaneEditor/Home";
 
 const router: TRouter = [{
     path: '/',
@@ -101,6 +102,12 @@ const router: TRouter = [{
         { path: '/query', components: LogQuery },
         { path: '/tenants', components: LogTenants },
         { path: '/workspace', components: LogWorkspace },
+    ]
+}, {
+    path: '/planeEditor',
+    redirect: 'home',
+    children: [
+        { path: '/home', components: PlaneEditorHome }
     ]
 }, {
     path: '/404',

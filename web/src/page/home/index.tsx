@@ -14,6 +14,7 @@ import {
   RightOutlined,
   ApiOutlined,
   FileTextOutlined,
+  BuildOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '../../Router';
 
@@ -114,6 +115,14 @@ const entries: EntryItem[] = [
     icon: <FileTextOutlined />,
     path: '/log',
     accent: 'slate',
+  },
+  {
+    id: 12,
+    name: '平面布局编辑器',
+    desc: '设备相对位置平面拖拽编辑，支持多主题',
+    icon: <BuildOutlined />,
+    path: '/planeEditor',
+    accent: 'indigo',
   },
 ];
 
