@@ -10,6 +10,9 @@ import type {
 
 const HTTP_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'] as const
 
+export const API_DOC_GROUPS = ['应用', '平台'] as const
+export type ApiDocGroup = (typeof API_DOC_GROUPS)[number]
+
 export function buildApiDocsUrl(baseUrl: string, group = '应用'): string {
   const normalized = baseUrl.replace(/\/+$/, '')
   return `${normalized}/v3/api-docs/${encodeURIComponent(group)}`

@@ -5,7 +5,6 @@ import {
   fetchOpenAPISpec,
   getResponseJsonSchema,
   parseApiDocsUrl,
-  parseOpenAPISpec,
   resolveSchema,
 } from '../../utils/openapi'
 import type { OpenAPISpec, ParsedEndpoint } from '../../type/openapi'
@@ -17,10 +16,8 @@ import {
 } from '../../utils/mockRules'
 import {
   addSwaggerHistory,
-  loadSwaggerHistory,
   loadSwaggerSession,
   saveSwaggerSession,
-  type SwaggerHistoryEntry,
 } from '../../utils/swaggerStorage'
 import {
   endpointRouteKey,
@@ -63,8 +60,6 @@ function DataMock() {
   const [phase, setPhase] = useState<PagePhase>(() =>
     (initialSession?.tabs.length ?? 0) > 0 ? 'pick' : 'load',
   )
-  const [formExpanded, setFormExpanded] = useState(() => (initialSession?.tabs.length ?? 0) === 0)
-  const [history, setHistory] = useState<SwaggerHistoryEntry[]>(() => loadSwaggerHistory())
   const [fetchLoading, setFetchLoading] = useState(false)
   const [mockLoading, setMockLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -137,7 +132,6 @@ function DataMock() {
   const activateTab = (tab: DocTab) => {
     setActiveTabId(tab.id)
     setPhase('pick')
-    setFormExpanded(false)
     setSelected(null)
     setFieldRules({})
     setArrayLengths({})
@@ -154,7 +148,7 @@ function DataMock() {
     activateTab(tab)
 
     if (meta) {
-      setHistory(addSwaggerHistory(data, url, meta.baseUrl, meta.group))
+      addSwaggerHistory(data, url, meta.baseUrl, meta.group)
     }
   }
 
@@ -184,29 +178,6 @@ function DataMock() {
     }
   }
 
-  const handlePaste = (json: string) => {
-    setFetchLoading(true)
-    setError(null)
-
-    try {
-      const data = parseOpenAPISpec(json)
-      addTab(data, '本地粘贴的 JSON')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '解析失败')
-    } finally {
-      setFetchLoading(false)
-    }
-  }
-
-  const handleHistorySelect = (entry: SwaggerHistoryEntry) => {
-    const cached = tabs.find((t) => t.sourceUrl === entry.sourceUrl)
-    if (cached) {
-      useCachedTab(cached)
-      return
-    }
-    void handleFetch(entry.baseUrl, entry.group)
-  }
-
   const handleTabSelect = (id: string) => {
     const tab = tabs.find((t) => t.id === id)
     if (tab) useCachedTab(tab)
@@ -224,7 +195,6 @@ function DataMock() {
           setPhase('pick')
         } else {
           setPhase('load')
-          setFormExpanded(true)
         }
         setSelected(null)
         setFieldRules({})
@@ -232,7 +202,6 @@ function DataMock() {
       }
 
       if (next.length === 0) {
-        setFormExpanded(true)
         setPhase('load')
       }
 
@@ -316,25 +285,18 @@ function DataMock() {
     await refreshMockStatus()
   }
 
-  const showForm = tabs.length === 0 || formExpanded
   const noJsonSchema = selected && !responseSchema
 
   return (
     <ToolPageLayout
       actions={
         <SwaggerDocToolbar
-          showForm={showForm}
           tabs={tabs}
           activeTabId={activeTabId}
           fetchLoading={fetchLoading}
-          history={history}
           onFetch={handleFetch}
-          onPaste={handlePaste}
-          onHistorySelect={handleHistorySelect}
           onSelectTab={handleTabSelect}
           onCloseTab={handleCloseTab}
-          onAddTab={() => setFormExpanded(true)}
-          onToggleForm={() => setFormExpanded(!formExpanded)}
         />
       }
     >
@@ -349,7 +311,7 @@ function DataMock() {
         {phase === 'load' && !fetchLoading && !error && (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>🎭</div>
-            <p>输入服务地址后加载 OpenAPI，选择接口并配置 Mock 规则</p>
+            <p>点击右上角「加载文档」，加载 OpenAPI 后选择接口并配置 Mock 规则</p>
             <p className={styles.emptyHint}>
               与 Swagger 共用文档缓存；Mock 在 localhost 原端口监听，支持多接口并行
             </p>

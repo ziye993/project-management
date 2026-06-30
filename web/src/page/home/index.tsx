@@ -99,6 +99,7 @@ export default function ZiyeHome() {
                 data-accent={item.accent}
                 onClick={() => push(item.path)}
               >
+                <span className={styles.glassShine} aria-hidden />
                 <span className={styles.iconWrap}>{item.icon}</span>
                 <span className={styles.cardBody}>
                   <span className={styles.cardName}>{item.name}</span>

@@ -6,14 +6,11 @@ import {
   fetchOpenAPISpec,
   isFetchableSourceUrl,
   parseApiDocsUrl,
-  parseOpenAPISpec,
 } from '../../../utils/openapi'
 import {
   addSwaggerHistory,
-  loadSwaggerHistory,
   loadSwaggerSession,
   saveSwaggerSession,
-  type SwaggerHistoryEntry,
 } from '../../../utils/swaggerStorage'
 import { ApiDocViewer } from './ApiDocViewer'
 import { createDocTab, createTabLabel, type DocTab } from '../../../type/docTab.ts'
@@ -25,11 +22,9 @@ function Swagger() {
   const [initialSession] = useState(() => loadSwaggerSession())
   const [tabs, setTabs] = useState<DocTab[]>(initialSession?.tabs ?? [])
   const [activeTabId, setActiveTabId] = useState<string | null>(initialSession?.activeTabId ?? null)
-  const [formExpanded, setFormExpanded] = useState(() => (initialSession?.tabs.length ?? 0) === 0)
   const [fetchLoading, setFetchLoading] = useState(false)
   const [refreshingTabId, setRefreshingTabId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [history, setHistory] = useState<SwaggerHistoryEntry[]>(() => loadSwaggerHistory())
   const [fieldDefaults, setFieldDefaults] = useState<MockFieldDefaults | null>(null)
 
   useEffect(() => {
@@ -52,11 +47,10 @@ function Swagger() {
     const tab = createDocTab(spec, sourceUrl)
     setTabs((prev) => [...prev, tab])
     setActiveTabId(tab.id)
-    setFormExpanded(false)
     setError(null)
 
     if (meta) {
-      setHistory(addSwaggerHistory(spec, sourceUrl, meta.baseUrl, meta.group))
+      addSwaggerHistory(spec, sourceUrl, meta.baseUrl, meta.group)
     }
   }
 
@@ -75,31 +69,6 @@ function Swagger() {
     }
   }
 
-  const handlePaste = (json: string) => {
-    setFetchLoading(true)
-    setError(null)
-
-    try {
-      const data = parseOpenAPISpec(json)
-      addTab(data, '本地粘贴的 JSON')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '解析失败')
-    } finally {
-      setFetchLoading(false)
-    }
-  }
-
-  const handleHistorySelect = (entry: SwaggerHistoryEntry) => {
-    const cached = tabs.find((t) => t.sourceUrl === entry.sourceUrl)
-    if (cached) {
-      setActiveTabId(cached.id)
-      setFormExpanded(false)
-      setError(null)
-      return
-    }
-    void handleFetch(entry.baseUrl, entry.group)
-  }
-
   const handleRefreshTab = async (tabId: string) => {
     const tab = tabs.find((t) => t.id === tabId)
     if (!tab || !isFetchableSourceUrl(tab.sourceUrl)) return
@@ -116,7 +85,7 @@ function Swagger() {
 
       const parsed = parseApiDocsUrl(tab.sourceUrl)
       if (parsed) {
-        setHistory(addSwaggerHistory(data, tab.sourceUrl, parsed.baseUrl, parsed.group))
+        addSwaggerHistory(data, tab.sourceUrl, parsed.baseUrl, parsed.group)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '刷新失败')
@@ -139,33 +108,22 @@ function Swagger() {
         setActiveTabId(newActive?.id ?? null)
       }
 
-      if (next.length === 0) {
-        setFormExpanded(true)
-      }
-
       return next
     })
   }
 
   const showWelcome = tabs.length === 0 && !fetchLoading
-  const showForm = tabs.length === 0 || formExpanded
 
   return (
     <ToolPageLayout
       actions={
         <SwaggerDocToolbar
-          showForm={showForm}
           tabs={tabs}
           activeTabId={activeTabId}
           fetchLoading={fetchLoading}
-          history={history}
           onFetch={handleFetch}
-          onPaste={handlePaste}
-          onHistorySelect={handleHistorySelect}
           onSelectTab={setActiveTabId}
           onCloseTab={handleCloseTab}
-          onAddTab={() => setFormExpanded(true)}
-          onToggleForm={() => setFormExpanded(!formExpanded)}
         />
       }
     >
@@ -199,7 +157,7 @@ function Swagger() {
         {showWelcome && !error && (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>📄</div>
-            <p>输入服务地址后点击「加载文档」开始</p>
+            <p>点击右上角「加载文档」，输入服务地址后开始</p>
             <p className={styles.emptyHint}>
               将自动请求 <code>{'{baseUrl}/v3/api-docs/{分组}'}</code> 接口
             </p>
