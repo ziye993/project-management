@@ -16,12 +16,10 @@ import {
   type SwaggerHistoryEntry,
 } from '../../../utils/swaggerStorage'
 import { ApiDocViewer } from './ApiDocViewer'
-import { DocTabs } from './DocTabs'
-import { UrlForm } from './UrlForm'
 import { createDocTab, createTabLabel, type DocTab } from '../../../type/docTab.ts'
 import styles from './index.module.less'
-import UserHeader from '../../../compomeents/UserHeader/index.tsx'
-import PageHeader from '../../../compomeents/PageHeader/index.tsx'
+import ToolPageLayout from '../../../compomeents/ToolPageLayout'
+import SwaggerDocToolbar from '../../../compomeents/SwaggerDocToolbar'
 
 function Swagger() {
   const [initialSession] = useState(() => loadSwaggerSession())
@@ -153,41 +151,25 @@ function Swagger() {
   const showForm = tabs.length === 0 || formExpanded
 
   return (
-    <div className={styles.app}>
-      <UserHeader className={styles.userHeader}>
-        <PageHeader>
-          {showForm && (
-            <UrlForm
-              onFetch={handleFetch}
-              onPaste={handlePaste}
-              loading={fetchLoading}
-              compact={tabs.length > 0}
-              history={history}
-              onHistorySelect={handleHistorySelect}
-            />
-          )}
-          {tabs.length > 0 && (
-            <DocTabs
-              tabs={tabs}
-              activeTabId={activeTabId!}
-              onSelect={setActiveTabId}
-              onClose={handleCloseTab}
-              onAdd={() => setFormExpanded(true)}
-            />
-          )}
-
-          {tabs.length > 0 && (
-            <button
-              type="button"
-              className={styles.formToggleBtn}
-              onClick={() => setFormExpanded(!formExpanded)}
-            >
-              {showForm ? '收起' : '加载文档'}
-            </button>
-          )}
-        </PageHeader>
-      </UserHeader>
-
+    <ToolPageLayout
+      actions={
+        <SwaggerDocToolbar
+          showForm={showForm}
+          tabs={tabs}
+          activeTabId={activeTabId}
+          fetchLoading={fetchLoading}
+          history={history}
+          onFetch={handleFetch}
+          onPaste={handlePaste}
+          onHistorySelect={handleHistorySelect}
+          onSelectTab={setActiveTabId}
+          onCloseTab={handleCloseTab}
+          onAddTab={() => setFormExpanded(true)}
+          onToggleForm={() => setFormExpanded(!formExpanded)}
+        />
+      }
+    >
+      <div className={styles.pageBody}>
       {error && (
         <div className={styles.errorBanner} role="alert">
           <strong>加载失败：</strong>{error}
@@ -224,7 +206,8 @@ function Swagger() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </ToolPageLayout>
   )
 }
 

@@ -31,10 +31,8 @@ import {
 } from '../../utils/dataMockStorage'
 import { createDocTab, type DocTab } from '../../type/docTab'
 import { post } from '../../server'
-import { UrlForm } from '../swagger/home/UrlForm'
-import { DocTabs } from '../swagger/home/DocTabs'
-import UserHeader from '../../compomeents/UserHeader/index.tsx'
-import PageHeader from '../../compomeents/PageHeader/index.tsx'
+import ToolPageLayout from '../../compomeents/ToolPageLayout'
+import SwaggerDocToolbar from '../../compomeents/SwaggerDocToolbar'
 import { EndpointPicker } from './EndpointPicker'
 import { FieldRuleEditor } from './FieldRuleEditor'
 import { MockControlPanel, MockServicePanel, RunningMockList } from './MockControlPanel'
@@ -322,40 +320,25 @@ function DataMock() {
   const noJsonSchema = selected && !responseSchema
 
   return (
-    <div className={styles.app}>
-      <UserHeader className={styles.userHeader}>
-        <PageHeader>
-          {showForm && (
-            <UrlForm
-              onFetch={handleFetch}
-              onPaste={handlePaste}
-              loading={fetchLoading}
-              compact={tabs.length > 0}
-              history={history}
-              onHistorySelect={handleHistorySelect}
-            />
-          )}
-          {tabs.length > 0 && activeTabId && (
-            <DocTabs
-              tabs={tabs}
-              activeTabId={activeTabId}
-              onSelect={handleTabSelect}
-              onClose={handleCloseTab}
-              onAdd={() => setFormExpanded(true)}
-            />
-          )}
-          {tabs.length > 0 && (
-            <button
-              type="button"
-              className={styles.formToggleBtn}
-              onClick={() => setFormExpanded(!formExpanded)}
-            >
-              {showForm ? '收起' : '加载文档'}
-            </button>
-          )}
-        </PageHeader>
-      </UserHeader>
-
+    <ToolPageLayout
+      actions={
+        <SwaggerDocToolbar
+          showForm={showForm}
+          tabs={tabs}
+          activeTabId={activeTabId}
+          fetchLoading={fetchLoading}
+          history={history}
+          onFetch={handleFetch}
+          onPaste={handlePaste}
+          onHistorySelect={handleHistorySelect}
+          onSelectTab={handleTabSelect}
+          onCloseTab={handleCloseTab}
+          onAddTab={() => setFormExpanded(true)}
+          onToggleForm={() => setFormExpanded(!formExpanded)}
+        />
+      }
+    >
+      <div className={styles.pageBody}>
       {error && (
         <div className={styles.errorBanner} role="alert">
           <strong>错误：</strong>{error}
@@ -444,7 +427,8 @@ function DataMock() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </ToolPageLayout>
   )
 }
 

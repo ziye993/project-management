@@ -1,6 +1,5 @@
-import UserHeader from '../../../compomeents/UserHeader';
-import PageHeader from '../../../compomeents/PageHeader';
-import PageShell, { shellStyles } from '../../../compomeents/PageShell';
+import ToolPageLayout, { shellStyles } from '../../../compomeents/ToolPageLayout';
+import ChatFilesFilter from '../../../compomeents/ChatFilesFilter';
 import LinkCopyModal, { type LinkItem } from '../../../compomeents/LinkCopyModal';
 import Button from '../../../UiComponents/Button';
 import { FolderAddOutlined, UploadOutlined, DeleteOutlined, DownloadOutlined, LinkOutlined } from '@ant-design/icons';
@@ -69,18 +68,17 @@ export default function LANSharingHome() {
   const pathLabel = chatOnly ? '/chat（聊天文件）' : `/${currentPath}`;
 
   return (
-    <PageShell className={styles.box}>
-      <UserHeader className={shellStyles.userHeader}>
-        <PageHeader>
-          <label className={styles.filterToggle}>
-            <input type="checkbox" checked={chatOnly} onChange={e => setChatOnly(e.target.checked)} />
-            聊天文件
-          </label>
+    <ToolPageLayout
+      className={styles.box}
+      actions={
+        <>
+          <ChatFilesFilter checked={chatOnly} onChange={setChatOnly} />
           {!chatOnly && <Button onClick={goUp}>上级</Button>}
           {!chatOnly && <Button onClick={mkdir}><FolderAddOutlined /> 新建文件夹</Button>}
           {!chatOnly && <Button onClick={() => fileRef.current?.click()}><UploadOutlined /> 上传文件</Button>}
-        </PageHeader>
-      </UserHeader>
+        </>
+      }
+    >
       <div className={`${shellStyles.contentPanel} ${styles.main}`}>
         <p className={styles.path}>当前路径：{pathLabel}</p>
         <input ref={fileRef} type="file" multiple hidden onChange={e => upload(e.target.files)} />
@@ -103,6 +101,6 @@ export default function LANSharingHome() {
         </div>
       </div>
       <LinkCopyModal open={linkModal.open} links={linkModal.links} onClose={() => setLinkModal({ open: false, links: [] })} />
-    </PageShell>
+    </ToolPageLayout>
   );
 }

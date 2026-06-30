@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { HomeOutlined } from '@ant-design/icons';
 import { useNavigate } from '../../../Router';
+import ToolPageLayout from '../../../compomeents/ToolPageLayout';
 import message from '../../../UiComponents/Modal/message';
 import { useAuthApi } from '../../../hooks/useAuthApi';
 import { useLogApi } from '../../../hooks/useLogApi';
 import styles from '../Home/index.module.less';
 
 export default function AuthUserDetail() {
-  const { push, state } = useNavigate();
+  const { state } = useNavigate();
   const userId = Number(state?.userId || 0);
   const authApi = useAuthApi();
   const logApi = useLogApi();
@@ -77,18 +77,15 @@ export default function AuthUserDetail() {
   };
 
   if (!userId) {
-    return <div className={styles.page}><p>无效用户</p></div>;
+    return (
+      <ToolPageLayout homePath="/auth/home">
+        <p>无效用户</p>
+      </ToolPageLayout>
+    );
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <button type="button" className={styles.navBtn} onClick={() => push('/auth/home')}>
-          <HomeOutlined /> 返回用户列表
-        </button>
-        <h1>用户 #{userId} 授权管理</h1>
-      </header>
-
+    <ToolPageLayout homePath="/auth/home">
       <div className={styles.panel}>
         <div className={styles.section}>
           <h3>重置密码</h3>
@@ -148,6 +145,6 @@ export default function AuthUserDetail() {
           </ul>
         </div>
       </div>
-    </div>
+    </ToolPageLayout>
   );
 }

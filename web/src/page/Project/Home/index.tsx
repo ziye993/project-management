@@ -15,6 +15,7 @@ import Left from './left';
 import type { IProjectData as _IProjectData, IColorCache } from '../../../type';
 import Center from './center';
 import Right from './right';
+import PageShell, { shellStyles } from '../../../compomeents/PageShell';
 import UserHeader from '../../../compomeents/UserHeader';
 import Header from './header';
 import ColorLegend from './colorLegend';
@@ -248,10 +249,8 @@ export default function ProjectManage() {
     }
   }, [refCount])
 
-  return <div className={styles.box}>
-    <div className={styles.ambientBg} aria-hidden />
-    <div className={styles.pageInner}>
-      <UserHeader className={styles.userHeader}>
+  return <PageShell className={styles.box}>
+      <UserHeader className={shellStyles.userHeader}>
         <Header forceRefreshList={forceRefreshList} onColorRefresh={loadColorGroups} />
       </UserHeader>
       <div className={styles.contentBox}>
@@ -260,6 +259,5 @@ export default function ProjectManage() {
         <Right currentProject={currentProject} setCommandChecked={setCommandChecked} runCommand={runCommand} reconnectCommand={reconnectCommand} close={close} stop={stop} />
         <ColorLegend colorCache={colorCache} />
       </div>
-    </div>
-  </div>
+  </PageShell>
 }

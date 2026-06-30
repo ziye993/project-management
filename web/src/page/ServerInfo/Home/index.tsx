@@ -1,6 +1,4 @@
-import UserHeader from '../../../compomeents/UserHeader';
-import PageHeader from '../../../compomeents/PageHeader';
-import PageShell, { shellStyles } from '../../../compomeents/PageShell';
+import ToolPageLayout, { shellStyles } from '../../../compomeents/ToolPageLayout';
 import Button from '../../../UiComponents/Button';
 import { ReloadOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
@@ -30,19 +28,17 @@ export default function ServerInfoHome() {
 
   if (!data) {
     return (
-      <PageShell className={styles.box}>
+      <ToolPageLayout className={styles.box}>
         <p className={styles.loading}>加载中...</p>
-      </PageShell>
+      </ToolPageLayout>
     );
   }
 
   return (
-    <PageShell className={styles.box}>
-      <UserHeader className={shellStyles.userHeader}>
-        <PageHeader>
-          <Button onClick={load}><ReloadOutlined /> 刷新</Button>
-        </PageHeader>
-      </UserHeader>
+    <ToolPageLayout
+      className={styles.box}
+      actions={<Button onClick={load}><ReloadOutlined /> 刷新</Button>}
+    >
       <div className={styles.content}>
         <section className={`${shellStyles.panel} ${styles.card}`}>
           <h3>实时状态</h3>
@@ -71,6 +67,6 @@ export default function ServerInfoHome() {
           {!data.disks?.length && <p>暂无磁盘数据</p>}
         </section>
       </div>
-    </PageShell>
+    </ToolPageLayout>
   );
 }

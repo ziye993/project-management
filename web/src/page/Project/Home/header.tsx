@@ -1,11 +1,11 @@
 
-import { FolderAddOutlined, FolderOpenOutlined, HomeOutlined, SyncOutlined, BgColorsOutlined } from '@ant-design/icons'
+import { FolderAddOutlined, FolderOpenOutlined, SyncOutlined, BgColorsOutlined } from '@ant-design/icons'
 import styles from './index.module.less';
 import { importWorkspace, importProject, refreshColorCache } from '../../../server/project';
-import { useNavigate } from '../../../Router';
 import Button from '../../../UiComponents/Button';
 import message from '../../../UiComponents/Modal/message';
 import FileSelect, { type FileSelectResult } from '../../../compomeents/FileSelect';
+import PageHeader from '../../../compomeents/PageHeader';
 import { useRef, useState } from 'react';
 
 interface IProps {
@@ -16,7 +16,6 @@ interface IProps {
 type ImportMode = 'workspace' | 'project' | null;
 
 export default function Header(props: IProps) {
-  const { push } = useNavigate();
   const [selectOpen, setSelectOpen] = useState(false);
   const importMode = useRef<ImportMode>(null);
 
@@ -66,23 +65,22 @@ export default function Header(props: IProps) {
         onClose={() => setSelectOpen(false)}
         onOK={handleSelectOK}
       />
-      <div className={styles.HeaderBox}>
-        <Button onClick={() => { push('/') }}>
-          <HomeOutlined />
-        </Button>
-        <Button onClick={() => openImport('workspace')}>
-          <FolderAddOutlined /> 引入工作区
-        </Button>
-        <Button onClick={() => openImport('project')}>
-          <FolderOpenOutlined /> 引入项目
-        </Button>
-        <Button onClick={() => { props.forceRefreshList() }}>
-          <SyncOutlined /> 同步项目
-        </Button>
-        <Button onClick={handleRefreshColors}>
-          <BgColorsOutlined /> 刷新颜色缓存
-        </Button>
-      </div>
+      <PageHeader>
+        <div className={styles.HeaderBox}>
+          <Button onClick={() => openImport('workspace')}>
+            <FolderAddOutlined /> 引入工作区
+          </Button>
+          <Button onClick={() => openImport('project')}>
+            <FolderOpenOutlined /> 引入项目
+          </Button>
+          <Button onClick={() => { props.forceRefreshList() }}>
+            <SyncOutlined /> 同步项目
+          </Button>
+          <Button onClick={handleRefreshColors}>
+            <BgColorsOutlined /> 刷新颜色缓存
+          </Button>
+        </div>
+      </PageHeader>
     </>
   );
 }

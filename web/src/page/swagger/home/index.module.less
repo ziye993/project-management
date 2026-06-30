@@ -1,4 +1,4 @@
-.app {
+.pageBody {
   --bg: #f4f6f9;
   --surface: #ffffff;
   --border: #e2e8f0;
@@ -20,11 +20,14 @@
     box-sizing: border-box;
   }
 
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 20px 48px;
+  width: 100%;
   font-family: var(--font);
-  background: var(--bg);
   color: var(--text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -297,7 +300,7 @@
 .loadBtn {
   padding: 8px 24px;
   background: var(--primary);
-  color: white;
+  // color: white;
   border: none;
   border-radius: var(--radius);
   font-size: 0.9rem;

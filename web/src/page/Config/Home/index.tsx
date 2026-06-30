@@ -1,5 +1,4 @@
-import UserHeader from '../../../compomeents/UserHeader'
-import PageShell, { shellStyles } from '../../../compomeents/PageShell';
+import ToolPageLayout, { shellStyles } from '../../../compomeents/ToolPageLayout';
 import styles from './index.module.less'
 import FileSelect, { type FileSelectResult } from '../../../compomeents/FileSelect';
 import { useEffect, useRef, useState } from 'react';
@@ -13,7 +12,6 @@ import {
   setPicUploadPath,
   setPublicBaseUrl,
 } from '../../../server/setConfig';
-import PageHeader from "../../../compomeents/PageHeader";
 import {
   EMPTY_MOCK_FIELD_DEFAULTS,
   mockFieldDefaultsFromConfig,
@@ -68,11 +66,7 @@ export default function ConfigHome() {
   const displayPath = (p?: string) => p || '未设置';
 
   return (
-    <PageShell className={styles.box}>
-      <UserHeader className={shellStyles.userHeader}>
-        <PageHeader />
-      </UserHeader>
-
+    <ToolPageLayout className={styles.box}>
       <FileSelect
         open={selectFileOpen}
         mode="directory"
@@ -221,6 +215,6 @@ export default function ConfigHome() {
           </div>
         </div>
       </div>
-    </PageShell>
+    </ToolPageLayout>
   );
 }

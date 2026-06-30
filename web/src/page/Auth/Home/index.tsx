@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { HomeOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { useNavigate } from '../../../Router';
+import ToolPageLayout from '../../../compomeents/ToolPageLayout';
 import Modal from '../../../UiComponents/Modal';
 import message from '../../../UiComponents/Modal/message';
 import { useAuthApi } from '../../../hooks/useAuthApi';
@@ -55,54 +55,49 @@ export default function AuthHome() {
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <button type="button" className={styles.navBtn} onClick={() => push('/')}>
-          <HomeOutlined /> 首页
-        </button>
-        <h1><SafetyCertificateOutlined /> 权限管理</h1>
-      </header>
+    <ToolPageLayout>
+      <div className={styles.content}>
+        <div className={styles.toolbar}>
+          <input value={filterName} onChange={e => setFilterName(e.target.value)} placeholder="搜索用户名" />
+          <button type="button" onClick={() => load(1)}>查询</button>
+          <button type="button" onClick={() => setCreateOpen(true)}>新建用户</button>
+        </div>
 
-      <div className={styles.toolbar}>
-        <input value={filterName} onChange={e => setFilterName(e.target.value)} placeholder="搜索用户名" />
-        <button type="button" onClick={() => load(1)}>查询</button>
-        <button type="button" onClick={() => setCreateOpen(true)}>新建用户</button>
-      </div>
-
-      <div className={styles.panel}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>用户名</th>
-              <th>邮箱</th>
-              <th>状态</th>
-              <th>超管</th>
-              <th>创建时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map(row => (
-              <tr key={row.id}>
-                <td>{row.username}</td>
-                <td>{row.email || '-'}</td>
-                <td>{row.status === 1 ? '正常' : '禁用'}</td>
-                <td>{row.is_super_admin ? '是' : '否'}</td>
-                <td>{row.create_time}</td>
-                <td>
-                  <button type="button" onClick={() => push('/auth/detail', { userId: row.id })}>授权管理</button>
-                </td>
+        <div className={styles.panel}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>用户名</th>
+                <th>邮箱</th>
+                <th>状态</th>
+                <th>超管</th>
+                <th>创建时间</th>
+                <th>操作</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {!list.length && <p className={styles.empty}>暂无用户</p>}
-      </div>
+            </thead>
+            <tbody>
+              {list.map(row => (
+                <tr key={row.id}>
+                  <td>{row.username}</td>
+                  <td>{row.email || '-'}</td>
+                  <td>{row.status === 1 ? '正常' : '禁用'}</td>
+                  <td>{row.is_super_admin ? '是' : '否'}</td>
+                  <td>{row.create_time}</td>
+                  <td>
+                    <button type="button" onClick={() => push('/auth/detail', { userId: row.id })}>授权管理</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!list.length && <p className={styles.empty}>暂无用户</p>}
+        </div>
 
-      <div className={styles.pagination}>
-        <button type="button" disabled={page <= 1} onClick={() => load(page - 1)}>上一页</button>
-        <span>{page} / {totalPages}</span>
-        <button type="button" disabled={page >= totalPages} onClick={() => load(page + 1)}>下一页</button>
+        <div className={styles.pagination}>
+          <button type="button" disabled={page <= 1} onClick={() => load(page - 1)}>上一页</button>
+          <span>{page} / {totalPages}</span>
+          <button type="button" disabled={page >= totalPages} onClick={() => load(page + 1)}>下一页</button>
+        </div>
       </div>
 
       <Modal open={createOpen} title="新建用户" onClose={() => setCreateOpen(false)} onOK={createUser} width="420px">
@@ -112,6 +107,6 @@ export default function AuthHome() {
           <label>邮箱<input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></label>
         </div>
       </Modal>
-    </div>
+    </ToolPageLayout>
   );
 }

@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { HomeOutlined, FileTextOutlined, LoginOutlined } from '@ant-design/icons';
-import { useNavigate, useRouterIds } from '../../../Router';
+import { LoginOutlined } from '@ant-design/icons';
+import { useRouterIds } from '../../../Router';
 import LoginModal from '../../../compomeents/LoginModal';
+import ModuleNavLinks from '../../../compomeents/ModuleNavLinks';
+import ToolPageLayout from '../../../compomeents/ToolPageLayout';
 import { useAuth } from '../../../hooks/useAuth';
-import styles from './index.module.less';
+import navStyles from '../../../compomeents/ModuleNavLinks/index.module.less';
 
 const NAV_ITEMS = [
   { path: '/log/home', label: '模块首页', match: 'home' },
@@ -13,50 +15,36 @@ const NAV_ITEMS = [
 ];
 
 export default function LogLayout(props: { children?: React.ReactNode }) {
-  const { push } = useNavigate();
   const routerIds = useRouterIds();
-  const current = routerIds[routerIds.length - 1] || 'home';
+  const current = String(routerIds[routerIds.length - 1] || 'home');
   const { isAuthenticated, user, canManageLog } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
 
+  const navItems = NAV_ITEMS.map(item => ({
+    ...item,
+    hidden: (item.match === 'tenants' || item.match === 'workspace') && !canManageLog,
+  }));
+
+  const headerActions = (
+    <>
+      {!isAuthenticated && (
+        <button type="button" className={navStyles.loginBtn} onClick={() => setLoginOpen(true)}>
+          <LoginOutlined /> 登录
+        </button>
+      )}
+      {isAuthenticated && user && (
+        <span className={navStyles.userTag}>{user.username}</span>
+      )}
+    </>
+  );
+
   return (
-    <div className={styles.shell}>
-      <header className={styles.header}>
-        <div className={styles.left}>
-          <button type="button" className={styles.navBtn} onClick={() => push('/')}>
-            <HomeOutlined /> 首页
-          </button>
-        </div>
-        <div className={styles.title}>
-          <FileTextOutlined /> 日志管理
-        </div>
-        <nav className={styles.nav}>
-          {NAV_ITEMS.map(item => {
-            const isManageNav = item.match === 'tenants' || item.match === 'workspace';
-            if (isManageNav && !canManageLog) return null;
-            return (
-              <button
-                key={item.path}
-                type="button"
-                className={`${styles.navLink} ${current === item.match ? styles.navLinkActive : ''}`}
-                onClick={() => push(item.path)}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-          {!isAuthenticated && (
-            <button type="button" className={styles.loginBtn} onClick={() => setLoginOpen(true)}>
-              <LoginOutlined /> 登录
-            </button>
-          )}
-          {isAuthenticated && user && (
-            <span className={styles.userTag}>{user.username}</span>
-          )}
-        </nav>
-      </header>
-      <main className={styles.main}>{props.children}</main>
+    <ToolPageLayout
+      actions={<ModuleNavLinks items={navItems} current={current} />}
+      headerActions={headerActions}
+    >
+      {props.children}
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
-    </div>
+    </ToolPageLayout>
   );
 }

@@ -1,15 +1,13 @@
-import PageShell from '../../../compomeents/PageShell';
-import PageHeader from '../../../compomeents/PageHeader';
+import ToolPageLayout from '../../../compomeents/ToolPageLayout';
 import PlaneEditor from '../../../compomeents/PlaneEditor';
 import styles from './index.module.less';
 
 export default function PlaneEditorHome() {
   return (
-    <PageShell>
-      <PageHeader />
+    <ToolPageLayout>
       <div className={styles.editorWrap}>
         <PlaneEditor />
       </div>
-    </PageShell>
+    </ToolPageLayout>
   );
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import PageShell, { shellStyles } from '../../compomeents/PageShell';
 import UserHeader from '../../compomeents/UserHeader';
 import ShutdownButton from '../../compomeents/ShutdownButton';
 import LoginModal from '../../compomeents/LoginModal';
@@ -86,11 +87,9 @@ export default function ZiyeHome() {
   );
 
   return (
-    <div className={styles.box}>
-      <div className={styles.ambientBg} aria-hidden />
-      <div className={styles.pageInner}>
-        <UserHeader className={styles.userHeader} actions={headerActions} />
-        <main className={styles.main}>
+    <PageShell className={styles.box}>
+      <UserHeader className={shellStyles.userHeader} actions={headerActions} />
+      <main className={styles.main}>
           <section className={styles.grid}>
             {!loading && data.map(item => (
               <button
@@ -113,8 +112,7 @@ export default function ZiyeHome() {
             )}
           </section>
         </main>
-      </div>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
-    </div>
+    </PageShell>
   );
 }

@@ -1,0 +1,46 @@
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.navLink {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: #64748b;
+  transition: background 0.2s, color 0.2s;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #334155;
+  }
+}
+
+.navLinkActive {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.loginBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.08);
+  color: #4f46e5;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.userTag {
+  font-size: 13px;
+  color: #64748b;
+}
