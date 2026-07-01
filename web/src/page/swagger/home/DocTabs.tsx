@@ -1,5 +1,6 @@
 import { PlusOutlined } from '@ant-design/icons'
 import type { DocTab } from '../../../type/docTab'
+import { getDocBaseUrl } from '../../../type/docTab'
 import styles from './index.module.less'
 
 interface DocTabsProps {
@@ -27,7 +28,7 @@ export function DocTabs({ tabs, activeTabId, onSelect, onClose, onAdd }: DocTabs
                 type="button"
                 className={styles.docTabLabel}
                 onClick={() => onSelect(tab.id)}
-                title={tab.sourceUrl}
+                title={tab.remark?.trim() || getDocBaseUrl(tab.sourceUrl)}
               >
                 {tab.label}
               </button>

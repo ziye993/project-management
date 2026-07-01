@@ -406,24 +406,66 @@
 .apiInfo {
   border-bottom: 1px solid var(--border);
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  padding: 0;
+  padding: 10px 20px;
 }
 
-.apiInfoToggle {
+.apiInfoRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 10px 20px;
-  border: none;
-  background: transparent;
+  gap: 8px;
+  min-width: 0;
+}
+
+.apiInfoUrl {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remarkBtn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  font-size: 0.8rem;
   cursor: pointer;
-  text-align: left;
-  font-size: 0.9rem;
+  color: var(--text);
+  transition: background 0.15s;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.03);
+    background: var(--bg);
   }
+}
+
+.remarkModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.remarkModalLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.remarkModalInput {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+.remarkModalHint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .apiInfoSummary {

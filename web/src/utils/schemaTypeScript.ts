@@ -24,7 +24,71 @@ export function pathToInterfaceName(path: string, suffix: 'In' | 'Out'): string 
   return `I${parts.join('')}${suffix}`
 }
 
-function schemaToTsType(spec: OpenAPISpec, schema: SchemaObject, depth = 0): string {
+function formatInlineComment(description?: string): string {
+  const text = description?.trim().replace(/\s+/g, ' ')
+  if (!text) return ''
+  return ` // ${text}`
+}
+
+function isSimpleScalarType(spec: OpenAPISpec, schema: SchemaObject, depth: number): boolean {
+  if (depth > 12) return true
+
+  if (schema.$ref) return true
+
+  const resolved = resolveSchema(spec, schema)
+
+  if (resolved.enum?.length) return true
+
+  if (resolved.oneOf?.length || resolved.anyOf?.length || resolved.allOf?.length) return false
+
+  if (resolved.type === 'array') return false
+
+  if (resolved.properties) return false
+
+  if (resolved.additionalProperties && typeof resolved.additionalProperties === 'object') return false
+
+  return true
+}
+
+function formatObjectType(
+  spec: OpenAPISpec,
+  properties: Record<string, SchemaObject>,
+  required: string[],
+  depth: number,
+  indent: string,
+): string {
+  const requiredSet = new Set(required)
+  const entries = Object.entries(properties)
+
+  if (entries.length === 0) return 'Record<string, unknown>'
+
+  const innerIndent = `${indent}  `
+  const propLines = entries.map(([key, prop]) => {
+    const resolved = resolveSchema(spec, prop)
+    const optional = requiredSet.has(key) ? '' : '?'
+    const comment = formatInlineComment(resolved.description)
+    const typeStr = schemaToTsType(spec, prop, depth, innerIndent)
+    return `${innerIndent}${key}${optional}: ${typeStr};${comment}`
+  })
+
+  const canCompact =
+    entries.length === 1 &&
+    !entries.some(([_, prop]) => resolveSchema(spec, prop).description?.trim()) &&
+    isSimpleScalarType(spec, entries[0][1], depth)
+
+  if (canCompact) {
+    return `{ ${propLines[0].trim()} }`
+  }
+
+  return `{\n${propLines.join('\n')}\n${indent}}`
+}
+
+function schemaToTsType(
+  spec: OpenAPISpec,
+  schema: SchemaObject,
+  depth = 0,
+  indent = '',
+): string {
   if (depth > 12) return 'unknown'
 
   if (schema.$ref) {
@@ -40,19 +104,19 @@ function schemaToTsType(spec: OpenAPISpec, schema: SchemaObject, depth = 0): str
   }
 
   if (resolved.oneOf?.length) {
-    return resolved.oneOf.map((s) => schemaToTsType(spec, s, depth + 1)).join(' | ')
+    return resolved.oneOf.map((s) => schemaToTsType(spec, s, depth + 1, indent)).join(' | ')
   }
 
   if (resolved.anyOf?.length) {
-    return resolved.anyOf.map((s) => schemaToTsType(spec, s, depth + 1)).join(' | ')
+    return resolved.anyOf.map((s) => schemaToTsType(spec, s, depth + 1, indent)).join(' | ')
   }
 
   if (resolved.allOf?.length) {
-    return resolved.allOf.map((s) => schemaToTsType(spec, s, depth + 1)).join(' & ')
+    return resolved.allOf.map((s) => schemaToTsType(spec, s, depth + 1, indent)).join(' & ')
   }
 
   if (resolved.type === 'array' && resolved.items) {
-    return `${schemaToTsType(spec, resolved.items, depth + 1)}[]`
+    return `${schemaToTsType(spec, resolved.items, depth + 1, indent)}[]`
   }
 
   switch (resolved.type) {
@@ -66,29 +130,13 @@ function schemaToTsType(spec: OpenAPISpec, schema: SchemaObject, depth = 0): str
     case 'object':
     default:
       if (resolved.properties) {
-        return formatInlineObject(spec, resolved.properties, resolved.required ?? [], depth + 1)
+        return formatObjectType(spec, resolved.properties, resolved.required ?? [], depth + 1, indent)
       }
       if (resolved.additionalProperties && typeof resolved.additionalProperties === 'object') {
-        return `Record<string, ${schemaToTsType(spec, resolved.additionalProperties, depth + 1)}>`
+        return `Record<string, ${schemaToTsType(spec, resolved.additionalProperties, depth + 1, indent)}>`
       }
       return 'Record<string, unknown>'
   }
-}
-
-function formatInlineObject(
-  spec: OpenAPISpec,
-  properties: Record<string, SchemaObject>,
-  required: string[],
-  depth: number,
-): string {
-  const requiredSet = new Set(required)
-  const lines = Object.entries(properties).map(([key, prop]) => {
-    const optional = requiredSet.has(key) ? '' : '?'
-    return `${key}${optional}: ${schemaToTsType(spec, prop, depth)};`
-  })
-
-  if (lines.length === 0) return 'Record<string, unknown>'
-  return `{ ${lines.join(' ')} }`
 }
 
 function formatInterfaceLines(
@@ -98,8 +146,11 @@ function formatInterfaceLines(
 ): string[] {
   const requiredSet = new Set(required)
   return Object.entries(properties).map(([key, prop]) => {
+    const resolved = resolveSchema(spec, prop)
     const optional = requiredSet.has(key) ? '' : '?'
-    return `  ${key}${optional}: ${schemaToTsType(spec, prop, 0)};`
+    const comment = formatInlineComment(resolved.description)
+    const typeStr = schemaToTsType(spec, prop, 0, '  ')
+    return `  ${key}${optional}: ${typeStr};${comment}`
   })
 }
 
@@ -166,7 +217,10 @@ function collectInputProperties(
   const required: string[] = []
 
   for (const param of operation.parameters ?? []) {
-    properties[param.name] = param.schema ?? { type: 'string' }
+    const schema = param.schema ?? { type: 'string' }
+    properties[param.name] = param.description
+      ? { ...schema, description: schema.description ?? param.description }
+      : schema
     if (param.required) required.push(param.name)
   }
 

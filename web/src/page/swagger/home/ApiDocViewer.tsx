@@ -2,17 +2,21 @@ import { ReloadOutlined } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
 import type { MockFieldDefaults } from '../../../type/mockDefaults'
 import type { OpenAPISpec } from '../../../type/openapi'
+import { getDocBaseUrl } from '../../../type/docTab'
 import {
   countEndpoints,
   filterEndpoints,
   groupEndpointsByTag,
 } from '../../../utils/openapi'
+import { DocRemarkModal } from './DocRemarkModal'
 import { EndpointCard } from './EndpointCard'
 import styles from './index.module.less'
 
 interface ApiDocViewerProps {
   spec: OpenAPISpec
   sourceUrl: string
+  remark?: string
+  onRemarkChange?: (remark: string) => void
   cookie?: string
   onCookieChange?: (cookie: string) => void
   fieldDefaults?: MockFieldDefaults | null
@@ -24,6 +28,8 @@ interface ApiDocViewerProps {
 export function ApiDocViewer({
   spec,
   sourceUrl,
+  remark = '',
+  onRemarkChange,
   cookie = '',
   onCookieChange,
   fieldDefaults,
@@ -33,7 +39,9 @@ export function ApiDocViewer({
 }: ApiDocViewerProps) {
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState<string | null>(null)
-  const [infoExpanded, setInfoExpanded] = useState(false)
+  const [remarkModalOpen, setRemarkModalOpen] = useState(false)
+
+  const docBaseUrl = useMemo(() => getDocBaseUrl(sourceUrl), [sourceUrl])
 
   const allGroups = useMemo(() => groupEndpointsByTag(spec), [spec])
   const filteredGroups = useMemo(
@@ -42,51 +50,40 @@ export function ApiDocViewer({
   )
 
   const tags = Array.from(filteredGroups.keys())
-  const totalCount = countEndpoints(allGroups)
   const filteredCount = countEndpoints(filteredGroups)
 
   const displayTag = activeTag && filteredGroups.has(activeTag) ? activeTag : tags[0] ?? null
   const displayEndpoints = displayTag ? filteredGroups.get(displayTag) ?? [] : []
 
+  const headerText = useMemo(() => {
+    const trimmed = remark.trim()
+    return trimmed ? `${docBaseUrl} [${trimmed}]` : docBaseUrl
+  }, [docBaseUrl, remark])
+
   return (
     <div className={styles.docViewer}>
       <header className={styles.apiInfo}>
-        <button
-          type="button"
-          className={styles.apiInfoToggle}
-          onClick={() => setInfoExpanded(!infoExpanded)}
-          aria-expanded={infoExpanded}
-        >
-          <span className={styles.apiInfoSummary}>
-            <strong>{spec.info.title}</strong>
-            <span className={styles.versionBadge}>v{spec.info.version}</span>
-            <span className={styles.apiInfoMeta}>{totalCount} 个接口</span>
-          </span>
-          <span className={styles.expandIcon}>{infoExpanded ? '▾' : '▸'}</span>
-        </button>
-
-        {infoExpanded && (
-          <div className={styles.apiInfoBody}>
-            {spec.info.description && (
-              <p className={styles.apiDescription}>{spec.info.description}</p>
-            )}
-            {spec.servers?.[0] && (
-              <div className={styles.serverUrl}>
-                <span className={styles.detailLabel}>服务地址</span>
-                <code>{spec.servers[0].url}</code>
-              </div>
-            )}
-            <div className={styles.serverUrl}>
-              <span className={styles.detailLabel}>文档来源</span>
-              <code>{sourceUrl}</code>
-            </div>
-            <div className={styles.stats}>
-              <span>{totalCount} 个接口</span>
-              <span>{allGroups.size} 个分组</span>
-            </div>
-          </div>
-        )}
+        <div className={styles.apiInfoRow}>
+          <code className={styles.apiInfoUrl} title={headerText}>
+            {headerText}
+          </code>
+          <button
+            type="button"
+            className={styles.remarkBtn}
+            onClick={() => setRemarkModalOpen(true)}
+            title={remark ? `备注：${remark}` : '添加备注'}
+          >
+            备注{remark ? ' ✓' : ''}
+          </button>
+        </div>
       </header>
+
+      <DocRemarkModal
+        open={remarkModalOpen}
+        remark={remark}
+        onClose={() => setRemarkModalOpen(false)}
+        onSave={(next) => onRemarkChange?.(next)}
+      />
 
       <div className={styles.docToolbar}>
         <input

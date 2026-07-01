@@ -20,7 +20,12 @@ import SwaggerDocToolbar from '../../../compomeents/SwaggerDocToolbar'
 
 function Swagger() {
   const [initialSession] = useState(() => loadSwaggerSession())
-  const [tabs, setTabs] = useState<DocTab[]>(initialSession?.tabs ?? [])
+  const [tabs, setTabs] = useState<DocTab[]>(() =>
+    (initialSession?.tabs ?? []).map((tab) => ({
+      ...tab,
+      label: createTabLabel(tab.spec, tab.sourceUrl, tab.remark),
+    })),
+  )
   const [activeTabId, setActiveTabId] = useState<string | null>(initialSession?.activeTabId ?? null)
   const [fetchLoading, setFetchLoading] = useState(false)
   const [refreshingTabId, setRefreshingTabId] = useState<string | null>(null)
@@ -78,7 +83,7 @@ function Swagger() {
 
     try {
       const data = await fetchOpenAPISpec(tab.sourceUrl)
-      const label = createTabLabel(data, tab.sourceUrl)
+      const label = createTabLabel(data, tab.sourceUrl, tab.remark)
       setTabs((prev) =>
         prev.map((t) => (t.id === tabId ? { ...t, spec: data, label } : t)),
       )
@@ -96,6 +101,20 @@ function Swagger() {
 
   const handleCookieChange = (tabId: string, cookie: string) => {
     setTabs((prev) => prev.map((t) => (t.id === tabId ? { ...t, cookie } : t)))
+  }
+
+  const handleRemarkChange = (tabId: string, remark: string) => {
+    setTabs((prev) =>
+      prev.map((t) =>
+        t.id === tabId
+          ? {
+              ...t,
+              remark: remark || undefined,
+              label: createTabLabel(t.spec, t.sourceUrl, remark),
+            }
+          : t,
+      ),
+    )
   }
 
   const handleCloseTab = (id: string) => {
@@ -144,6 +163,8 @@ function Swagger() {
             <ApiDocViewer
               spec={tab.spec}
               sourceUrl={tab.sourceUrl}
+              remark={tab.remark ?? ''}
+              onRemarkChange={(remark) => handleRemarkChange(tab.id, remark)}
               cookie={tab.cookie ?? ''}
               onCookieChange={(cookie) => handleCookieChange(tab.id, cookie)}
               fieldDefaults={fieldDefaults}
