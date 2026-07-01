@@ -249,13 +249,42 @@ app.post('/api/project/getRunningList', (req, res) => {
   res.send({ success: true, data: result, code: 0, msg: '' });
 });
 
+function openExternalEditor(projectPath, editor) {
+  const isWin = process.platform === 'win32';
+  const isMac = process.platform === 'darwin';
+  let shellCmd;
+
+  if (editor === 'cursor') {
+    if (isWin) {
+      shellCmd = `cursor "${projectPath}"`;
+    } else if (isMac) {
+      shellCmd = `cursor "${projectPath}" 2>/dev/null || open -a Cursor "${projectPath}"`;
+    } else {
+      shellCmd = `cursor "${projectPath}"`;
+    }
+  } else {
+    shellCmd = `code "${projectPath}"`;
+  }
+
+  const cmd = isWin ? 'cmd' : 'sh';
+  const args = isWin ? ['/c', shellCmd] : ['-c', shellCmd];
+  spawn(cmd, args, { detached: true, stdio: 'ignore' });
+}
+
 app.post('/api/project/openInVscode', (req, res) => {
   const { path: projectPath } = req.body;
-  const isWin = process.platform === 'win32';
-  const cmd = isWin ? 'cmd' : 'sh';
-  const args = isWin ? ['/c', `code "${projectPath}"`] : ['-c', `code "${projectPath}"`];
   try {
-    spawn(cmd, args, { detached: true, stdio: 'ignore' });
+    openExternalEditor(projectPath, 'vscode');
+    ok(res, null);
+  } catch (error) {
+    res.status(500).send({ success: false, msg: error.message, data: null, code: 1 });
+  }
+});
+
+app.post('/api/project/openInCursor', (req, res) => {
+  const { path: projectPath } = req.body;
+  try {
+    openExternalEditor(projectPath, 'cursor');
     ok(res, null);
   } catch (error) {
     res.status(500).send({ success: false, msg: error.message, data: null, code: 1 });

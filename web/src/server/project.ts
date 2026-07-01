@@ -53,3 +53,7 @@ export const getLogs = async () => {
 export const openInVscode = async (param: { path: string }) => {
   return await post(basePath + '/openInVscode', param);
 }
+
+export const openInCursor = async (param: { path: string }) => {
+  return await post(basePath + '/openInCursor', param);
+}
