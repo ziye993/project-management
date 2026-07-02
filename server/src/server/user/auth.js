@@ -9,7 +9,7 @@ import {
   clearLoginAttempts,
 } from '../../utils/loginRateLimit.js';
 import { loadUserPermissions } from '../../middleware/auth.js';
-import { sendVerificationCode } from './maill.js';
+import { sendVerificationCode } from './mail.js';
 import { decryptLoginPassword, getPasswordPublicKey } from '../../utils/passwordCrypto.js';
 
 const JWT_EXPIRES = '7d';

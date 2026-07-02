@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import app from '../../app.js';
 import { generateResponse } from './generateResponse.js';
 import { buildMockBaseUrl, toPublicSession } from './session.js';
@@ -17,14 +16,7 @@ import {
   restorePersistedSessions,
 } from './store.js';
 import { shutdownAllPortServers } from './portServer.js';
-
-function sendOk(res, data) {
-  res.send({ code: 0, success: true, msg: '', data });
-}
-
-function sendErr(res, msg, status = 400) {
-  res.status(status).send({ code: 1, success: false, msg, data: null });
-}
+import { ok, fail } from '../../utils/httpResponse.js';
 
 app.post('/api/mock/start', async (req, res) => {
   try {
@@ -39,7 +31,7 @@ app.post('/api/mock/start', async (req, res) => {
     } = req.body ?? {};
 
     if (!method || !openApiPath || !responseSchema || !baseUrl) {
-      return sendErr(res, '缺少 method、path、baseUrl 或 responseSchema');
+      return fail(res, 400, 1, '缺少 method、path、baseUrl 或 responseSchema');
     }
 
     const session = await addOrUpdateSession({
@@ -52,9 +44,9 @@ app.post('/api/mock/start', async (req, res) => {
       responseSchema,
     });
 
-    sendOk(res, toPublicSession(session));
+    ok(res, toPublicSession(session));
   } catch (err) {
-    sendErr(res, err instanceof Error ? err.message : '启动 Mock 失败', 500);
+    fail(res, 500, 1, err instanceof Error ? err.message : '启动 Mock 失败');
   }
 });
 
@@ -63,12 +55,12 @@ app.post('/api/mock/startAll', async (req, res) => {
     const { baseUrl, sourceUrl = '', spec, endpointRules = {} } = req.body ?? {};
 
     if (!baseUrl || !spec?.paths) {
-      return sendErr(res, '缺少 baseUrl 或 spec');
+      return fail(res, 400, 1, '缺少 baseUrl 或 spec');
     }
 
     const mockable = collectMockableEndpoints(spec);
     if (mockable.length === 0) {
-      return sendErr(res, '没有可 Mock 的接口');
+      return fail(res, 400, 1, '没有可 Mock 的接口');
     }
 
     const items = mockable.map((ep) => {
@@ -86,25 +78,25 @@ app.post('/api/mock/startAll', async (req, res) => {
     });
 
     const sessions = await addManySessions(items);
-    sendOk(res, {
+    ok(res, {
       count: sessions.length,
       mockBaseUrl: buildMockBaseUrl(baseUrl),
       running: sessions.map(toPublicSession),
     });
   } catch (err) {
-    sendErr(res, err instanceof Error ? err.message : '批量启动 Mock 失败', 500);
+    fail(res, 500, 1, err instanceof Error ? err.message : '批量启动 Mock 失败');
   }
 });
 
 app.post('/api/mock/stop', async (req, res) => {
   try {
     const { mockId } = req.body ?? {};
-    if (!mockId) return sendErr(res, '缺少 mockId');
+    if (!mockId) return fail(res, 400, 1, '缺少 mockId');
 
     const stopped = await removeSession(mockId);
-    sendOk(res, { stopped });
+    ok(res, { stopped });
   } catch (err) {
-    sendErr(res, err instanceof Error ? err.message : '停止 Mock 失败', 500);
+    fail(res, 500, 1, err instanceof Error ? err.message : '停止 Mock 失败');
   }
 });
 
@@ -112,20 +104,20 @@ app.post('/api/mock/stopAll', async (req, res) => {
   try {
     const { baseUrl, sourceUrl, mockIds } = req.body ?? {};
     const count = await removeSessionsByFilter({ baseUrl, sourceUrl, mockIds });
-    sendOk(res, { stopped: count });
+    ok(res, { stopped: count });
   } catch (err) {
-    sendErr(res, err instanceof Error ? err.message : '停止 Mock 失败', 500);
+    fail(res, 500, 1, err instanceof Error ? err.message : '停止 Mock 失败');
   }
 });
 
 app.post('/api/mock/status', (_req, res) => {
-  sendOk(res, { running: listSessions() });
+  ok(res, { running: listSessions() });
 });
 
 app.post('/api/mock/preview', (req, res) => {
   const { responseSchema, fieldRules = {}, arrayLengths = {} } = req.body ?? {};
-  if (!responseSchema) return sendErr(res, '缺少 responseSchema');
-  sendOk(res, {
+  if (!responseSchema) return fail(res, 400, 1, '缺少 responseSchema');
+  ok(res, {
     body: generateResponse(responseSchema, {
       fieldRules,
       arrayLengths,

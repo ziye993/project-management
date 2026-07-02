@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CopyOutlined } from '@ant-design/icons';
-import Modal from '../../../UiComponents/Modal';
-import message from '../../../UiComponents/Modal/message';
+import Modal from '@/components/ui/Modal';
+import message from '@/components/ui/Modal/message';
 import {
   type OrgItem,
   type ProjectItem,
   type ApiKeyItem,
-} from '../../../server/log';
+} from '@/api/log';
 import { useLogApi } from '../../../hooks/useLogApi';
 import { useAuth } from '../../../hooks/useAuth';
 import shared from '../shared.module.less';

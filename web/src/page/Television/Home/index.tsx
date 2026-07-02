@@ -1,81 +1,24 @@
-import ToolPageLayout, { shellStyles } from '../../../compomeents/ToolPageLayout';
-import ChatFilesFilter from '../../../compomeents/ChatFilesFilter';
-import MediaItemCard from '../../../compomeents/MediaItemCard';
-import LinkCopyModal, { type LinkItem } from '../../../compomeents/LinkCopyModal';
-import ChunkUploader from '../../../compomeents/ChunkUploader';
-import Modal from '../../../UiComponents/Modal';
-import Button from '../../../UiComponents/Button';
-import { UploadOutlined } from '@ant-design/icons';
-import styles from './index.module.less';
-import { useEffect, useState } from 'react';
-import { deleteMedia, getMovList } from '../../../server/media';
-import { baseServerIp } from '../../../server';
-import message from '../../../UiComponents/Modal/message';
+import MediaGallery from '@/components/MediaGallery';
+import Modal from '@/components/ui/Modal';
+import ChunkUploader from '@/components/ChunkUploader';
+import { getMovList } from '@/api/media';
 
 export default function TelevisionHome() {
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [fileList, setFileList] = useState<any[]>([]);
-  const [preview, setPreview] = useState('');
-  const [linkModal, setLinkModal] = useState<{ open: boolean; links: LinkItem[] }>({ open: false, links: [] });
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
-  const [chatOnly, setChatOnly] = useState(false);
-
-  const load = async () => {
-    const res = await getMovList(chatOnly);
-    setFileList(res?.data ?? []);
-  };
-
-  useEffect(() => { load(); }, [chatOnly]);
-
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
-    const res = await deleteMedia('mov', deleteTarget.storedName);
-    if (res?.success) {
-      message.success('删除成功');
-      setDeleteTarget(null);
-      await load();
-    }
-  };
-
   return (
-    <ToolPageLayout
-      className={styles.box}
-      actions={
-        <>
-          <ChatFilesFilter checked={chatOnly} onChange={setChatOnly} />
-          <Button onClick={() => setUploadOpen(true)}><UploadOutlined /> 上传视频</Button>
-        </>
-      }
-    >
-      <div className={`${shellStyles.contentPanel} ${styles.content}`}>
-        {fileList.map(item => (
-          <MediaItemCard
-            key={item.storedName}
-            name={item.name}
-            previewUrl={`${baseServerIp}${item.url}`}
-            isVideo
-            links={item.links}
-            onView={() => setPreview(`${baseServerIp}${item.url}`)}
-            onCopyLinks={() => setLinkModal({ open: true, links: item.links || [] })}
-            onDelete={() => setDeleteTarget(item)}
+    <MediaGallery
+      type="mov"
+      uploadLabel="上传视频"
+      previewTitle="播放视频"
+      loadList={getMovList}
+      renderUploadModal={({ open, onClose, onComplete }) => (
+        <Modal open={open} title="切片上传视频" onClose={onClose} onOK={onClose}>
+          <ChunkUploader
+            accept="video/*,.mp4,.mkv,.avi,.mov,.webm"
+            type="mov"
+            onComplete={onComplete}
           />
-        ))}
-      </div>
-      <Modal open={uploadOpen} title="切片上传视频" onClose={() => setUploadOpen(false)} onOK={() => setUploadOpen(false)}>
-        <ChunkUploader accept="video/*,.mp4,.mkv,.avi,.mov,.webm" type="mov" onComplete={() => { setUploadOpen(false); load(); }} />
-      </Modal>
-      <Modal open={!!preview} title="播放视频" onClose={() => setPreview('')} onOK={() => setPreview('')} width="80vw">
-        {preview && <video src={preview} controls className={styles.previewVideo} />}
-      </Modal>
-      <Modal
-        open={!!deleteTarget}
-        title="确认删除"
-        onClose={() => setDeleteTarget(null)}
-        onOK={confirmDelete}
-      >
-        <p className={styles.deleteTip}>确定删除「{deleteTarget?.name}」？此操作不可恢复。</p>
-      </Modal>
-      <LinkCopyModal open={linkModal.open} links={linkModal.links} onClose={() => setLinkModal({ open: false, links: [] })} />
-    </ToolPageLayout>
+        </Modal>
+      )}
+    />
   );
 }

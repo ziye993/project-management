@@ -1,10 +1,4 @@
-export function ok(res, data, msg = '') {
-  res.json({ success: true, code: 0, msg, data });
-}
-
-export function fail(res, httpStatus, code, msg) {
-  res.status(httpStatus).json({ success: false, code, msg, data: null });
-}
+export { ok, fail } from '../../../utils/httpResponse.js';
 
 export function getClientIp(req) {
   const forwarded = req.headers['x-forwarded-for'];

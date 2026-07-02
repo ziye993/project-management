@@ -19,9 +19,9 @@ import { fileNameFromUrl, getClipboardFiles, uploadChatFile } from '../../../uti
 import { useNavigate } from '../../../Router';
 import type { ActiveChat, ChatGroup, ChatMessage, ChatUser, Conversation } from '../../../type/chat';
 import { FileOutlined, MessageOutlined, PaperClipOutlined, PictureOutlined, SendOutlined, TeamOutlined, VideoCameraOutlined } from '@ant-design/icons';
-import Button from '../../../UiComponents/Button';
-import Modal from '../../../UiComponents/Modal';
-import message from '../../../UiComponents/Modal/message';
+import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
+import message from '@/components/ui/Modal/message';
 import styles from './index.module.less';
 
 function formatTime(ts?: number) {
@@ -349,7 +349,7 @@ export default function LocalChatHome() {
     <div className={styles.container}>
       <aside className={styles.historyPanel}>
         <div className={styles.panelHead}>
-          <button type="button" className={styles.myAvatarBtn} onClick={() => push('/localChat/profile')}>
+          <button type="button" className={styles.myAvatarBtn} onClick={() => push('/local-chat/profile')}>
             <span className={styles.avatar}>{identity.avatar}</span>
           </button>
           <span className={styles.panelTitle}>聊天记录</span>

@@ -1,4 +1,4 @@
-import GlobalScripts from '../../../compomeents/GlobalScripts';
+import GlobalScripts from '@/components/GlobalScripts';
 import type { IProjectListItem, IProjectScript } from '../../../type';
 import { mixBorderColor, softenButtonColor } from '../../../utils/color';
 import styles from './index.module.less';

@@ -1,6 +1,6 @@
 import { useNavigate, useRouterIds } from '../../../Router';
-import Button from '../../../UiComponents/Button';
-import ToolPageLayout from '../../../compomeents/ToolPageLayout';
+import Button from '@/components/ui/Button';
+import ToolPageLayout from '@/components/ToolPageLayout';
 import { GameLayoutActionsProvider, useGameLayoutActions } from '../context/layoutActions';
 
 function GameLayoutInner(props: { children?: React.ReactNode }) {

@@ -1,12 +1,12 @@
-import ToolPageLayout, { shellStyles } from '../../../compomeents/ToolPageLayout';
-import ChatFilesFilter from '../../../compomeents/ChatFilesFilter';
-import LinkCopyModal, { type LinkItem } from '../../../compomeents/LinkCopyModal';
-import Button from '../../../UiComponents/Button';
+import ToolPageLayout, { shellStyles } from '@/components/ToolPageLayout';
+import ChatFilesFilter from '@/components/ChatFilesFilter';
+import LinkCopyModal, { type LinkItem } from '@/components/LinkCopyModal';
+import Button from '@/components/ui/Button';
 import { FolderAddOutlined, UploadOutlined, DeleteOutlined, DownloadOutlined, LinkOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
 import { useEffect, useRef, useState } from 'react';
-import { createShareFolder, deleteShareItem, getShareList, uploadShareFiles } from '../../../server/share';
-import message from '../../../UiComponents/Modal/message';
+import { createShareFolder, deleteShareItem, getShareList, uploadShareFiles } from '@/api/share';
+import message from '@/components/ui/Modal/message';
 
 export default function LANSharingHome() {
   const [currentPath, setCurrentPath] = useState('');

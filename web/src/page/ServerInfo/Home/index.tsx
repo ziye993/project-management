@@ -1,9 +1,9 @@
-import ToolPageLayout, { shellStyles } from '../../../compomeents/ToolPageLayout';
-import Button from '../../../UiComponents/Button';
+import ToolPageLayout, { shellStyles } from '@/components/ToolPageLayout';
+import Button from '@/components/ui/Button';
 import { ReloadOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
 import { useEffect, useState } from 'react';
-import { getServerStatus } from '../../../server/system';
+import { getServerStatus } from '@/api/system';
 
 function formatBytes(n: number) {
   if (!n) return '0 B';

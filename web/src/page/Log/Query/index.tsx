@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import Modal from '../../../UiComponents/Modal';
+import Modal from '@/components/ui/Modal';
 import {
   type LogItem,
   type OrgItem,
   type ProjectItem,
-} from '../../../server/log';
+} from '@/api/log';
 import { useLogApi } from '../../../hooks/useLogApi';
 import shared from '../shared.module.less';
 

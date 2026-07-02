@@ -1,4 +1,5 @@
 node_modules/
+html/
 data/
 .idea/
 .DS_Store

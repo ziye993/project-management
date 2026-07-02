@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { LoginOutlined } from '@ant-design/icons';
 import { useRouterIds } from '../../../Router';
-import LoginModal from '../../../compomeents/LoginModal';
-import ModuleNavLinks from '../../../compomeents/ModuleNavLinks';
-import ToolPageLayout from '../../../compomeents/ToolPageLayout';
+import LoginModal from '@/components/LoginModal';
+import ModuleNavLinks from '@/components/ModuleNavLinks';
+import ToolPageLayout from '@/components/ToolPageLayout';
 import { useAuth } from '../../../hooks/useAuth';
-import navStyles from '../../../compomeents/ModuleNavLinks/index.module.less';
+import navStyles from '@/components/ModuleNavLinks/index.module.less';
 
 const NAV_ITEMS = [
   { path: '/log/home', label: '模块首页', match: 'home' },

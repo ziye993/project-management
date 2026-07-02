@@ -1,5 +1,5 @@
-import { baseServerIp, upload } from '../server';
-import { uploadShareFiles } from '../server/share';
+import { baseServerIp, upload } from '@/api';
+import { uploadShareFiles } from '@/api/share';
 import type { MessageType } from '../type/chat';
 
 export const CHAT_SHARE_FOLDER = 'chat';

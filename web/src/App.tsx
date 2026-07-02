@@ -1,4 +1,3 @@
-import './App.css'
 import Router from './Router'
 import { default as routerConfig } from './Router/config'
 import { AuthProvider } from './context/AuthContext'

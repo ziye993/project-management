@@ -1,11 +1,10 @@
 
 import { FolderAddOutlined, FolderOpenOutlined, SyncOutlined, BgColorsOutlined } from '@ant-design/icons'
 import styles from './index.module.less';
-import { importWorkspace, importProject, refreshColorCache } from '../../../server/project';
-import Button from '../../../UiComponents/Button';
-import message from '../../../UiComponents/Modal/message';
-import FileSelect, { type FileSelectResult } from '../../../compomeents/FileSelect';
-import PageHeader from '../../../compomeents/PageHeader';
+import { importWorkspace, importProject, refreshColorCache } from '@/api/project';
+import Button from '@/components/ui/Button';
+import message from '@/components/ui/Modal/message';
+import FileSelect, { type FileSelectResult } from '@/components/FileSelect';
 import { useRef, useState } from 'react';
 
 interface IProps {
@@ -65,22 +64,20 @@ export default function Header(props: IProps) {
         onClose={() => setSelectOpen(false)}
         onOK={handleSelectOK}
       />
-      <PageHeader>
-        <div className={styles.HeaderBox}>
-          <Button onClick={() => openImport('workspace')}>
-            <FolderAddOutlined /> 引入工作区
-          </Button>
-          <Button onClick={() => openImport('project')}>
-            <FolderOpenOutlined /> 引入项目
-          </Button>
-          <Button onClick={() => { props.forceRefreshList() }}>
-            <SyncOutlined /> 同步项目
-          </Button>
-          <Button onClick={handleRefreshColors}>
-            <BgColorsOutlined /> 刷新颜色缓存
-          </Button>
-        </div>
-      </PageHeader>
+      <div className={styles.HeaderBox}>
+        <Button onClick={() => openImport('workspace')}>
+          <FolderAddOutlined /> 引入工作区
+        </Button>
+        <Button onClick={() => openImport('project')}>
+          <FolderOpenOutlined /> 引入项目
+        </Button>
+        <Button onClick={() => { props.forceRefreshList() }}>
+          <SyncOutlined /> 同步项目
+        </Button>
+        <Button onClick={handleRefreshColors}>
+          <BgColorsOutlined /> 刷新颜色缓存
+        </Button>
+      </div>
     </>
   );
 }

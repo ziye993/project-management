@@ -10,13 +10,12 @@ import {
   getRunningList,
   getLogs,
   getColorGroups,
-} from '../../../server/project';
+} from '@/api/project';
 import Left from './left';
 import type { IProjectData as _IProjectData, IColorCache } from '../../../type';
 import Center from './center';
 import Right from './right';
-import PageShell, { shellStyles } from '../../../compomeents/PageShell';
-import UserHeader from '../../../compomeents/UserHeader';
+import ToolPageLayout from '@/components/ToolPageLayout';
 import Header from './header';
 import ColorLegend from './colorLegend';
 import { makeRunKey, parseRunKey } from '../../../utils/runKey';
@@ -243,17 +242,14 @@ export default function ProjectManage() {
     }
   }, [refCount])
 
-  return <PageShell className={styles.box}>
-      <UserHeader className={shellStyles.userHeader}>
-        <Header forceRefreshList={forceRefreshList} onColorRefresh={loadColorGroups} />
-      </UserHeader>
-      <div className={styles.contentBox}>
+  return (
+    <ToolPageLayout className={styles.box} actions={<Header forceRefreshList={forceRefreshList} onColorRefresh={loadColorGroups} />} mainClassName={styles.contentBox}>
         <Left projectList={projectList} setProjectChecked={setProjectChecked} onProjectRemoved={init} />
         <Center commandBoxRef={commandBoxRef} currentCommand={currentCommand} currentProject={currentProject} refCount={refCount} logs={logs} runCommand={runCommand} />
         <div className={styles.sideColumn}>
           <Right currentProject={currentProject} setCommandChecked={setCommandChecked} runCommand={runCommand} reconnectCommand={reconnectCommand} close={close} stop={stop} />
           <ColorLegend colorCache={colorCache} />
         </div>
-      </div>
-  </PageShell>
+    </ToolPageLayout>
+  );
 }

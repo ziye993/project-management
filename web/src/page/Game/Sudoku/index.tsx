@@ -11,9 +11,9 @@ import {
   SaveOutlined,
   UndoOutlined,
 } from '@ant-design/icons';
-import Button from '../../../UiComponents/Button';
-import Modal from '../../../UiComponents/Modal';
-import message from '../../../UiComponents/Modal/message';
+import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
+import message from '@/components/ui/Modal/message';
 import { useNavigate } from '../../../Router';
 import { useGameLayoutActions } from '../context/layoutActions';
 import {

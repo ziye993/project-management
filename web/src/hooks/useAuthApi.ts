@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { createAuthApi } from '../server/auth';
+import { createAuthApi } from '@/api/auth';
 import { useAuth } from './useAuth';
 import { resolveEffectiveLogApiBaseUrl } from '../utils/logApiBase';
 

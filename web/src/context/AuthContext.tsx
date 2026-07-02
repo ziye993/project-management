@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { post } from '../server';
-import { fetchMe } from '../server/user';
+import { post } from '@/api';
+import { fetchMe } from '@/api/user';
 import { computeVisibleModulesClient, computeModuleCapabilitiesClient } from '../utils/accessRules';
 import { isSameOriginBase, resolveEffectiveLogApiBaseUrl } from '../utils/logApiBase';
 

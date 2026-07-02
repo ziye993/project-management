@@ -3,8 +3,8 @@ import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from '../../../Router';
 import { loadChatIdentity, saveChatIdentity } from '../../../utils/chatIdentity';
 import { connectChatSocket, registerChatUser, setChatHandlers, clearChatHandlers, updateChatProfile } from '../../../utils/chatSocket';
-import Button from '../../../UiComponents/Button';
-import message from '../../../UiComponents/Modal/message';
+import Button from '@/components/ui/Button';
+import message from '@/components/ui/Modal/message';
 import styles from './index.module.less';
 
 const AVATAR_PRESETS = ['😀', '😎', '🦊', '🐱', '🐶', '🌟', '🎮', '🎵', '🚀', '💡'];
@@ -52,7 +52,7 @@ export default function LocalChatProfile() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <button type="button" className={styles.backBtn} onClick={() => push('/localChat/home')}>
+        <button type="button" className={styles.backBtn} onClick={() => push('/local-chat/home')}>
           <ArrowLeftOutlined /> 返回对话
         </button>
         <h2 className={styles.title}>个人信息</h2>

@@ -1,8 +1,8 @@
 import type { IProjectListItem, IProjectScript } from '../../../type';
 import styles from './index.module.less';
 import { DeleteOutlined, AppstoreOutlined } from '@ant-design/icons';
-import { removeProject } from '../../../server/project';
-import message from '../../../UiComponents/Modal/message';
+import { removeProject } from '@/api/project';
+import message from '@/components/ui/Modal/message';
 import { softenRowColor } from '../../../utils/color';
 
 interface IProps {

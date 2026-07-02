@@ -13,6 +13,7 @@ import { makeRunKey, parseRunKey } from '../../utils/runKey.js';
 import { decodeOutput } from '../../utils/decodeOutput.js';
 import { appendCommandLog, ensureCommandLog, getCommandLogs ,clearCommandLog} from '../../utils/commandLogs.js';
 import { resolveExistingProjectPath, spawnProjectScript } from '../../utils/projectCommand.js';
+import { ok, fail } from '../../utils/httpResponse.js';
 
 let projectList = getProjectList();
 let currentChild = {};
@@ -39,10 +40,6 @@ export async function cleanupProjectProcesses() {
 process.on('SIGINT', () => { cleanupProjectProcesses().then(() => process.exit()); });
 process.on('SIGTERM', () => { cleanupProjectProcesses().then(() => process.exit()); });
 
-function ok(res, data, msg = '') {
-  res.json({ msg, data, success: true, code: 0 });
-}
-
 app.post('/api/project/getProjectList', (req, res) => {
   projectList = getProjectList();
   const colorMap = getProjectColorMap();
@@ -64,7 +61,7 @@ app.post('/api/project/refreshColorCache', (req, res) => {
 });
 
 app.post('/api/project/getLogs', (req, res) => {
-  res.send({ success: true, data: logs, code: 0, msg: '' });
+  ok(res, logs);
 });
 
 app.post('/api/project/forceRefreshList', (req, res) => {
@@ -76,16 +73,16 @@ app.post('/api/project/importWorkspace', async (req, res) => {
   try {
     const folderPath = req.body?.path;
     if (!folderPath) {
-      return res.status(400).send({ success: false, code: 1, msg: '请选择文件夹', data: null });
+      return fail(res, 400, 1, '请选择文件夹');
     }
     const entries = scanWorkspaceFolder(folderPath);
     if (!entries.length) {
-      return res.status(400).send({ success: false, code: 2, msg: '该文件夹下未找到含 package.json 的子项目', data: null });
+      return fail(res, 400, 2, '该文件夹下未找到含 package.json 的子项目');
     }
     projectList = addProjects(entries);
     ok(res, { added: entries.length, projectList });
   } catch (error) {
-    res.status(500).send({ success: false, code: 3, msg: error.message, data: null });
+    fail(res, 500, 3, error.message);
   }
 });
 
@@ -93,20 +90,20 @@ app.post('/api/project/importProject', async (req, res) => {
   try {
     const folderPath = req.body?.path;
     if (!folderPath) {
-      return res.status(400).send({ success: false, code: 1, msg: '请选择文件夹', data: null });
+      return fail(res, 400, 1, '请选择文件夹');
     }
     const entry = buildSingleProject(folderPath);
     projectList = addProjects([entry]);
     ok(res, { added: 1, project: entry, projectList });
   } catch (error) {
-    res.status(500).send({ success: false, code: 3, msg: error.message, data: null });
+    fail(res, 500, 3, error.message);
   }
 });
 
 app.post('/api/project/removeProject', (req, res) => {
   const { path: projectPath } = req.body;
   if (!projectPath) {
-    return res.status(400).send({ success: false, code: 1, msg: '缺少 path 参数', data: null });
+    return fail(res, 400, 1, '缺少 path 参数');
   }
   projectList = removeProjectByPath(projectPath);
   ok(res, projectList);
@@ -114,7 +111,7 @@ app.post('/api/project/removeProject', (req, res) => {
 
 app.post('/api/project/runCommand', (req, res) => {
   const { path: projectPath, value } = req.body;
-  if (!value || !projectPath) return res.status(400).send('缺少参数');
+  if (!value || !projectPath) return fail(res, 400, 1, '缺少参数');
 
   let resolvedPath;
   try {
@@ -206,36 +203,36 @@ async function terminateRunningCommand(resolvedPath, value) {
 app.post('/api/project/stopCommand', async (req, res) => {
   const { value, path: projectPath } = req.body;
   if (!value || !projectPath) {
-    return res.status(400).send({ success: false, code: 1, msg: '缺少参数', data: null });
+    return fail(res, 400, 1, '缺少参数');
   }
   let resolvedPath;
   try {
     resolvedPath = resolveExistingProjectPath(projectPath);
   } catch (error) {
-    return res.send({ msg: error.message, code: 1, success: false, data: null });
+    return fail(res, 400, 1, error.message);
   }
   const result = await terminateRunningCommand(resolvedPath, value);
   if (!result.ok) {
-    return res.send({ msg: '此项目可能未运行或出错', code: 2, success: false, data: result.key });
+    return fail(res, 400, 2, '此项目可能未运行或出错', result.key);
   }
   appendCommandLog(resolvedPath, value, { text: '\n⏹ 已暂停', type: 'error' });
-  res.send({ msg: '', code: 0, success: result.killed, data: result.killed });
+  ok(res, result.killed);
 });
 
 app.post('/api/project/closeCommand', async (req, res) => {
   const { value, path: projectPath } = req.body;
   if (!value || !projectPath) {
-    return res.status(400).send({ success: false, code: 1, msg: '缺少参数', data: null });
+    return fail(res, 400, 1, '缺少参数');
   }
   let resolvedPath;
   try {
     resolvedPath = resolveExistingProjectPath(projectPath);
   } catch (error) {
-    return res.send({ msg: error.message, code: 1, success: false, data: null });
+    return fail(res, 400, 1, error.message);
   }
   const result = await terminateRunningCommand(resolvedPath, value);
   clearCommandLog(resolvedPath, value);
-  res.send({ msg: '', code: 0, success: true, data: result.killed });
+  ok(res, result.killed);
 });
 
 app.post('/api/project/getRunningList', (req, res) => {
@@ -246,7 +243,7 @@ app.post('/api/project/getRunningList', (req, res) => {
     if (!result[projectPath]) result[projectPath] = [];
     result[projectPath].push(command);
   });
-  res.send({ success: true, data: result, code: 0, msg: '' });
+  ok(res, result);
 });
 
 function openExternalEditor(projectPath, editor) {
@@ -277,7 +274,7 @@ app.post('/api/project/openInVscode', (req, res) => {
     openExternalEditor(projectPath, 'vscode');
     ok(res, null);
   } catch (error) {
-    res.status(500).send({ success: false, msg: error.message, data: null, code: 1 });
+    fail(res, 500, 1, error.message);
   }
 });
 
@@ -287,6 +284,6 @@ app.post('/api/project/openInCursor', (req, res) => {
     openExternalEditor(projectPath, 'cursor');
     ok(res, null);
   } catch (error) {
-    res.status(500).send({ success: false, msg: error.message, data: null, code: 1 });
+    fail(res, 500, 1, error.message);
   }
 });

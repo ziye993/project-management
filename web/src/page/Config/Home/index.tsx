@@ -1,8 +1,8 @@
-import ToolPageLayout, { shellStyles } from '../../../compomeents/ToolPageLayout';
+import ToolPageLayout, { shellStyles } from '@/components/ToolPageLayout';
 import styles from './index.module.less'
-import FileSelect, { type FileSelectResult } from '../../../compomeents/FileSelect';
+import FileSelect, { type FileSelectResult } from '@/components/FileSelect';
 import { useEffect, useRef, useState } from 'react';
-import message from '../../../UiComponents/Modal/message';
+import message from '@/components/ui/Modal/message';
 import {
   getConfig,
   setCommandSortOrder,
@@ -11,7 +11,7 @@ import {
   setMovUploadPath,
   setPicUploadPath,
   setPublicBaseUrl,
-} from '../../../server/setConfig';
+} from '@/api/setConfig';
 import {
   EMPTY_MOCK_FIELD_DEFAULTS,
   mockFieldDefaultsFromConfig,

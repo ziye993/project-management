@@ -6,6 +6,7 @@ import { getShareDir } from '../../initDataStorage.js';
 import { buildAccessLinksRelative } from '../../utils/accessLinks.js';
 import { getConfig } from '../../utils/jsonFile.js';
 import { fixFilenameEncoding } from '../../utils/filenameEncoding.js';
+import { ok, fail } from '../../utils/httpResponse.js';
 
 const CHAT_FOLDER = 'chat';
 
@@ -42,7 +43,7 @@ app.post('/api/share/list', (req, res) => {
     const relativePath = chatOnly ? CHAT_FOLDER : (req.body?.relativePath || '');
     const dir = safeJoin(getShareDir(), relativePath);
     if (!fs.existsSync(dir)) {
-      return res.json({ success: true, code: 0, data: { items: [], currentPath: relativePath, chatOnly }, msg: '' });
+      return ok(res, { items: [], currentPath: relativePath, chatOnly });
     }
     const config = getConfig();
     const prefix = config.shareRequestPath || '/static/share';
@@ -70,59 +71,55 @@ app.post('/api/share/list', (req, res) => {
       items = items.filter(item => item.relativePath !== CHAT_FOLDER);
     }
 
-    res.json({ success: true, code: 0, data: { items, currentPath: relativePath, chatOnly }, msg: '' });
+    ok(res, { items, currentPath: relativePath, chatOnly });
   } catch (e) {
-    res.status(400).json({ success: false, code: 1, msg: e.message, data: null });
+    fail(res, 400, 1, e.message);
   }
 });
 
 app.post('/api/share/mkdir', (req, res) => {
   try {
     const { relativePath = '', name } = req.body;
-    if (!name) return res.status(400).json({ success: false, code: 1, msg: '文件夹名不能为空' });
+    if (!name) return fail(res, 400, 1, '文件夹名不能为空');
     const dir = safeJoin(getShareDir(), path.join(relativePath, name));
     fs.mkdirSync(dir, { recursive: true });
-    res.json({ success: true, code: 0, data: null, msg: '创建成功' });
+    ok(res, null, '创建成功');
   } catch (e) {
-    res.status(400).json({ success: false, code: 1, msg: e.message });
+    fail(res, 400, 1, e.message);
   }
 });
 
 app.post('/api/share/upload', (req, res) => {
   shareUpload(req, res, err => {
-    if (err) return res.status(400).json({ success: false, msg: err.message });
+    if (err) return fail(res, 400, 1, err.message);
     const config = getConfig();
     const prefix = config.shareRequestPath || '/static/share';
     const relativePath = req.body?.relativePath || '';
-    res.json({
-      success: true, code: 0,
-      data: (req.files || []).map(f => {
-        const rel = path.join(relativePath, f.filename).replace(/\\/g, '/');
-        return {
-          name: f.filename,
-          originalName: f.originalname,
-          size: f.size,
-          relativePath: rel,
-          source: req.body?.source === 'chat' ? 'chat' : 'normal',
-          downloadLinks: buildAccessLinksRelative(prefix, rel),
-        };
-      }),
-      msg: '上传成功',
-    });
+    ok(res, (req.files || []).map(f => {
+      const rel = path.join(relativePath, f.filename).replace(/\\/g, '/');
+      return {
+        name: f.filename,
+        originalName: f.originalname,
+        size: f.size,
+        relativePath: rel,
+        source: req.body?.source === 'chat' ? 'chat' : 'normal',
+        downloadLinks: buildAccessLinksRelative(prefix, rel),
+      };
+    }), '上传成功');
   });
 });
 
 app.post('/api/share/delete', (req, res) => {
   try {
     const { relativePath } = req.body;
-    if (!relativePath) return res.status(400).json({ success: false, code: 1, msg: '缺少路径' });
+    if (!relativePath) return fail(res, 400, 1, '缺少路径');
     const target = safeJoin(getShareDir(), relativePath);
-    if (!fs.existsSync(target)) return res.status(404).json({ success: false, code: 2, msg: '不存在' });
+    if (!fs.existsSync(target)) return fail(res, 404, 2, '不存在');
     const stat = fs.statSync(target);
     if (stat.isDirectory()) fs.rmSync(target, { recursive: true, force: true });
     else fs.unlinkSync(target);
-    res.json({ success: true, code: 0, msg: '已删除' });
+    ok(res, null, '已删除');
   } catch (e) {
-    res.status(400).json({ success: false, code: 1, msg: e.message });
+    fail(res, 400, 1, e.message);
   }
 });

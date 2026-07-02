@@ -1,7 +1,7 @@
 import { isLogServer } from '../config/deployment.js';
 import './openapiProxy/index.js';
 import './mock/index.js';
-import './porxyStatic/index.js';
+import './proxyStatic/index.js';
 import './pm/index.js';
 import './localhostChat/index.js';
 import './gomoku/index.js';

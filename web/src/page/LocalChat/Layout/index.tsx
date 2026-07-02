@@ -1,5 +1,5 @@
 import { useNavigate } from '../../../Router';
-import ToolPageLayout, { layoutStyles } from '../../../compomeents/ToolPageLayout';
+import ToolPageLayout, { layoutStyles } from '@/components/ToolPageLayout';
 import { loadChatIdentity } from '../../../utils/chatIdentity';
 import styles from './index.module.less';
 
@@ -14,7 +14,7 @@ export default function ChatLayout(props: { children?: React.ReactNode }) {
         <button
           type="button"
           className={styles.avatarBtn}
-          onClick={() => push('/localChat/profile')}
+          onClick={() => push('/local-chat/profile')}
           title="个人信息"
         >
           <span className={styles.avatar}>{identity.avatar}</span>

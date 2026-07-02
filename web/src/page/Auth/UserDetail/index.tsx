@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from '../../../Router';
-import ToolPageLayout from '../../../compomeents/ToolPageLayout';
-import message from '../../../UiComponents/Modal/message';
+import ToolPageLayout from '@/components/ToolPageLayout';
+import message from '@/components/ui/Modal/message';
 import { useAuthApi } from '../../../hooks/useAuthApi';
 import { useLogApi } from '../../../hooks/useLogApi';
 import styles from '../Home/index.module.less';

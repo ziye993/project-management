@@ -9,12 +9,12 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
-    "@ant-design/icons": "^6.1.0",
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",

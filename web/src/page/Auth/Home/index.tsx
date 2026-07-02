@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from '../../../Router';
-import ToolPageLayout from '../../../compomeents/ToolPageLayout';
-import Modal from '../../../UiComponents/Modal';
-import message from '../../../UiComponents/Modal/message';
-import { useAuthApi } from '../../../hooks/useAuthApi';
-import styles from './index.module.less';
+import { useNavigate } from '@/Router';
+import ToolPageLayout from '@/components/ToolPageLayout';
+import Modal from '@/components/ui/Modal';
+import message from '@/components/ui/Modal/message';
+import { useAuthApi } from '@/hooks/useAuthApi';
+import shared from '@/page/Log/shared.module.less';
 
 interface UserRow {
   id: number;
@@ -56,55 +56,86 @@ export default function AuthHome() {
 
   return (
     <ToolPageLayout>
-      <div className={styles.content}>
-        <div className={styles.toolbar}>
-          <input value={filterName} onChange={e => setFilterName(e.target.value)} placeholder="搜索用户名" />
-          <button type="button" onClick={() => load(1)}>查询</button>
-          <button type="button" onClick={() => setCreateOpen(true)}>新建用户</button>
+      <div className={shared.page}>
+        <div className={shared.toolbar}>
+          <div className={`${shared.field} ${shared.fieldWide}`}>
+            <label htmlFor="auth-filter">用户名</label>
+            <input
+              id="auth-filter"
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+              placeholder="搜索用户名"
+            />
+          </div>
+          <button type="button" className={shared.btn} onClick={() => load(1)}>查询</button>
+          <button type="button" className={shared.btn} onClick={() => setCreateOpen(true)}>新建用户</button>
         </div>
 
-        <div className={styles.panel}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>用户名</th>
-                <th>邮箱</th>
-                <th>状态</th>
-                <th>超管</th>
-                <th>创建时间</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map(row => (
-                <tr key={row.id}>
-                  <td>{row.username}</td>
-                  <td>{row.email || '-'}</td>
-                  <td>{row.status === 1 ? '正常' : '禁用'}</td>
-                  <td>{row.is_super_admin ? '是' : '否'}</td>
-                  <td>{row.create_time}</td>
-                  <td>
-                    <button type="button" onClick={() => push('/auth/detail', { userId: row.id })}>授权管理</button>
-                  </td>
+        <div className={shared.panel}>
+          <div className={shared.tableWrap}>
+            <table className={shared.table}>
+              <thead>
+                <tr>
+                  <th>用户名</th>
+                  <th>邮箱</th>
+                  <th>状态</th>
+                  <th>超管</th>
+                  <th>创建时间</th>
+                  <th>操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {!list.length && <p className={styles.empty}>暂无用户</p>}
-        </div>
-
-        <div className={styles.pagination}>
-          <button type="button" disabled={page <= 1} onClick={() => load(page - 1)}>上一页</button>
-          <span>{page} / {totalPages}</span>
-          <button type="button" disabled={page >= totalPages} onClick={() => load(page + 1)}>下一页</button>
+              </thead>
+              <tbody>
+                {list.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.username}</td>
+                    <td>{row.email || '-'}</td>
+                    <td className={row.status === 1 ? shared.statusOn : shared.statusOff}>
+                      {row.status === 1 ? '正常' : '禁用'}
+                    </td>
+                    <td>{row.is_super_admin ? '是' : '否'}</td>
+                    <td>{row.create_time}</td>
+                    <td>
+                      <div className={shared.actions}>
+                        <button
+                          type="button"
+                          className={`${shared.btn} ${shared.btnSmall}`}
+                          onClick={() => push('/auth/detail', { userId: row.id })}
+                        >
+                          授权管理
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {!list.length && <p className={shared.empty}>暂无用户</p>}
+          <div className={shared.pagination}>
+            <span>共 {total} 条</span>
+            <div className={shared.paginationBtns}>
+              <button type="button" className={shared.btnGhost} disabled={page <= 1} onClick={() => load(page - 1)}>上一页</button>
+              <span>{page} / {totalPages}</span>
+              <button type="button" className={shared.btnGhost} disabled={page >= totalPages} onClick={() => load(page + 1)}>下一页</button>
+            </div>
+          </div>
         </div>
       </div>
 
       <Modal open={createOpen} title="新建用户" onClose={() => setCreateOpen(false)} onOK={createUser} width="420px">
-        <div className={styles.form}>
-          <label>用户名<input value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} /></label>
-          <label>密码<input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} /></label>
-          <label>邮箱<input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></label>
+        <div className={shared.formGrid}>
+          <div className={shared.formField}>
+            <label htmlFor="auth-username">用户名</label>
+            <input id="auth-username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+          </div>
+          <div className={shared.formField}>
+            <label htmlFor="auth-password">密码</label>
+            <input id="auth-password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+          </div>
+          <div className={shared.formField}>
+            <label htmlFor="auth-email">邮箱</label>
+            <input id="auth-email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
         </div>
       </Modal>
     </ToolPageLayout>

@@ -1,18 +1,18 @@
 import ChatLayout from "../page/LocalChat/Layout";
 import LocalChatHome from "../page/LocalChat/Home";
 import LocalChatProfile from "../page/LocalChat/Profile";
-import Layout from "../compomeents/Layout";
+import Layout from "@/components/Layout";
 import ProjectManage from "../page/Project/Home";
 import type { TRouter } from "./type";
 import NotFound from "../page/404";
-import ZiyeHome from "../page/home";
+import ZiyeHome from "../page/Home";
 import ImageHome from "../page/Image/Home";
 import TelevisionHome from "../page/Television/Home";
 import ServerInfoHome from "../page/ServerInfo/Home";
 import LANSharingHome from "../page/LANSharing/Home";
 import ConfigHome from "../page/Config/Home";
-import Swagger from "../page/swagger/home";
-import DataMock from "../page/dataMock";
+import Swagger from "../page/Swagger/Home";
+import DataMock from "../page/DataMock";
 import GameLayout from "../page/Game/Layout";
 import GameHome from "../page/Game/Home";
 import SudokuHome from "../page/Game/Sudoku";
@@ -55,13 +55,13 @@ const router: TRouter = [{
         { path: '/home', components: TelevisionHome }
     ]
 }, {
-    path: '/serverInfo',
+    path: '/server-info',
     redirect: 'home',
     children: [
         { path: '/home', components: ServerInfoHome }
     ]
 }, {
-    path: '/LANSharing',
+    path: '/lan-sharing',
     redirect: 'home',
     children: [
         { path: '/home', components: LANSharingHome }
@@ -73,7 +73,7 @@ const router: TRouter = [{
     { path: '/home', components: Swagger }
   ]
 }, {
-  path: '/dataMock',
+  path: '/data-mock',
   redirect: 'home',
   children: [
     { path: '/home', components: DataMock }
@@ -88,7 +88,7 @@ const router: TRouter = [{
         { path: '/gomoku', components: GomokuHome },
     ]
 }, {
-    path: '/localChat',
+    path: '/local-chat',
     components: ChatLayout,
     redirect: 'home',
     children: [
@@ -106,7 +106,7 @@ const router: TRouter = [{
         { path: '/workspace', components: LogWorkspace },
     ]
 }, {
-    path: '/planeEditor',
+    path: '/plane-editor',
     redirect: 'home',
     children: [
         { path: '/home', components: PlaneEditorHome }
