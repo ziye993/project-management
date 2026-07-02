@@ -23,8 +23,8 @@ export default function Right(props: IProps) {
         {runningScripts.map(_ => {
             const statusClass = _.running ? styles.runningActive : styles.runningPaused;
             return <div key={_.value} className={`${styles.itemBox} ${styles.runningItemBox} ${statusClass} ${_?.checked ? styles.checkedItem : ''}`} onClick={() => { setCommandChecked(_) }}>
-                <span>{_.label}</span>
-                <div>
+                <span title={_.label}>{_.label}</span>
+                <div className={styles.runningItemActions}>
                     {_.running && !_.connect && (
                         <ApiOutlined
                             title="断线重连"

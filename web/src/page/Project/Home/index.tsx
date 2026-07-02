@@ -31,13 +31,7 @@ export default function ProjectManage() {
   const [refCount, setRefCount] = useState(1);
   const logRef = useRef<any>({});
 
-  const projectList = projectData?.projectList?.map?.(_ => {
-    return {
-      ..._,
-      hasRunning: _.scripts.some(__ => __.running),
-      hasMask: _.scripts.some(__ => __.running !== undefined)
-    }
-  }) || [];
+  const projectList = projectData?.projectList || [];
   const currentProjectIndex = projectList.findIndex(_ => _.checked);
   const currentProject = projectList?.[currentProjectIndex];
   const currentCommandIndex = currentProject?.scripts?.findIndex?.(_ => _.checked);
@@ -256,8 +250,10 @@ export default function ProjectManage() {
       <div className={styles.contentBox}>
         <Left projectList={projectList} setProjectChecked={setProjectChecked} onProjectRemoved={init} />
         <Center commandBoxRef={commandBoxRef} currentCommand={currentCommand} currentProject={currentProject} refCount={refCount} logs={logs} runCommand={runCommand} />
-        <Right currentProject={currentProject} setCommandChecked={setCommandChecked} runCommand={runCommand} reconnectCommand={reconnectCommand} close={close} stop={stop} />
-        <ColorLegend colorCache={colorCache} />
+        <div className={styles.sideColumn}>
+          <Right currentProject={currentProject} setCommandChecked={setCommandChecked} runCommand={runCommand} reconnectCommand={reconnectCommand} close={close} stop={stop} />
+          <ColorLegend colorCache={colorCache} />
+        </div>
       </div>
   </PageShell>
 }

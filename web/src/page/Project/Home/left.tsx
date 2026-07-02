@@ -1,4 +1,4 @@
-import type { IProjectListItem } from '../../../type';
+import type { IProjectListItem, IProjectScript } from '../../../type';
 import styles from './index.module.less';
 import { DeleteOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { removeProject } from '../../../server/project';
@@ -9,6 +9,22 @@ interface IProps {
 	projectList: IProjectListItem[];
 	setProjectChecked: (index: number) => void;
 	onProjectRemoved: () => void;
+}
+
+function RunningDots({ scripts }: { scripts: IProjectScript[] }) {
+	const activeScripts = scripts.filter(s => s.running !== undefined).slice(0, 3);
+	if (activeScripts.length === 0) return null;
+
+	return (
+		<span className={styles.runningDots} aria-hidden>
+			{activeScripts.map(script => (
+				<span
+					key={script.value}
+					className={`${styles.runningDot} ${script.running ? styles.dotRunning : styles.dotPaused}`}
+				/>
+			))}
+		</span>
+	);
 }
 
 export default function Left(props: IProps) {
@@ -30,21 +46,17 @@ export default function Left(props: IProps) {
 						key={item.path}
 						className={`${styles.itemBox} ${item.checked ? styles.checkedItem : ''}`}
 						style={{
-							'--row-accent': item.color || '#cbd5e1',
-							backgroundColor: item.color ? softenRowColor(item.color) : undefined,
+							'--row-accent': item.color || '#e2e8f0',
+							backgroundColor: item.color ? softenRowColor(item.color, 24) : undefined,
 						} as React.CSSProperties}
 						onClick={() => { setProjectChecked(index) }}
 						title={item.path}
 					>
-						<div className={styles.itemMain}>
-							<span className={`
-              ${styles.hasRunningicon} 
-              ${item.hasMask ? (item.hasRunning
-								? styles.hasRunning : styles.maskHasPause) : styles.noMask}
-              `}></span>
-							<span className={styles.projectItemName}>{item.label}</span>
+						<span className={styles.projectItemName}>{item.label}</span>
+						<div className={styles.itemActions}>
+							<DeleteOutlined className={styles.removeBtn} onClick={(e) => handleRemove(e, item)} />
+							<RunningDots scripts={item.scripts} />
 						</div>
-						<DeleteOutlined className={styles.removeBtn} onClick={(e) => handleRemove(e, item)} />
 					</div>
 				);
 			})}
