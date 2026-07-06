@@ -26,6 +26,7 @@ import SwaggerDocToolbar from '@/components/SwaggerDocToolbar'
 import { useSwaggerDocSession } from '@/hooks/useSwaggerDocSession'
 import { EndpointPicker } from './EndpointPicker'
 import { FieldRuleEditor } from './FieldRuleEditor'
+import { StaticResponseEditor, staticResponseForApi } from './StaticResponseEditor'
 import { MockControlPanel, MockServicePanel, RunningMockList } from './MockControlPanel'
 import styles from './index.module.less'
 
@@ -64,6 +65,7 @@ function DataMock() {
   const [selected, setSelected] = useState<ParsedEndpoint | null>(null)
   const [fieldRules, setFieldRules] = useState<FieldRulesMap>({})
   const [arrayLengths, setArrayLengths] = useState<ArrayLengthsMap>({})
+  const [staticResponseText, setStaticResponseText] = useState('')
   const [runningMocks, setRunningMocks] = useState<MockSessionInfo[]>([])
 
   const spec = activeTab?.spec ?? null
@@ -124,6 +126,7 @@ function DataMock() {
     setSelected(null)
     setFieldRules({})
     setArrayLengths({})
+    setStaticResponseText('')
     setError(null)
   }
 
@@ -145,6 +148,7 @@ function DataMock() {
       setSelected(null)
       setFieldRules({})
       setArrayLengths({})
+      setStaticResponseText('')
       setPhase(remainingCount > 0 ? 'pick' : 'load')
     })
   }
@@ -167,6 +171,7 @@ function DataMock() {
     const saved = loadEndpointRules(activeTab.sourceUrl, endpoint.method, endpoint.path)
     setFieldRules(saved?.fieldRules ?? buildDefaultFieldRules(resolved))
     setArrayLengths(saved?.arrayLengths ?? buildDefaultArrayLengths(resolved))
+    setStaticResponseText(saved?.staticResponseText ?? '')
     setPhase('configure')
   }
 
@@ -178,8 +183,9 @@ function DataMock() {
       selected.path,
       fieldRules,
       arrayLengths,
+      staticResponseText,
     )
-  }, [selected, activeTab, fieldRules, arrayLengths])
+  }, [selected, activeTab, fieldRules, arrayLengths, staticResponseText])
 
   useEffect(() => {
     persistCurrentRules()
@@ -189,12 +195,17 @@ function DataMock() {
     if (!baseUrl || !spec || !activeTab) return
     setMockLoading(true)
     try {
-      const endpointRules: Record<string, { fieldRules: FieldRulesMap; arrayLengths: ArrayLengthsMap }> = {}
+      const endpointRules: Record<
+        string,
+        { fieldRules: FieldRulesMap; arrayLengths: ArrayLengthsMap; staticResponse?: unknown }
+      > = {}
       for (const ep of mockableEndpoints) {
         const saved = loadEndpointRules(activeTab.sourceUrl, ep.method, ep.path)
+        const staticResponse = staticResponseForApi(saved?.staticResponseText ?? '')
         endpointRules[endpointRouteKey(ep.method, ep.path)] = {
           fieldRules: saved?.fieldRules ?? buildDefaultFieldRules(ep.responseSchema),
           arrayLengths: saved?.arrayLengths ?? buildDefaultArrayLengths(ep.responseSchema),
+          staticResponse,
         }
       }
       await post('/mock/startAll', {
@@ -303,6 +314,11 @@ function DataMock() {
                     {currentRunningMock && <span className={styles.mockingBadge}>Mock 中</span>}
                   </div>
 
+                  <StaticResponseEditor
+                    value={staticResponseText}
+                    onChange={setStaticResponseText}
+                  />
+
                   <FieldRuleEditor
                     spec={spec}
                     schema={responseSchema}
@@ -319,6 +335,7 @@ function DataMock() {
                     sourceUrl={sourceUrl}
                     fieldRules={fieldRules}
                     arrayLengths={arrayLengths}
+                    staticResponseText={staticResponseText}
                     responseSchema={responseSchema as Record<string, unknown>}
                     runningMock={currentRunningMock}
                     onChanged={() => void refreshMockStatus()}

@@ -28,6 +28,7 @@ app.post('/api/mock/start', async (req, res) => {
       fieldRules = {},
       arrayLengths = {},
       responseSchema,
+      staticResponse,
     } = req.body ?? {};
 
     if (!method || !openApiPath || !responseSchema || !baseUrl) {
@@ -42,6 +43,7 @@ app.post('/api/mock/start', async (req, res) => {
       fieldRules,
       arrayLengths,
       responseSchema,
+      staticResponse,
     });
 
     ok(res, toPublicSession(session));
@@ -74,6 +76,7 @@ app.post('/api/mock/startAll', async (req, res) => {
         fieldRules: custom.fieldRules ?? buildDefaultFieldRules(ep.responseSchema),
         arrayLengths: custom.arrayLengths ?? {},
         responseSchema: ep.responseSchema,
+        staticResponse: custom.staticResponse,
       };
     });
 
@@ -115,15 +118,17 @@ app.post('/api/mock/status', (_req, res) => {
 });
 
 app.post('/api/mock/preview', (req, res) => {
-  const { responseSchema, fieldRules = {}, arrayLengths = {} } = req.body ?? {};
+  const { responseSchema, fieldRules = {}, arrayLengths = {}, staticResponse } = req.body ?? {};
   if (!responseSchema) return fail(res, 400, 1, '缺少 responseSchema');
-  ok(res, {
-    body: generateResponse(responseSchema, {
-      fieldRules,
-      arrayLengths,
-      globalDefaults: getMockGlobalDefaults(),
-    }),
-  });
+  const body =
+    staticResponse !== undefined
+      ? staticResponse
+      : generateResponse(responseSchema, {
+          fieldRules,
+          arrayLengths,
+          globalDefaults: getMockGlobalDefaults(),
+        });
+  ok(res, { body });
 });
 
 await restorePersistedSessions();

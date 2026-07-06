@@ -1,7 +1,7 @@
 import http from 'http';
 import express from 'express';
 import cors from 'cors';
-import { generateResponse } from './generateResponse.js';
+import { resolveMockBody } from './generateResponse.js';
 import { getMockGlobalDefaults } from './mockConfig.js';
 
 /** 同端口共用一个 HTTP 服务（进程内，非 fork 子进程）；主进程退出时统一关闭。 */
@@ -18,11 +18,7 @@ function createPortApp(port, matchSession) {
     if (!session) {
       return res.status(404).json({ code: 404, success: false, msg: 'mock route not found', data: null });
     }
-    const body = generateResponse(session.responseSchema, {
-      fieldRules: session.fieldRules,
-      arrayLengths: session.arrayLengths,
-      globalDefaults: getMockGlobalDefaults(),
-    });
+    const body = resolveMockBody(session, getMockGlobalDefaults());
     res.json(body);
   });
 

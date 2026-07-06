@@ -364,6 +364,42 @@
   margin-bottom: 20px;
 }
 
+.staticResponseEditor {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.staticResponseTextarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  resize: vertical;
+  background: var(--surface);
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+}
+
+.staticResponseError {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--error-text);
+}
+
+.staticResponseActive {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: #059669;
+}
+
 .ruleNode {
   margin-bottom: 4px;
 }

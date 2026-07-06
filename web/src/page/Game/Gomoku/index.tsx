@@ -1,6 +1,7 @@
 import { CopyOutlined, LinkOutlined, LogoutOutlined, StopOutlined } from '@ant-design/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getLanAddresses } from '@/api/system';
+import { copyTextToClipboard } from '@/utils/clipboard';
 import {
   clearGomokuHandlers,
   connectGomokuSocket,
@@ -239,13 +240,7 @@ export default function GomokuHome() {
     return () => setActions(null);
   }, [phase, resetToLobby, setActions]);
 
-  const copyText = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      /* ignore */
-    }
-  };
+  const copyText = (text: string) => copyTextToClipboard(text);
 
   const handleJoin = () => {
     const code = joinCode.trim().toUpperCase();

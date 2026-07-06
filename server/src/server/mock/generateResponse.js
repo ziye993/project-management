@@ -153,3 +153,14 @@ function generateFromSchema(schema, ctx) {
 export function generateResponse(responseSchema, { fieldRules = {}, arrayLengths = {}, globalDefaults = null } = {}) {
   return generateFromSchema(responseSchema, { fieldRules, arrayLengths, globalDefaults });
 }
+
+export function resolveMockBody(session, globalDefaults = null) {
+  if (session.staticResponse !== undefined) {
+    return session.staticResponse;
+  }
+  return generateResponse(session.responseSchema, {
+    fieldRules: session.fieldRules ?? {},
+    arrayLengths: session.arrayLengths ?? {},
+    globalDefaults,
+  });
+}

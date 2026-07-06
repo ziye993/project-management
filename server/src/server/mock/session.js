@@ -65,6 +65,7 @@ export function createSessionPayload({
   fieldRules = {},
   arrayLengths = {},
   responseSchema,
+  staticResponse,
   sourceUrl = '',
 }) {
   const { port, contextPath } = parseBaseUrl(baseUrl);
@@ -82,6 +83,7 @@ export function createSessionPayload({
     fieldRules,
     arrayLengths,
     responseSchema,
+    staticResponse,
     startedAt: Date.now(),
   };
 }

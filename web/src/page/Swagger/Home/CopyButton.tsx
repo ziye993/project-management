@@ -1,4 +1,5 @@
 import { useState, type MouseEvent } from 'react'
+import { copyTextToClipboard } from '@/utils/clipboard'
 import styles from './index.module.less'
 
 interface CopyButtonProps {
@@ -13,17 +14,8 @@ export function CopyButton({ text, label, title, className = '' }: CopyButtonPro
 
   const handleCopy = async (e: MouseEvent) => {
     e.stopPropagation()
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textarea)
+    const ok = await copyTextToClipboard(text)
+    if (ok) {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     }

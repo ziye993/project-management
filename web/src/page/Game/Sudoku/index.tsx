@@ -14,6 +14,7 @@ import {
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import message from '@/components/ui/Modal/message';
+import { copyTextToClipboard } from '@/utils/clipboard';
 import { useNavigate } from '../../../Router';
 import { useGameLayoutActions } from '../context/layoutActions';
 import {
@@ -355,12 +356,9 @@ export default function SudokuHome() {
 
   const handleShare = useCallback(async () => {
     const url = buildShareUrl(buildPersistState());
-    try {
-      await navigator.clipboard.writeText(url);
-      message.success('分享链接已复制到剪贴板');
-    } catch {
-      message.info(url);
-    }
+    const ok = await copyTextToClipboard(url);
+    if (ok) message.success('分享链接已复制到剪贴板');
+    else message.info(url);
   }, [buildPersistState]);
 
   // 键盘快捷键

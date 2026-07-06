@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CopyOutlined } from '@ant-design/icons';
 import Modal from '@/components/ui/Modal';
 import message from '@/components/ui/Modal/message';
+import { copyTextToClipboard } from '@/utils/clipboard';
 import {
   type OrgItem,
   type ProjectItem,
@@ -100,12 +101,8 @@ export default function LogWorkspace() {
   };
 
   const copyKey = async () => {
-    try {
-      await navigator.clipboard.writeText(plainKey);
-      message.success('已复制到剪贴板');
-    } catch {
-      message.error('复制失败，请手动复制');
-    }
+    const ok = await copyTextToClipboard(plainKey);
+    message[ok ? 'success' : 'error'](ok ? '已复制到剪贴板' : '复制失败，请手动复制');
   };
 
   const toggleProject = async (id: number) => {

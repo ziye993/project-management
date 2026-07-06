@@ -25,6 +25,7 @@ export function savePersistedSessions(sessions) {
     fieldRules: s.fieldRules ?? {},
     arrayLengths: s.arrayLengths ?? {},
     responseSchema: s.responseSchema,
+    staticResponse: s.staticResponse,
     startedAt: s.startedAt,
   }));
   writeJSONFile(MOCK_FILE, { sessions: payload });

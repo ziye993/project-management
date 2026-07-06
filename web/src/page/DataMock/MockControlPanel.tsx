@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CopyButton } from '@/page/Swagger/Home/CopyButton'
 import { post } from '@/api'
 import type { MockSessionInfo } from '../../utils/dataMockStorage'
+import { isStaticResponseValid, staticResponseForApi } from './StaticResponseEditor'
 import styles from './index.module.less'
 
 interface MockControlPanelProps {
@@ -11,6 +12,7 @@ interface MockControlPanelProps {
   sourceUrl: string
   fieldRules: Record<string, unknown>
   arrayLengths: Record<string, number>
+  staticResponseText: string
   responseSchema: Record<string, unknown>
   runningMock: MockSessionInfo | null
   onChanged: () => void
@@ -23,6 +25,7 @@ export function MockControlPanel({
   sourceUrl,
   fieldRules,
   arrayLengths,
+  staticResponseText,
   responseSchema,
   runningMock,
   onChanged,
@@ -33,11 +36,13 @@ export function MockControlPanel({
 
   const running = !!runningMock
   const mockUrl = runningMock?.mockUrl ?? null
+  const jsonInvalid = staticResponseText.trim() !== '' && !isStaticResponseValid(staticResponseText)
 
   const handleStart = async () => {
+    if (jsonInvalid) return
     setLoading(true)
     try {
-      await post('/mock/start', {
+      const payload: Record<string, unknown> = {
         method,
         path,
         baseUrl,
@@ -45,7 +50,12 @@ export function MockControlPanel({
         fieldRules,
         arrayLengths,
         responseSchema,
-      })
+      }
+      const staticResponse = staticResponseForApi(staticResponseText)
+      if (staticResponse !== undefined) {
+        payload.staticResponse = staticResponse
+      }
+      await post('/mock/start', payload)
       onChanged()
     } finally {
       setLoading(false)
@@ -95,7 +105,7 @@ export function MockControlPanel({
           type="button"
           className={styles.startBtn}
           onClick={() => void handleStart()}
-          disabled={loading}
+          disabled={loading || jsonInvalid}
         >
           {loading ? '启动中…' : '启动此接口 Mock'}
         </button>

@@ -17,7 +17,7 @@ export interface MockSessionInfo {
 
 type EndpointRulesStore = Record<
   string,
-  { fieldRules: FieldRulesMap; arrayLengths: ArrayLengthsMap }
+  { fieldRules: FieldRulesMap; arrayLengths: ArrayLengthsMap; staticResponseText?: string }
 >
 
 function endpointKey(sourceUrl: string, method: string, path: string) {
@@ -49,10 +49,23 @@ export function saveEndpointRules(
   path: string,
   fieldRules: FieldRulesMap,
   arrayLengths: ArrayLengthsMap,
+  staticResponseText = '',
 ) {
   const store = loadStore()
-  store[endpointKey(sourceUrl, method, path)] = { fieldRules, arrayLengths }
+  store[endpointKey(sourceUrl, method, path)] = { fieldRules, arrayLengths, staticResponseText }
   saveStore(store)
+}
+
+export function parseStaticResponseText(
+  text: string,
+): { ok: true; value: unknown } | { ok: false; error: string,value:unknown } | { ok: true; empty: true,value:unknown } {
+  const trimmed = text.trim()
+  if (!trimmed) return { ok: true, empty: true ,value: undefined }
+  try {
+    return { ok: true, value: JSON.parse(trimmed) }
+  } catch {
+    return { ok: false, error: 'JSON 格式无效',value: undefined }
+  }
 }
 
 export function endpointRouteKey(method: string, path: string) {
