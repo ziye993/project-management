@@ -1,0 +1,88 @@
+.nav {
+  flex-shrink: 0;
+  padding: 8px 0 16px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item {
+  margin: 0;
+}
+
+.anchorBtn {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 8px 10px 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 12px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(241, 245, 249, 0.9);
+  }
+}
+
+.active {
+  background: rgba(238, 242, 255, 0.75);
+
+  .label {
+    color: #4f46e5;
+    font-weight: 600;
+  }
+}
+
+.track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 28px;
+  min-height: 100%;
+  padding-top: 4px;
+}
+
+.node {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(148, 163, 184, 0.55);
+  background: #fff;
+  flex-shrink: 0;
+  z-index: 1;
+  transition: all 0.2s;
+}
+
+.nodeActive {
+  border-color: #818cf8;
+  background: #818cf8;
+  box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.18);
+}
+
+.line {
+  position: absolute;
+  top: 16px;
+  bottom: -18px;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.35), rgba(148, 163, 184, 0.15));
+  border-radius: 2px;
+}
+
+.label {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  padding-top: 0;
+}

@@ -1,0 +1,51 @@
+.box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  padding: 24px;
+}
+
+.panel {
+  text-align: center;
+  max-width: 360px;
+  padding: 32px 28px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.desc {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.loginBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  background: rgba(238, 242, 255, 0.9);
+  color: #4f46e5;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(224, 231, 255, 0.95);
+  }
+}

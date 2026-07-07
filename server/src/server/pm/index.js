@@ -12,7 +12,8 @@ import { getColorCache } from '../../utils/jsonFile.js';
 import { makeRunKey, parseRunKey } from '../../utils/runKey.js';
 import { decodeOutput } from '../../utils/decodeOutput.js';
 import { appendCommandLog, ensureCommandLog, getCommandLogs ,clearCommandLog} from '../../utils/commandLogs.js';
-import { resolveExistingProjectPath, spawnProjectScript } from '../../utils/projectCommand.js';
+import { resolveExistingProjectPath, spawnProjectScript, spawnCustomShellCommand } from '../../utils/projectCommand.js';
+import { findCustomProjectCommand, parseCustomCommandId } from '../../utils/customCommands.js';
 import { ok, fail } from '../../utils/httpResponse.js';
 
 let projectList = getProjectList();
@@ -131,7 +132,20 @@ app.post('/api/project/runCommand', (req, res) => {
   if (!currentChild[key]) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     try {
-      child = spawnProjectScript(resolvedPath, value);
+      if (value.startsWith('__custom__:')) {
+        const commandId = parseCustomCommandId(value);
+        const customCmd = findCustomProjectCommand(commandId);
+        if (!customCmd) {
+          const message = '自定义指令不存在或已被删除';
+          appendCommandLog(resolvedPath, value, { text: message, type: 'error' });
+          res.write(`[[E]][错误] ${message}`);
+          res.end(`\n❌ ${message}`);
+          return;
+        }
+        child = spawnCustomShellCommand(resolvedPath, customCmd.command);
+      } else {
+        child = spawnProjectScript(resolvedPath, value);
+      }
     } catch (error) {
       const message = error.message || '进程启动失败';
       appendCommandLog(resolvedPath, value, { text: message, type: 'error' });

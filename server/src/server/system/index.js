@@ -9,6 +9,7 @@ import { getConfig } from '../../utils/jsonFile.js';
 import {
   computeVisibleModules,
   computeModuleCapabilities,
+  normalizeModuleAccess,
 } from '../../middleware/access.js';
 import { optionalAuthenticate } from '../../middleware/auth.js';
 import {
@@ -22,6 +23,7 @@ app.post('/api/system/accessContext', optionalAuthenticate, (req, res) => {
   const isSuperAdmin = !!req.user?.is_super_admin;
   const orgPermissions = req.orgPermissions || [];
   const channel = req.channel;
+  const moduleAccess = normalizeModuleAccess(getConfig(true)?.moduleAccess);
 
   const visibleModules = computeVisibleModules({
     channel,
@@ -29,6 +31,7 @@ app.post('/api/system/accessContext', optionalAuthenticate, (req, res) => {
     isAuthenticated,
     isSuperAdmin,
     orgPermissions,
+    moduleAccess,
   });
 
   const moduleCapabilities = computeModuleCapabilities({
@@ -38,6 +41,7 @@ app.post('/api/system/accessContext', optionalAuthenticate, (req, res) => {
     isSuperAdmin,
     orgPermissions,
     visibleModules,
+    moduleAccess,
   });
 
   const publicBaseUrl = resolvePublicBaseUrl(req);
@@ -63,6 +67,7 @@ app.post('/api/system/accessContext', optionalAuthenticate, (req, res) => {
       projectPermissions: req.projectPermissions || [],
       visibleModules,
       moduleCapabilities,
+      moduleAccess,
       isAuthenticated,
     },
   });

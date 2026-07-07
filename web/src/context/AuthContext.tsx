@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { post } from '@/api';
 import { fetchMe } from '@/api/user';
 import { computeVisibleModulesClient, computeModuleCapabilitiesClient } from '../utils/accessRules';
+import { normalizeModuleAccess, type ModuleAccessConfig } from '../constants/moduleAccess';
 import { isSameOriginBase, resolveEffectiveLogApiBaseUrl } from '../utils/logApiBase';
 
 export interface OrgPermission {
@@ -40,6 +41,7 @@ export interface AccessContextData {
   projectPermissions: ProjectPermission[];
   visibleModules: string[];
   moduleCapabilities: Record<string, ModuleCapability>;
+  moduleAccess: ModuleAccessConfig;
   isAuthenticated: boolean;
 }
 
@@ -48,6 +50,7 @@ interface AuthContextValue extends AccessContextData {
   refresh: () => Promise<void>;
   canManageLog: boolean;
   hasModule: (key: string) => boolean;
+  canReadModule: (key: string) => boolean;
   canWriteModule: (key: string) => boolean;
 }
 
@@ -62,6 +65,7 @@ const defaultState: AccessContextData = {
   projectPermissions: [],
   visibleModules: [],
   moduleCapabilities: {},
+  moduleAccess: { requireLogin: [], hidden: [] },
   isAuthenticated: false,
 };
 
@@ -100,12 +104,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      const moduleAccess = normalizeModuleAccess(ctx.moduleAccess);
+
       const visibleModules = computeVisibleModulesClient({
         channel: ctx.channel,
         deploymentRole: ctx.deploymentRole,
         isAuthenticated,
         isSuperAdmin,
         orgPermissions,
+        moduleAccess,
       });
 
       const moduleCapabilities = computeModuleCapabilitiesClient({
@@ -115,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isSuperAdmin,
         orgPermissions,
         visibleModules,
+        moduleAccess,
       });
 
       setState({
@@ -127,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isSuperAdmin,
         visibleModules,
         moduleCapabilities,
+        moduleAccess,
       });
     } catch (err) {
       console.error('[AuthProvider]', err);
@@ -151,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh,
     canManageLog,
     hasModule: (key: string) => state.visibleModules.includes(key),
+    canReadModule: (key: string) => !!state.moduleCapabilities[key]?.read,
     canWriteModule: (key: string) => !!state.moduleCapabilities[key]?.write,
   }), [state, loading, refresh, canManageLog]);
 

@@ -1,4 +1,7 @@
 import { post } from ".";
+import type { MockFieldDefaults } from '../type/mockDefaults';
+import type { ModuleAccessConfig } from '../constants/moduleAccess';
+import type { CustomProjectCommand } from '../constants/customCommands';
 
 const basePath = "/config"
 
@@ -26,8 +29,14 @@ export const setCommandSortOrder = async (param: { commandSortOrder: string[] })
   return await post(basePath + '/setCommandSortOrder', param);
 }
 
-import type { MockFieldDefaults } from '../type/mockDefaults'
-
 export const setMockFieldDefaults = async (param: { mockFieldDefaults: MockFieldDefaults }) => {
   return await post(basePath + '/setMockFieldDefaults', param);
+}
+
+export const setModuleAccess = async (param: { moduleAccess: ModuleAccessConfig }) => {
+  return await post(basePath + '/setModuleAccess', param);
+}
+
+export const setCustomProjectCommands = async (param: { customProjectCommands: CustomProjectCommand[] }) => {
+  return await post(basePath + '/setCustomProjectCommands', param);
 }

@@ -1,10 +1,11 @@
 import { ApiOutlined, CloseCircleOutlined, PauseCircleOutlined, PlayCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
-import type { IProjectListItem } from '../../../type';
+import type { IProjectListItem, IProjectScript } from '../../../type';
 import styles from './index.module.less';
 
 
 interface IProps {
     currentProject: IProjectListItem,
+    customRunningItems?: IProjectScript[];
     setCommandChecked: Function;
     runCommand: Function;
     reconnectCommand: Function;
@@ -12,15 +13,16 @@ interface IProps {
     stop: Function;
 }
 export default function Right(props: IProps) {
-    const { currentProject, setCommandChecked, runCommand, reconnectCommand, close, stop } = props;
+    const { currentProject, customRunningItems = [], setCommandChecked, runCommand, reconnectCommand, close, stop } = props;
     const runningScripts = currentProject?.scripts?.filter?.(_ => _?.running !== undefined) ?? [];
+    const runningItems = [...runningScripts, ...customRunningItems];
 
     return (<div className={`${styles.list} ${styles.runningPanel}`}>
         <p className={styles.panelTitle}><ThunderboltOutlined /> 运行记录</p>
-        {runningScripts.length === 0 && (
+        {runningItems.length === 0 && (
             <p className={styles.emptyHint}>暂无运行记录</p>
         )}
-        {runningScripts.map(_ => {
+        {runningItems.map(_ => {
             const statusClass = _.running ? styles.runningActive : styles.runningPaused;
             return <div key={_.value} className={`${styles.itemBox} ${styles.runningItemBox} ${statusClass} ${_?.checked ? styles.checkedItem : ''}`} onClick={() => { setCommandChecked(_) }}>
                 <span title={_.label}>{_.label}</span>

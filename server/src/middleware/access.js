@@ -6,8 +6,35 @@ const LOCAL_MODULES = [
   'swagger', 'dataMock', 'game', 'localChat', 'planeEditor',
 ];
 
+const CONFIGURABLE_MODULE_KEYS = new Set(LOCAL_MODULES);
+
 const PUBLIC_ALWAYS = ['game', 'localChat'];
 const PUBLIC_NEVER = ['project', 'config', 'dataMock', 'swagger', 'planeEditor'];
+
+export function normalizeModuleAccess(raw) {
+  const requireLogin = [];
+  const hidden = [];
+
+  if (Array.isArray(raw?.requireLogin)) {
+    for (const key of raw.requireLogin) {
+      if (typeof key === 'string' && CONFIGURABLE_MODULE_KEYS.has(key) && !hidden.includes(key)) {
+        requireLogin.push(key);
+      }
+    }
+  }
+  if (Array.isArray(raw?.hidden)) {
+    for (const key of raw.hidden) {
+      if (typeof key === 'string' && CONFIGURABLE_MODULE_KEYS.has(key) && !hidden.includes(key)) {
+        hidden.push(key);
+      }
+    }
+  }
+
+  return {
+    requireLogin: requireLogin.filter(key => !hidden.includes(key)),
+    hidden,
+  };
+}
 
 function normalizeIp(raw) {
   if (!raw) return '';
@@ -82,13 +109,15 @@ export function computeVisibleModules({
   isAuthenticated,
   isSuperAdmin,
   orgPermissions,
+  moduleAccess,
 }) {
   const hasOrg = Array.isArray(orgPermissions) && orgPermissions.length > 0;
-  const canSeeLog = isAuthenticated && (isSuperAdmin || hasOrg);
+  const access = normalizeModuleAccess(moduleAccess);
+  const hiddenSet = new Set(access.hidden);
 
   if (channel === 'local' || channel === 'lan') {
-    const modules = [...LOCAL_MODULES];
-    if (canSeeLog) modules.push('log');
+    const modules = LOCAL_MODULES.filter(m => !hiddenSet.has(m));
+    modules.push('log');
     if (deploymentRole === 'log_server') modules.push('auth');
     return modules;
   }
@@ -99,9 +128,11 @@ export function computeVisibleModules({
     if (deploymentRole === 'log_server') modules.push('auth');
   } else if (isAuthenticated && hasOrg) {
     modules.push('log');
+  } else {
+    modules.push('log');
   }
 
-  return modules.filter(m => !PUBLIC_NEVER.includes(m));
+  return modules.filter(m => !PUBLIC_NEVER.includes(m) && !hiddenSet.has(m));
 }
 
 function rw(read = true, write = true) {
@@ -115,10 +146,13 @@ export function computeModuleCapabilities({
   isSuperAdmin,
   orgPermissions,
   visibleModules,
+  moduleAccess,
 }) {
   const caps = {};
   const hasOrg = Array.isArray(orgPermissions) && orgPermissions.length > 0;
   const hasManage = isSuperAdmin || orgPermissions?.some(p => p.role === 'manage');
+  const access = normalizeModuleAccess(moduleAccess);
+  const requireLoginSet = new Set(access.requireLogin);
 
   for (const key of visibleModules) {
     if (channel === 'local' || channel === 'lan') {
@@ -128,6 +162,8 @@ export function computeModuleCapabilities({
           : rw(false, false);
       } else if (key === 'auth') {
         caps[key] = rw(true, true);
+      } else if (requireLoginSet.has(key) && !isAuthenticated) {
+        caps[key] = rw(false, false);
       } else {
         caps[key] = rw(true, true);
       }
@@ -144,6 +180,8 @@ export function computeModuleCapabilities({
         : rw(false, false);
     } else if (key === 'auth') {
       caps[key] = deploymentRole === 'log_server' && isSuperAdmin ? rw(true, true) : rw(false, false);
+    } else if (requireLoginSet.has(key) && !isAuthenticated) {
+      caps[key] = rw(false, false);
     } else {
       caps[key] = rw(true, true);
     }

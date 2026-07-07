@@ -36,3 +36,16 @@ export function spawnProjectScript(projectPath, scriptName) {
     detached: !isWin,
   });
 }
+
+export function spawnCustomShellCommand(projectPath, command) {
+  const cwd = resolveExistingProjectPath(projectPath);
+  const isWin = process.platform === 'win32';
+  return spawn(command, [], {
+    cwd,
+    shell: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+    env: process.env,
+    detached: !isWin,
+  });
+}

@@ -1,14 +1,24 @@
 import GlobalScripts from '@/components/GlobalScripts';
+import LinkifiedText from '@/components/LinkifiedText';
+import { customCommandValue, type CustomProjectCommand } from '@/constants/customCommands';
 import type { IProjectListItem, IProjectScript } from '../../../type';
 import { mixBorderColor, softenButtonColor } from '../../../utils/color';
 import styles from './index.module.less';
 
+interface CustomRunState {
+  running?: boolean;
+  connect?: boolean;
+  checked?: boolean;
+}
 
 interface IProps {
     currentProject: IProjectListItem,
-    currentCommand: IProjectScript;
+    currentCommand: IProjectScript | null;
+    customCommands: CustomProjectCommand[];
+    customRunState: Record<string, CustomRunState>;
     refCount: number;
     runCommand: Function;
+    runCustomCommand: Function;
     logs: any[];
     commandBoxRef: React.RefObject<HTMLDivElement | null>;
 }
@@ -46,7 +56,17 @@ function CommandButton({
 }
 
 export default function Center(props: IProps) {
-    const { currentProject, currentCommand, refCount, runCommand, logs, commandBoxRef } = props;
+    const {
+        currentProject,
+        currentCommand,
+        customCommands,
+        customRunState,
+        refCount,
+        runCommand,
+        runCustomCommand,
+        logs,
+        commandBoxRef,
+    } = props;
 
     const idleScripts = currentProject?.scripts?.filter?.(_ => _?.running === undefined) ?? [];
     const pinnedScripts = idleScripts
@@ -58,30 +78,47 @@ export default function Center(props: IProps) {
     const projectColor = currentProject?.color;
 
     return (<div className={styles.content} style={{ width: "0px" }}>
-        <div className={styles.contentHeadButton}>
-            <div className={styles.pinnedSection}>
+        <div className={styles.commandRows}>
+            <div className={styles.commandRow}>
                 <GlobalScripts className={`${styles.comButton} ${styles.globalScripts}`} item={{ path: currentProject?.path, }} />
-                {pinnedScripts.map((script) => (
-                    <CommandButton
-                        key={script.value}
-                        script={script}
-                        projectColor={projectColor}
-                        pinned
-                        onClick={() => runCommand(script)}
-                    />
-                ))}
+                {customCommands.map((cmd) => {
+                    const value = customCommandValue(cmd.id);
+                    const state = customRunState[value];
+                    return (
+                        <div
+                            key={cmd.id}
+                            className={`${styles.comButton} ${state?.checked ? styles.comButtonChecked : ''}`}
+                            onClick={() => runCustomCommand(cmd)}
+                        >
+                            {cmd.title}
+                        </div>
+                    );
+                })}
             </div>
-            {otherScripts.length > 0 && (
-                <div className={styles.scrollableSection}>
-                    {otherScripts.map((script) => (
+            <div className={styles.commandRow}>
+                <div className={styles.pinnedSection}>
+                    {pinnedScripts.map((script) => (
                         <CommandButton
                             key={script.value}
                             script={script}
+                            projectColor={projectColor}
+                            pinned
                             onClick={() => runCommand(script)}
                         />
                     ))}
                 </div>
-            )}
+                {otherScripts.length > 0 && (
+                    <div className={styles.scrollableSection}>
+                        {otherScripts.map((script) => (
+                            <CommandButton
+                                key={script.value}
+                                script={script}
+                                onClick={() => runCommand(script)}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
         <div className={styles.commandBottonLine}></div>
         <div className={styles.cmdContent}>
@@ -89,7 +126,7 @@ export default function Center(props: IProps) {
             <div className={styles.commandLogBox} ref={commandBoxRef} >
                 {refCount && logs.map((_, index) => {
                     return <code key={index} className={styles.codeline} style={{ color: _.type === 'error' ? '#dc2626' : '#334155', margin: '2px 0' }}>
-                        {_.text}
+                        <LinkifiedText text={_.text} />
                     </code>
                 })}
             </div>

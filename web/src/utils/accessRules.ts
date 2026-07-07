@@ -1,4 +1,5 @@
 import type { OrgPermission } from '../context/AuthContext';
+import { normalizeModuleAccess, type ModuleAccessConfig } from '../constants/moduleAccess';
 
 const LOCAL_MODULES = [
   'project', 'image', 'television', 'config', 'serverInfo', 'LANSharing',
@@ -14,14 +15,16 @@ export function computeVisibleModulesClient(opts: {
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
   orgPermissions: OrgPermission[];
+  moduleAccess?: ModuleAccessConfig | null;
 }) {
   const { channel, deploymentRole, isAuthenticated, isSuperAdmin, orgPermissions } = opts;
+  const access = normalizeModuleAccess(opts.moduleAccess);
+  const hiddenSet = new Set(access.hidden);
   const hasOrg = orgPermissions.length > 0;
-  const canSeeLog = isAuthenticated && (isSuperAdmin || hasOrg);
 
   if (channel === 'local' || channel === 'lan') {
-    const modules = [...LOCAL_MODULES];
-    if (canSeeLog) modules.push('log');
+    const modules = LOCAL_MODULES.filter(m => !hiddenSet.has(m));
+    modules.push('log');
     if (deploymentRole === 'log_server') modules.push('auth');
     return modules;
   }
@@ -32,9 +35,11 @@ export function computeVisibleModulesClient(opts: {
     if (deploymentRole === 'log_server') modules.push('auth');
   } else if (isAuthenticated && hasOrg) {
     modules.push('log');
+  } else {
+    modules.push('log');
   }
 
-  return modules.filter(m => !PUBLIC_NEVER.includes(m));
+  return modules.filter(m => !PUBLIC_NEVER.includes(m) && !hiddenSet.has(m));
 }
 
 export function computeModuleCapabilitiesClient(opts: {
@@ -44,10 +49,13 @@ export function computeModuleCapabilitiesClient(opts: {
   isSuperAdmin: boolean;
   orgPermissions: OrgPermission[];
   visibleModules: string[];
+  moduleAccess?: ModuleAccessConfig | null;
 }) {
   const { channel, deploymentRole, isAuthenticated, isSuperAdmin, orgPermissions, visibleModules } = opts;
   const caps: Record<string, { read: boolean; write: boolean }> = {};
   const hasManage = isSuperAdmin || orgPermissions.some(p => p.role === 'manage');
+  const access = normalizeModuleAccess(opts.moduleAccess);
+  const requireLoginSet = new Set(access.requireLogin);
 
   for (const key of visibleModules) {
     if (channel === 'local' || channel === 'lan') {
@@ -55,6 +63,10 @@ export function computeModuleCapabilitiesClient(opts: {
         caps[key] = isAuthenticated
           ? { read: true, write: isSuperAdmin || hasManage }
           : { read: false, write: false };
+      } else if (key === 'auth') {
+        caps[key] = { read: true, write: true };
+      } else if (requireLoginSet.has(key) && !isAuthenticated) {
+        caps[key] = { read: false, write: false };
       } else {
         caps[key] = { read: true, write: true };
       }
@@ -72,6 +84,8 @@ export function computeModuleCapabilitiesClient(opts: {
       caps[key] = deploymentRole === 'log_server' && isSuperAdmin
         ? { read: true, write: true }
         : { read: false, write: false };
+    } else if (requireLoginSet.has(key) && !isAuthenticated) {
+      caps[key] = { read: false, write: false };
     } else {
       caps[key] = { read: true, write: true };
     }
