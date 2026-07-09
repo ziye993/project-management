@@ -18,6 +18,21 @@ function parseOptionalBoolean(value) {
   return undefined;
 }
 
+function parsePaginationFields(src = {}) {
+  const pagination = {};
+
+  const pageNo = parseOptionalNumber(src.pageNo ?? src.current);
+  if (pageNo !== undefined) pagination.pageNo = pageNo;
+
+  const pageSize = parseOptionalNumber(src.pageSize ?? src.size);
+  if (pageSize !== undefined) pagination.pageSize = pageSize;
+
+  const total = parseOptionalNumber(src.total);
+  if (total !== undefined) pagination.total = total;
+
+  return pagination;
+}
+
 export function normalizeMockFieldDefaults(input = {}) {
   const result = {};
 
@@ -31,14 +46,16 @@ export function normalizeMockFieldDefaults(input = {}) {
     result.message = String(input.message);
   }
 
-  const resultFields = {};
-  const src = input.result && typeof input.result === 'object' ? input.result : {};
-  for (const key of ['size', 'total', 'current', 'pages']) {
-    const n = parseOptionalNumber(src[key]);
-    if (n !== undefined) resultFields[key] = n;
-  }
-  if (Object.keys(resultFields).length) {
-    result.result = resultFields;
+  const paginationSrc =
+    input.pagination && typeof input.pagination === 'object'
+      ? input.pagination
+      : input.result && typeof input.result === 'object'
+        ? input.result
+        : {};
+
+  const pagination = parsePaginationFields(paginationSrc);
+  if (Object.keys(pagination).length) {
+    result.pagination = pagination;
   }
 
   return result;

@@ -17,10 +17,36 @@ function coerceBoolean(value) {
   return value;
 }
 
-const RESULT_KEYS = ['size', 'total', 'current', 'pages'];
+const PAGINATION_CONFIG = {
+  pageNo: ['pageNo', 'pageNum', 'current', 'page'],
+  pageSize: ['pageSize', 'size'],
+  total: ['total'],
+};
+
+function getPathLeaf(path) {
+  const parts = path.split('.');
+  return parts[parts.length - 1] ?? path;
+}
+
+function resolvePaginationDefault(path, defaults, schema) {
+  const pagination = defaults?.pagination ?? defaults?.result;
+  if (!pagination || typeof pagination !== 'object') return undefined;
+
+  const leaf = getPathLeaf(path);
+  for (const [configKey, aliases] of Object.entries(PAGINATION_CONFIG)) {
+    if (!aliases.includes(leaf)) continue;
+
+    let value = pagination[configKey];
+    if (!isConfigured(value) && configKey === 'pageNo') value = pagination.current;
+    if (!isConfigured(value) && configKey === 'pageSize') value = pagination.size;
+    if (isConfigured(value)) return coerceNumber(value, schema);
+  }
+
+  return undefined;
+}
 
 /**
- * @param {string} path 字段路径，如 code、msg、result.size
+ * @param {string} path 字段路径，如 code、msg、data.pageNo
  * @param {object} defaults config.mockFieldDefaults
  * @param {object} schema 当前字段 schema
  * @returns {unknown|undefined} 有配置则返回值，否则 undefined
@@ -40,14 +66,8 @@ export function resolveGlobalFieldDefault(path, defaults, schema) {
     return String(defaults.message);
   }
 
-  const resultDefaults = defaults.result;
-  if (resultDefaults && typeof resultDefaults === 'object') {
-    for (const key of RESULT_KEYS) {
-      if (path === `result.${key}` && isConfigured(resultDefaults[key])) {
-        return coerceNumber(resultDefaults[key], schema);
-      }
-    }
-  }
+  const paginated = resolvePaginationDefault(path, defaults, schema);
+  if (paginated !== undefined) return paginated;
 
   return undefined;
 }
@@ -57,8 +77,13 @@ export const MOCK_DEFAULT_FIELD_PATHS = [
   'success',
   'msg',
   'message',
-  'result.size',
+  'pageNo',
+  'pageSize',
+  'total',
+  'data.pageNo',
+  'data.pageSize',
+  'data.total',
+  'result.pageNo',
+  'result.pageSize',
   'result.total',
-  'result.current',
-  'result.pages',
 ];

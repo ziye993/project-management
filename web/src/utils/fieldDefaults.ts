@@ -18,7 +18,36 @@ function coerceBoolean(value: unknown): unknown {
   return value
 }
 
-const RESULT_KEYS = ['size', 'total', 'current', 'pages'] as const
+const PAGINATION_CONFIG = {
+  pageNo: ['pageNo', 'pageNum', 'current', 'page'] as const,
+  pageSize: ['pageSize', 'size'] as const,
+  total: ['total'] as const,
+}
+
+type PaginationConfigKey = keyof typeof PAGINATION_CONFIG
+
+function getPathLeaf(path: string): string {
+  const parts = path.split('.')
+  return parts[parts.length - 1] ?? path
+}
+
+function resolvePaginationDefault(
+  path: string,
+  defaults: MockFieldDefaults | null | undefined,
+  schema?: SchemaObject,
+): unknown | undefined {
+  const pagination = defaults?.pagination
+  if (!pagination || typeof pagination !== 'object') return undefined
+
+  const leaf = getPathLeaf(path)
+  for (const configKey of Object.keys(PAGINATION_CONFIG) as PaginationConfigKey[]) {
+    if (!(PAGINATION_CONFIG[configKey] as readonly string[]).includes(leaf)) continue
+    const value = pagination[configKey]
+    if (isConfigured(value)) return coerceNumber(value, schema)
+  }
+
+  return undefined
+}
 
 /** 与 server mock fieldDefaults 一致：按字段路径匹配系统配置默认值 */
 export function resolveGlobalFieldDefault(
@@ -40,19 +69,13 @@ export function resolveGlobalFieldDefault(
     return String(defaults.message)
   }
 
-  const resultDefaults = defaults.result
-  if (resultDefaults && typeof resultDefaults === 'object') {
-    for (const key of RESULT_KEYS) {
-      if (path === `result.${key}` && isConfigured(resultDefaults[key])) {
-        return coerceNumber(resultDefaults[key], schema)
-      }
-    }
-  }
+  const paginated = resolvePaginationDefault(path, defaults, schema)
+  if (paginated !== undefined) return paginated
 
   return undefined
 }
 
-/** Swagger 试请求：先精确路径，再尝试 result.{name} 别名（如 query 参数 current → result.current） */
+/** Swagger 试请求：先精确路径，再尝试顶层分页参数别名（如 query 参数 pageNo） */
 export function resolveFieldDefault(
   path: string,
   defaults: MockFieldDefaults | null | undefined,
@@ -61,10 +84,8 @@ export function resolveFieldDefault(
   const exact = resolveGlobalFieldDefault(path, defaults, schema)
   if (exact !== undefined) return exact
 
-  if (defaults?.result && path && !path.includes('.')) {
-    if ((RESULT_KEYS as readonly string[]).includes(path)) {
-      return resolveGlobalFieldDefault(`result.${path}`, defaults, schema)
-    }
+  if (defaults?.pagination && path && !path.includes('.')) {
+    return resolvePaginationDefault(path, defaults, schema)
   }
 
   return undefined

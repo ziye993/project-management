@@ -267,7 +267,7 @@ export default function ConfigHome() {
           <div className={`${shellStyles.panel} ${styles.configItemBox}`}>
             <span className={styles.configItemTitle}>Mock 公共字段默认值</span>
             <p className={styles.hint}>
-              数据 Mock 与 Swagger 试请求未单独配置的字段将使用此处默认值；留空则仍按类型/schema 生成。message 同时作用于 msg / message 字段；分页字段 current / size 等也会匹配 result 下的同名配置。
+              数据 Mock 与 Swagger 试请求未单独配置的字段将使用此处默认值；留空则仍按类型/schema 生成。message 同时作用于 msg / message 字段；分页字段 pageNo / pageSize / total 会匹配响应中任意层级的同名字段（也兼容 current / size 等别名）。
             </p>
             <div className={styles.mockDefaultsForm}>
               <label className={styles.mockFieldRow}>
@@ -303,21 +303,21 @@ export default function ConfigHome() {
                 />
               </label>
               <div className={styles.mockFieldGroup}>
-                <span className={styles.mockFieldGroupTitle}>result 分页（字段存在时生效）</span>
-                {(['size', 'total', 'current', 'pages'] as const).map((key) => (
+                <span className={styles.mockFieldGroupTitle}>分页字段（字段存在时生效）</span>
+                {(['pageNo', 'pageSize', 'total'] as const).map((key) => (
                   <label key={key} className={styles.mockFieldRow}>
                     <span>{key}</span>
                     <input
                       className={styles.input}
                       type="number"
-                      value={mockDefaults.result?.[key] ?? ''}
+                      value={mockDefaults.pagination?.[key] ?? ''}
                       onChange={(e) =>
                         setMockDefaults((prev) => ({
                           ...prev,
-                          result: { ...prev.result, [key]: e.target.value },
+                          pagination: { ...prev.pagination, [key]: e.target.value },
                         }))
                       }
-                      placeholder="留空则随机"
+                      placeholder={key === 'pageNo' ? '如 1' : key === 'pageSize' ? '如 10' : '如 100'}
                     />
                   </label>
                 ))}
