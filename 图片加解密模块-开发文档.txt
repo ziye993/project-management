@@ -1,0 +1,516 @@
+图片加解密模块 — 开发文档
+版本：2026-07-09
+说明：本文档描述新模块「图片加解密」(moduleKey: imageCrypto) 的完整需求与实现方案。
+      通用工程约定见同目录 开发规范.md，本文档不重复叙述。
+
+
+================================================================================
+一、模块概述
+================================================================================
+
+模块名称（首页卡片）：图片加解密
+模块 key：imageCrypto
+路由前缀：/image-crypto
+定位：本地/局域网图片工具集，包含像素混淆加解密、幻影坦克隐写、智能显形、双图合并。
+
+核心原则：
+1. 图像计算默认在浏览器 Canvas 完成，图片处理不上传服务器（保存结果除外）。
+2. 保存到服务器复用现有 POST /api/upload/uploadPic。
+3. 非密码学安全，UI 须展示免责声明：仅供学习研究与合法用途。
+4. 混淆解密须使用原图密文；平台二次压缩可能导致失败。
+
+
+================================================================================
+二、功能分区（四个 Tab）
+================================================================================
+
+Tab1：加解密
+  - 上传一张图片
+  - 选择算法（混淆 / 解混淆方向由按钮决定，算法相同互逆）
+  - 若算法需要密钥则显示密钥输入框并校验
+  - 预览处理结果
+  - 按钮：加密、解密、保存到服务器
+
+Tab2：隐写图（幻影坦克）
+  子模式 A — 合成：
+    - 上传表图、里图两张
+    - 合成幻影坦克 PNG
+    - 合成完成后在成品图右下角绘制竖排水印（见第七节）
+    - 预览、保存到服务器
+  子模式 B — 手动分离：
+    - 上传一张隐写图
+    - 调节色阶、对比度、伽马、背景色（浅色底 / 深色底各一张预览）
+    - 保存到服务器
+
+Tab3：智能显形
+  - 上传一张隐写图（未知参数）
+  - 系统生成多组预设，每组两张候选图（如浅色底显形 / 深色底显形）
+  - 用户在多组预设中选出「最能区分表里两张图」的一组
+  - 后台根据选择收窄参数区间，生成下一轮预设
+  - 每轮预设结果保留在历史中，用户可回溯查看上一轮
+  - 用户不再点「下一步」时，可在任意历史轮次的某组预设上点【保存】结束流程
+  - 保存到服务器
+
+Tab4：双图合并
+  - 上传图 A、图 B
+  - 配置混合参数：曝光、对比度、饱和度、不透明度、混合模式等
+  - 每项参数有用户可配置的字母代号（默认见系统配置）
+  - 实时预览合并效果
+  - 导出时可选择：
+      a) 仅图片
+      c) 复制参数字符串到剪贴板
+  - 本 Tab 不在成品图上强制绘制可见水印（参数传递见第八节）
+  - 保存到服务器
+
+
+================================================================================
+三、加解密算法清单
+================================================================================
+
+须实现以下算法，统一接口：
+  scramble(imageData, key, options) => ImageData
+  unscramble(imageData, key, options) => ImageData
+
+算法 ID          显示名称              需要密钥    密钥类型与范围
+-------------------------------------------------------------------------------
+xiaofanqie       小番茄混淆            是          数值，开区间 (0, 1.618)
+block            块混淆                是          任意字符串
+row              行像素混淆            是          任意字符串
+pixel            逐像素混淆            是          任意字符串
+picEncryptRow    PicEncrypt 行模式     是          数值，开区间 (0, 1)
+picEncryptRowCol PicEncrypt 行+列模式   是          数值，开区间 (0, 1)
+
+默认选中算法：xiaofanqie
+默认密钥（仅作输入框占位提示，不自动填入）：0.666
+
+注意事项：
+- 同一算法 + 同一密钥 + 相同宽高 可逆。
+- 多次混淆/解混淆须逆序反向操作同等次数。
+- 块大小等参数若算法支持，从系统配置读取（见第九节）。
+- 参考实现：PicEncrypt 开源项目（移植为 TypeScript，注意许可证）。
+
+
+================================================================================
+四、隐写图（幻影坦克）合成与分离
+================================================================================
+
+4.1 合成算法
+  输入：表图（surface）、里图（inner），尺寸须一致或可裁剪对齐
+  输出：单张 PNG，灰度分离 + 像素交错
+  参考：Mirage_Decode 项目制作逻辑
+
+4.2 合成后水印（用户确认方案）
+  时机：合成算法完成、得到成品图之后，再绘制水印。不对表图、里图原图加水印。
+  位置：右下角
+  样式：竖排文字，字号约 14px
+  内容：由系统配置决定（默认可为合成参数摘要或固定标识，见第九节）
+  边距：距右边缘、下边缘各 8px（可配置）
+  颜色：半透明白色或黑色，带 1px 描边以保证可读性（可配置）
+  影响说明：
+    - 不影响合成前的两张原图
+    - 成品图已不再是「待解密的密文混淆图」，水印像素属于明文成品的一部分
+    - 若用户对成品隐写图再做「智能显形」，局部亮度可能略受影响，但合成后水印
+      区域不在隐写显形关键区时影响可接受
+
+4.3 手动分离
+  可调参数：色阶黑场、色阶白场、对比度、伽马、背景色（浅色/深色）
+  输出：两张预览（浅底显形、深底显形），可分别保存
+
+
+================================================================================
+五、智能显形交互详设
+================================================================================
+
+5.1 目标
+  隐写图制作参数未知时，无法枚举全部可能。采用「预设网格 + 用户视觉反馈 +
+  区间收窄 + 将最后结果再交由用户手动调整」代替暴力破解。
+
+5.2 参数空间（首轮边界）
+  从系统配置读取最大/最小预设边界，例如：
+    色阶黑场：0 ~ 80
+    色阶白场：175 ~ 255
+    对比度：-50 ~ 50
+    伽马：0.5 ~ 2.0
+  首轮在边界内均匀或分层采样，生成 presetGroupCount 组预设。
+
+5.3 每轮展示
+  组数：presetGroupCount（系统配置，默认 4）
+  每组：2 张图（浅色背景显形、深色背景显形）
+  布局：网格展示，每组下方有「选择此组」按钮
+  用户选中一组后，进入下一轮；或点击历史栏回到之前某轮重新选择
+
+5.4 收窄规则
+  设当前参数区间为 [min, max]，共 G 组采样
+  用户选中第 k 组：
+    新区间 = 第 k 组参数 ± (当前区间宽度 / (2*G))
+    各维度独立收窄，不越出全局最大/最小边界
+  连续收窄 minRefineRounds 轮后（默认 3），提示用户可直接保存/再次手动调整各项参数
+
+5.5 历史与保存
+  前端维护会话状态：
+    sessionId（可选，若启用服务端持久化）
+    rounds[]: { roundIndex, presets[], selectedIndex?, params }
+  用户点击某预设的【保存】：
+    将该预设对应的显形图 toBlob → uploadPic
+    可选同时保存参数字符串到服务器（见第八节）
+  用户可点击「上一步」回到上一轮重选，分支以最新选择为准
+
+5.6 服务端会话（可选，建议阶段三实现）
+  POST /api/imageCrypto/session/create
+    body: { imageBase64 或临时上传 id }
+    return: { sessionId }
+  POST /api/imageCrypto/session/refine
+    body: { sessionId, roundIndex, selectedPresetIndex }
+    return: { nextRound presets }
+  GET /api/imageCrypto/session/history
+    query: { sessionId }
+    return: { rounds }
+  存储：server data 目录 JSON 文件，7 天过期清理
+
+
+================================================================================
+六、双图合并
+================================================================================
+
+6.1 可调参数
+  参数项          默认代号    默认值    范围（建议）
+  ----------------------------------------------------------------
+  曝光            E           0         -100 ~ 100
+  对比度          C           0         -100 ~ 100
+  饱和度          S           0         -100 ~ 100
+  不透明度        O           100       0 ~ 100
+  混合模式        M           normal    normal/multiply/screen/overlay 等
+
+  代号与显示名可在系统配置中修改。
+
+6.2 预览
+  图 B 叠加在图 A 上，滑块变更实时刷新 Canvas 预览。
+
+6.3 参数字符串格式
+  示例：E+30 C-10 S+5 O80 M-normal
+  规则：代号 + 有符号数值；混合模式用名称；空格分隔
+  保存时可复制此字符串；导入时可粘贴恢复滑块
+
+6.4 水印策略（本 Tab）
+  不在合并成品上强制绘制可见角标。
+  参数传递依赖：服务器关联存储 / 剪贴板 / 文件名编码（见第八节）。
+
+
+================================================================================
+七、水印规范汇总
+================================================================================
+
+场景                    是否绘制可见水印    说明
+--------------------------------------------------------------------------------
+幻影坦克合成成品        是                  合成后右下角竖排 14px，见 4.2
+混淆密文                否                  任何水印都会破坏解密
+解密后的明文            否（默认）          可选由用户手动开启，非默认
+双图合并成品            否（默认）          参数走元数据/服务器/剪贴板
+智能显形保存结果        否（默认）          可选保存参数 JSON 关联
+
+幻影坦克合成水印默认内容（可在系统配置修改）：
+  竖排字符，每行一个参数缩写，例如：
+  M
+  合
+  成
+  或参数摘要竖排：色阶/对比度简写
+  默认文案：「隐」换行「写」换行「图」（即竖排「隐写图」三字标识）
+
+
+================================================================================
+八、参数传递（无可见水印时）
+================================================================================
+
+保存图片时并行支持以下方式（用户可选，默认勾选服务器关联）：
+
+
+ 剪贴板
+   保存成功后自动复制 paramString
+
+ 文件名编码
+   上传时 displayName 设为 blend_E+30_C-10.jpg（若 API 支持）
+
+ PNG 元数据（可选增强）
+   在 tEXt 块写入 pm-params: {...}
+   注意：社交平台压缩后会丢失，仅适合原图直传
+
+读取：GET /api/imageCrypto/getMeta?storedName=xxx
+
+
+================================================================================
+九、系统配置项（Config 模块扩展）
+================================================================================
+
+在系统配置页新增锚点区块：「图片加解密」
+存储字段：config.imageCryptoSettings（合并进现有 json 配置文件）
+读写 API：
+  POST /api/config/setImageCryptoSettings
+  getConfig 响应中一并返回 imageCryptoSettings
+前端：
+  web/src/type/imageCryptoSettings.ts  类型定义
+  web/src/api/setConfig.ts             增加 setImageCryptoSettings
+  web/src/page/Config/Home/index.tsx   增加配置区块
+
+配置项与默认值：
+
+--- 通用 ---
+exportJpegQuality          0.95        导出 JPEG 质量
+maxImageEdgePx             4096        单边最大像素，超出提示缩放
+disclaimerText             「本工具非密码学加密，请勿用于隐私数据」
+
+--- 加解密 ---
+defaultAlgorithmId         xiaofanqie
+defaultKeyHint             0.666       仅占位提示
+blockSize                  16          块混淆块边长（像素）
+
+--- 幻影坦克合成水印 ---
+mirageWatermarkEnabled     true
+mirageWatermarkFontSize    14
+mirageWatermarkPosition    bottom-right
+mirageWatermarkOffsetX     8
+mirageWatermarkOffsetY     8
+mirageWatermarkText        隐写图      竖排绘制，每字一行
+mirageWatermarkColor       rgba(255,255,255,0.85)
+mirageWatermarkStroke      rgba(0,0,0,0.6)
+
+--- 智能显形 ---
+presetGroupCount           4           每轮展示组数
+presetsPerGroup            2           每组候选图数（浅底/深底）
+minRefineRounds            3           建议最少收窄轮数
+revealLevelMin             0           色阶黑场下限
+revealLevelMax             80          色阶黑场上限
+revealLevelHighMin         175         色阶白场下限
+revealLevelHighMax         255         色阶白场上限
+revealContrastMin          -50
+revealContrastMax          50
+revealGammaMin             0.5
+revealGammaMax             2.0
+
+--- 双图合并参数代号 ---
+blendParamCodes            { exposure:"E", contrast:"C", saturation:"S", opacity:"O", blendMode:"M" }
+
+模块内读取配置：
+  页面加载时 getConfig，用 imageCryptoSettings 覆盖内置 DEFAULT_SETTINGS
+  内置 DEFAULT_SETTINGS 与上表默认值一致，配置缺失时回退
+
+
+================================================================================
+十、文件与目录规划
+================================================================================
+
+前端新增：
+
+web/src/page/ImageCrypto/
+  Layout/index.tsx                 多 Tab 布局 + ModuleNavLinks
+  Layout/index.module.less
+  Scramble/index.tsx               Tab1 加解密
+  Scramble/index.module.less
+  Mirage/index.tsx                 Tab2 隐写图
+  Mirage/index.module.less
+  SmartReveal/index.tsx            Tab3 智能显形
+  SmartReveal/index.module.less
+  Blend/index.tsx                  Tab4 双图合并
+  Blend/index.module.less
+  components/
+    ImageUploader.tsx
+    AlgorithmSelect.tsx
+    KeyInput.tsx
+    PresetGrid.tsx
+    RevealHistory.tsx
+    BlendSliders.tsx
+    SaveToServerButton.tsx
+    ParamImportExport.tsx
+  utils/
+    algorithms/
+      types.ts
+      registry.ts
+      xiaofanqie.ts
+      block.ts
+      row.ts
+      pixel.ts
+      picEncrypt.ts
+      mirage.ts
+      blend.ts
+    canvas/
+      loadImage.ts
+      imageDataFromSource.ts
+      exportBlob.ts
+      drawWatermark.ts
+    smartReveal/
+      samplePresets.ts
+      refineInterval.ts
+      sessionState.ts
+    paramString.ts
+    defaultSettings.ts
+
+web/src/api/imageCrypto.ts
+web/src/type/imageCryptoSettings.ts
+
+后端新增：
+
+server/src/server/imageCrypto/
+  index.js                         saveMeta / getMeta / session API
+  normalizeSettings.js             校验配置结构（可选，与 mockDefaults 类似）
+
+server/src/server/config/index.js  增加 setImageCryptoSettings
+
+路由与权限（与 开发规范.md 第三节一致）：
+  web/src/Router/config.ts
+  web/src/utils/moduleMap.ts
+  web/src/page/Home/index.tsx
+  server/src/middleware/access.js
+  web/src/utils/accessRules.ts
+  web/src/constants/moduleAccess.ts
+  server/src/server/index.js
+
+建议权限：
+  LOCAL_MODULES 加入 imageCrypto
+  PUBLIC_NEVER 加入 imageCrypto（公网默认不可见，与 planeEditor 类似）
+  本地/局域网默认可读写
+
+
+================================================================================
+十一、API 列表
+================================================================================
+
+复用现有：
+  POST /api/upload/uploadPic         保存图片到服务器
+
+新增：
+  POST /api/imageCrypto/saveMeta
+    body: { storedName, kind, params, paramString }
+    return: { ok }
+
+  POST /api/imageCrypto/getMeta
+    body: { storedName }
+    return: { kind, params, paramString, savedAt }
+
+  POST /api/imageCrypto/session/create
+    body: { imageBase64 }
+    return: { sessionId, firstRound }
+
+  POST /api/imageCrypto/session/refine
+    body: { sessionId, roundIndex, selectedPresetIndex }
+    return: { nextRound, done }
+
+  POST /api/imageCrypto/session/history
+    body: { sessionId }
+    return: { rounds }
+
+  POST /api/config/setImageCryptoSettings
+    body: { imageCryptoSettings }
+    return: { imageCryptoSettings }
+
+
+================================================================================
+十二、UI 交互要点
+================================================================================
+
+1. 所有 Tab 顶部显示免责声明（文案来自配置 disclaimerText）。
+2. 上传区支持拖拽；处理中显示进度条（大图分块时更新百分比）。
+3. 加解密 Tab：算法切换时动态显示/隐藏密钥框，校验不通过禁用按钮。
+4. 保存到服务器：成功后 toast 提示，可选展示媒体链接（复用 getFileLinks）。
+5. 智能显形：左侧历史轮次列表，右侧当前轮预设网格；底部「下一步」「保存」。
+6. 配置项修改后，已打开的模块页须刷新或重新 getConfig 后生效。
+
+页面导航 Tab 标签：
+  加解密 | 隐写图 | 智能显形 | 双图合并
+
+
+================================================================================
+十三、性能与兼容
+================================================================================
+
+1. 图像处理在前端主线程首版实现；单图边长超过 maxImageEdgePx 提示用户缩放。
+2. 若 2000x2000 以上卡顿，二期引入 Web Worker 分块处理。
+3. 导出默认 JPEG quality 0.95；幻影坦克合成建议 PNG，保存时由用户选择格式。
+4. 浏览器要求：支持 Canvas 2D、ImageData、toBlob。
+5. 不使用服务端图像库（sharp 等），保持零额外依赖。
+
+
+================================================================================
+十四、实施阶段
+================================================================================
+
+阶段一（约 1~2 周）
+  - 模块骨架、路由、权限、首页入口
+  - Tab1 加解密：xiaofanqie + block + row 三种算法
+  - 保存到服务器
+  - 系统配置区块骨架 + 默认值
+
+阶段二（约 1 周）
+  - 补全 pixel、picEncryptRow、picEncryptRowCol
+  - Tab2 幻影坦克合成 + 合成后右下角竖排水印
+  - Tab2 手动分离
+  - imageCryptoSettings 全部配置项落地
+
+阶段三（约 1~2 周）
+  - Tab3 智能显形完整交互 + 前端会话
+  - 可选服务端 session 持久化
+  - saveMeta / getMeta 参数关联
+
+阶段四（约 3~5 天）
+  - Tab4 双图合并 + 参数代号 + 导入导出
+  - 剪贴板、文件名编码
+  - 联调与样例图回归测试
+
+
+================================================================================
+十五、测试用例
+================================================================================
+
+加解密：
+  1. 小番茄密钥 0.666 样例图往返一致
+  2. 块混淆字符串密钥往返一致
+  3. 错误密钥输出乱图但不崩溃
+  4. JPEG 0.95 往返（小番茄）
+
+隐写图：
+  5. 表图+里图合成后浅/深底可辨
+  6. 合成后水印仅在右下角，原图文件不变
+  7. 手动分离滑块实时预览
+
+智能显形：
+  8. 首轮展示 presetGroupCount 组
+  9. 选组后参数区间收窄
+  10. 历史回溯后重选分支正确
+  11. 保存结果 uploadPic 成功
+
+双图合并：
+  12. 滑块变更预览正确
+  13. 参数字符串导出导入往返
+  14. saveMeta 后 getMeta 可恢复
+
+配置：
+  15. 修改系统配置后模块读取新默认值
+  16. 配置缺失时使用内置 DEFAULT_SETTINGS
+
+权限：
+  17. local 可见可写；public 默认不可见
+
+
+================================================================================
+十六、风险与限制
+================================================================================
+
+1. 贴吧/微信压缩后的混淆图可能无法还原，UI 须提示使用原图。
+2. 算法与第三方工具不完全一致时解不出来，需样例回归对齐。
+3. 智能显形非 AI，依赖用户判断力，极端参数可能无法收敛。
+4. 幻影坦克成品上的合成水印会使该成品不适合再作为「待分离密文」精细调参，
+   但合成前的原图不受影响。
+5. 本模块不得用于规避违法内容传播，免责声明必须展示。
+
+
+================================================================================
+十七、外部参考
+================================================================================
+
+PicEncrypt        https://github.com/jiarandiana0307/PicEncrypt
+Mirage_Decode     https://github.com/TankFactory/Mirage_Decode
+
+移植时注明算法来源，遵守开源许可证。
+
+
+================================================================================
+文档结束
+================================================================================

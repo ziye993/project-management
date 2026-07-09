@@ -3,13 +3,13 @@ import { DEPLOYMENT_ROLE } from '../config/deployment.js';
 
 const LOCAL_MODULES = [
   'project', 'image', 'television', 'config', 'serverInfo', 'LANSharing',
-  'swagger', 'dataMock', 'game', 'localChat', 'planeEditor',
+  'swagger', 'dataMock', 'game', 'localChat', 'planeEditor', 'imageCrypto',
 ];
 
 const CONFIGURABLE_MODULE_KEYS = new Set(LOCAL_MODULES);
 
 const PUBLIC_ALWAYS = ['game', 'localChat'];
-const PUBLIC_NEVER = ['project', 'config', 'dataMock', 'swagger', 'planeEditor'];
+const PUBLIC_NEVER = ['project', 'config', 'dataMock', 'swagger', 'planeEditor', 'imageCrypto'];
 
 export function normalizeModuleAccess(raw) {
   const requireLogin = [];

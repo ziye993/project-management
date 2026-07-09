@@ -33,6 +33,10 @@ import {
   mockFieldDefaultsFromConfig,
   type MockFieldDefaults,
 } from '../../../type/mockDefaults';
+import {
+  type ImageCryptoSettings,
+} from '../../../type/imageCryptoSettings';
+import ImageCryptoSettingsSection from './ImageCryptoSettingsSection';
 
 type ConfigState = {
   picUploadPath?: string;
@@ -44,6 +48,7 @@ type ConfigState = {
   filesRoot?: string;
   mockFieldDefaults?: MockFieldDefaults;
   moduleAccess?: ModuleAccessConfig;
+  imageCryptoSettings?: ImageCryptoSettings;
 };
 
 const CONFIG_SECTIONS: ConfigAnchorItem[] = [
@@ -53,6 +58,7 @@ const CONFIG_SECTIONS: ConfigAnchorItem[] = [
   { key: 'publicUrl', label: '访问链接' },
   { key: 'moduleAccess', label: '模块访问控制' },
   { key: 'mockDefaults', label: 'Mock 默认值' },
+  { key: 'imageCrypto', label: '图片加解密' },
 ];
 
 export default function ConfigHome() {
@@ -336,6 +342,17 @@ export default function ConfigHome() {
             </div>
           </div>
         );
+      case 'imageCrypto':
+        return (
+          <div className={`${shellStyles.panel} ${styles.configItemBox}`}>
+            <span className={styles.configItemTitle}>图片加解密</span>
+            <p className={styles.hint}>模块内 Canvas 处理、水印、智能显形与双图合并默认参数</p>
+            <ImageCryptoSettingsSection
+              initial={config.imageCryptoSettings}
+              onSaved={loadConfig}
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -345,6 +362,7 @@ export default function ConfigHome() {
     config.fileUploadPath,
     config.movUploadPath,
     config.picUploadPath,
+    config.imageCryptoSettings,
     customCommands,
     mockDefaults,
     moduleModes,

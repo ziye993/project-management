@@ -25,6 +25,12 @@ import LogWorkspace from "../page/Log/Workspace";
 import PlaneEditorHome from "../page/PlaneEditor/Home";
 import AuthHome from "../page/Auth/Home";
 import AuthUserDetail from "../page/Auth/UserDetail";
+import ImageCryptoLayout, {
+  ImageCryptoScramblePage,
+  ImageCryptoMiragePage,
+  ImageCryptoSmartRevealPage,
+  ImageCryptoBlendPage,
+} from "../page/ImageCrypto/Layout";
 
 const router: TRouter = [{
     path: '/',
@@ -110,6 +116,16 @@ const router: TRouter = [{
     redirect: 'home',
     children: [
         { path: '/home', components: PlaneEditorHome }
+    ]
+}, {
+    path: '/image-crypto',
+    components: ImageCryptoLayout,
+    redirect: 'scramble',
+    children: [
+        { path: '/scramble', components: ImageCryptoScramblePage },
+        { path: '/mirage', components: ImageCryptoMiragePage },
+        { path: '/smart-reveal', components: ImageCryptoSmartRevealPage },
+        { path: '/blend', components: ImageCryptoBlendPage },
     ]
 }, {
     path: '/auth',

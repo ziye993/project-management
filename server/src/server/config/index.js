@@ -4,6 +4,7 @@ import { getFilesDir } from '../../paths.js';
 import { normalizeMockFieldDefaults } from '../mock/mockConfig.js';
 import { normalizeModuleAccess } from '../../middleware/access.js';
 import { normalizeCustomProjectCommands } from '../../utils/customCommands.js';
+import { normalizeImageCryptoSettings } from '../imageCrypto/normalizeSettings.js';
 import { ok, fail } from '../../utils/httpResponse.js';
 
 app.post('/api/config/getConfig', (req, res) => {
@@ -95,6 +96,17 @@ app.post('/api/config/setModuleAccess', (req, res) => {
   }
   setConfig(config);
   ok(res, { moduleAccess: normalized });
+});
+
+app.post('/api/config/setImageCryptoSettings', (req, res) => {
+  const { imageCryptoSettings } = req.body ?? {};
+  if (imageCryptoSettings !== undefined && (typeof imageCryptoSettings !== 'object' || imageCryptoSettings === null)) {
+    return fail(res, 400, 1, 'imageCryptoSettings 格式无效');
+  }
+  const config = getConfig(true) || {};
+  config.imageCryptoSettings = normalizeImageCryptoSettings(imageCryptoSettings ?? {});
+  setConfig(config);
+  ok(res, { imageCryptoSettings: config.imageCryptoSettings });
 });
 
 app.post('/api/config/setCustomProjectCommands', (req, res) => {

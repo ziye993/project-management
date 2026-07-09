@@ -2,6 +2,7 @@ import { post } from ".";
 import type { MockFieldDefaults } from '../type/mockDefaults';
 import type { ModuleAccessConfig } from '../constants/moduleAccess';
 import type { CustomProjectCommand } from '../constants/customCommands';
+import type { ImageCryptoSettings } from '../type/imageCryptoSettings';
 
 const basePath = "/config"
 
@@ -40,3 +41,7 @@ export const setModuleAccess = async (param: { moduleAccess: ModuleAccessConfig 
 export const setCustomProjectCommands = async (param: { customProjectCommands: CustomProjectCommand[] }) => {
   return await post(basePath + '/setCustomProjectCommands', param);
 }
+
+export const setImageCryptoSettings = async (param: {
+  imageCryptoSettings: Partial<ImageCryptoSettings>;
+}) => post(basePath + '/setImageCryptoSettings', param);
