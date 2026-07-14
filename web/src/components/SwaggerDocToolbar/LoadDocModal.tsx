@@ -3,33 +3,70 @@ import Modal from '@/components/ui/Modal'
 import { API_DOC_GROUPS, type ApiDocGroup } from '../../utils/openapi'
 import styles from './LoadDocModal.module.less'
 
+export type LoadDocConfirmInput =
+  | { mode: 'url'; baseUrl: string; group: string }
+  | { mode: 'paste'; json: string }
+
 interface LoadDocModalProps {
   open: boolean
   loading: boolean
   onClose: () => void
-  onConfirm: (baseUrl: string, group: string) => void | Promise<void>
+  /** 成功返回 true，失败返回 false；仅成功时关闭弹窗 */
+  onConfirm: (input: LoadDocConfirmInput) => boolean | Promise<boolean>
 }
 
 export default function LoadDocModal({ open, loading, onClose, onConfirm }: LoadDocModalProps) {
   const [baseUrl, setBaseUrl] = useState('http://10.1.101.54:8208/dmom-mes')
   const [group, setGroup] = useState<ApiDocGroup>('应用')
+  const [pasteJson, setPasteJson] = useState('')
+  const [localError, setLocalError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (open) {
       setBaseUrl('http://10.1.101.54:8208/dmom-mes')
       setGroup('应用')
+      setPasteJson('')
+      setLocalError(null)
+      setSubmitting(false)
     }
   }, [open])
 
-  const handleConfirm = () => {
-    const trimmed = baseUrl.trim()
-    if (!trimmed || loading) return
-    onClose()
-    void onConfirm(trimmed, group)
+  const busy = loading || submitting
+
+  const handleConfirm = async () => {
+    if (busy) return
+
+    const trimmedPaste = pasteJson.trim()
+    const trimmedUrl = baseUrl.trim()
+
+    if (!trimmedPaste && !trimmedUrl) {
+      setLocalError('请填写服务地址，或粘贴接口响应 JSON')
+      return
+    }
+
+    setLocalError(null)
+    setSubmitting(true)
+    try {
+      const input: LoadDocConfirmInput = trimmedPaste
+        ? { mode: 'paste', json: trimmedPaste }
+        : { mode: 'url', baseUrl: trimmedUrl, group }
+
+      const ok = await onConfirm(input)
+      if (ok) {
+        onClose()
+      } else {
+        setLocalError('加载失败，请检查地址或粘贴内容是否正确')
+      }
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : '加载失败')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
-    <Modal open={open} title="加载文档" onClose={onClose} onOK={handleConfirm} width={480}>
+    <Modal open={open} title="加载文档" onClose={onClose} onOK={() => void handleConfirm()} width={560}>
       <div className={styles.form}>
         <label className={styles.field}>
           <span>服务地址</span>
@@ -38,12 +75,17 @@ export default function LoadDocModal({ open, loading, onClose, onConfirm }: Load
             value={baseUrl}
             onChange={(e) => setBaseUrl(e.target.value)}
             placeholder="http://host:port/context-path"
-            onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
+            disabled={busy}
+            onKeyDown={(e) => e.key === 'Enter' && void handleConfirm()}
           />
         </label>
         <label className={styles.field}>
           <span>API 分组</span>
-          <select value={group} onChange={(e) => setGroup(e.target.value as ApiDocGroup)}>
+          <select
+            value={group}
+            onChange={(e) => setGroup(e.target.value as ApiDocGroup)}
+            disabled={busy}
+          >
             {API_DOC_GROUPS.map((item) => (
               <option key={item} value={item}>
                 {item}
@@ -51,9 +93,31 @@ export default function LoadDocModal({ open, loading, onClose, onConfirm }: Load
             ))}
           </select>
         </label>
+        <label className={styles.field}>
+          <span>粘贴响应数据（可选）</span>
+          <textarea
+            value={pasteJson}
+            onChange={(e) => setPasteJson(e.target.value)}
+            placeholder="直接粘贴 /v3/api-docs 接口返回的 JSON，填写后将跳过远程请求"
+            rows={8}
+            disabled={busy}
+            spellCheck={false}
+          />
+        </label>
+        {localError && (
+          <p className={styles.error} role="alert">
+            {localError}
+          </p>
+        )}
         <p className={styles.hint}>
-          将请求 <code>{'{baseUrl}/v3/api-docs/{分组}'}</code>
-          {loading ? '，加载中…' : ''}
+          {pasteJson.trim()
+            ? '将直接解析粘贴的 OpenAPI JSON，不请求远程地址'
+            : (
+              <>
+                将请求 <code>{'{baseUrl}/v3/api-docs/{分组}'}</code>
+              </>
+            )}
+          {busy ? '，加载中…' : ''}
         </p>
       </div>
     </Modal>

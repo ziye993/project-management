@@ -14,6 +14,7 @@ import { createTabLabel } from '@/type/docTab';
 import styles from './index.module.less';
 import ToolPageLayout from '@/components/ToolPageLayout';
 import SwaggerDocToolbar from '@/components/SwaggerDocToolbar';
+import type { LoadDocConfirmInput } from '@/components/SwaggerDocToolbar/LoadDocModal';
 import { useSwaggerDocSession } from '@/hooks/useSwaggerDocSession';
 
 function Swagger() {
@@ -26,6 +27,8 @@ function Swagger() {
     error,
     setError,
     fetchDocument,
+    loadFromPaste,
+    importConfig,
     closeTab,
   } = useSwaggerDocSession({ relabelTabs: true });
   const [refreshingTabId, setRefreshingTabId] = useState<string | null>(null);
@@ -39,8 +42,21 @@ function Swagger() {
     });
   }, []);
 
-  const handleFetch = async (baseUrl: string, group: string) => {
-    await fetchDocument(baseUrl, group);
+  const handleFetch = async (input: LoadDocConfirmInput) => {
+    if (input.mode === 'paste') {
+      await loadFromPaste(input.json);
+      return true;
+    }
+    await fetchDocument(input.baseUrl, input.group);
+    return true;
+  };
+
+  const handleImport = (raw: string) => {
+    try {
+      importConfig(raw);
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('导入失败');
+    }
   };
 
   const handleRefreshTab = async (tabId: string) => {
@@ -96,6 +112,7 @@ function Swagger() {
           activeTabId={activeTabId}
           fetchLoading={fetchLoading}
           onFetch={handleFetch}
+          onImport={handleImport}
           onSelectTab={setActiveTabId}
           onCloseTab={closeTab}
         />
@@ -134,9 +151,9 @@ function Swagger() {
           {showWelcome && !error && (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>📄</div>
-              <p>点击右上角「加载文档」，输入服务地址后开始</p>
+              <p>点击右上角「加载文档」，输入服务地址或粘贴响应 JSON 后开始</p>
               <p className={styles.emptyHint}>
-                将自动请求 <code>{'{baseUrl}/v3/api-docs/{分组}'}</code> 接口
+                远程加载将请求 <code>{'{baseUrl}/v3/api-docs/{分组}'}</code>
               </p>
             </div>
           )}

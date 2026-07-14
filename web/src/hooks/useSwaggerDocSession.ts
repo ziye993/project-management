@@ -2,9 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   addSwaggerHistory,
   loadSwaggerSession,
+  mergeSwaggerTabs,
+  parseSwaggerImport,
   saveSwaggerSession,
+  type SwaggerExportPayload,
 } from '@/utils/swaggerStorage';
-import { buildApiDocsUrl, fetchOpenAPISpec } from '@/utils/openapi';
+import { buildApiDocsUrl, fetchOpenAPISpec, parseOpenAPISpec } from '@/utils/openapi';
 import { createDocTab, createTabLabel, type DocTab } from '@/type/docTab';
 
 interface UseSwaggerDocSessionOptions {
@@ -75,11 +78,46 @@ export function useSwaggerDocSession(options: UseSwaggerDocSessionOptions = {}) 
       const data = await fetchOpenAPISpec(docsUrl);
       return addTab(data, docsUrl, { baseUrl, group });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '加载失败');
-      return null;
+      const message = err instanceof Error ? err.message : '加载失败';
+      setError(message);
+      throw new Error(message);
     } finally {
       setFetchLoading(false);
     }
+  };
+
+  const loadFromPaste = async (json: string) => {
+    setFetchLoading(true);
+    setError(null);
+    try {
+      const data = parseOpenAPISpec(json);
+      return addTab(data, '本地粘贴的 JSON');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '解析失败';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setFetchLoading(false);
+    }
+  };
+
+  const importConfig = (raw: string): SwaggerExportPayload => {
+    const payload = parseSwaggerImport(raw);
+    let merged: DocTab[] = [];
+    setTabs((prev) => {
+      merged = mergeSwaggerTabs(prev, payload.tabs);
+      return merged;
+    });
+
+    const focusTab =
+      payload.tabs.find((tab) => tab.id === payload.activeTabId) ?? payload.tabs[0] ?? null;
+    const matched = focusTab
+      ? merged.find((tab) => isSameDoc(tab, focusTab))
+      : null;
+
+    setActiveTabId(matched?.id ?? activeTabId ?? merged[0]?.id ?? null);
+    setError(null);
+    return payload;
   };
 
   const closeTab = (
@@ -114,6 +152,14 @@ export function useSwaggerDocSession(options: UseSwaggerDocSessionOptions = {}) 
     addTab,
     selectTab,
     fetchDocument,
+    loadFromPaste,
+    importConfig,
     closeTab,
   };
+}
+
+function isSameDoc(a: DocTab, b: DocTab): boolean {
+  if (a.id && b.id && a.id === b.id) return true;
+  if (a.sourceUrl === b.sourceUrl && a.sourceUrl !== '本地粘贴的 JSON') return true;
+  return false;
 }

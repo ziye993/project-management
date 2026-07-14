@@ -23,6 +23,7 @@ import type { DocTab } from '@/type/docTab'
 import { post } from '@/api'
 import ToolPageLayout from '@/components/ToolPageLayout'
 import SwaggerDocToolbar from '@/components/SwaggerDocToolbar'
+import type { LoadDocConfirmInput } from '@/components/SwaggerDocToolbar/LoadDocModal'
 import { useSwaggerDocSession } from '@/hooks/useSwaggerDocSession'
 import { EndpointPicker } from './EndpointPicker'
 import { FieldRuleEditor } from './FieldRuleEditor'
@@ -57,6 +58,8 @@ function DataMock() {
     error,
     setError,
     fetchDocument,
+    loadFromPaste,
+    importConfig,
     selectTab,
     closeTab,
   } = useSwaggerDocSession()
@@ -130,12 +133,25 @@ function DataMock() {
     setError(null)
   }
 
-  const handleFetch = async (url: string, group: string) => {
+  const handleFetch = async (input: LoadDocConfirmInput) => {
     setSelected(null)
-    const tab = await fetchDocument(url, group, { preferCache: true })
+    const tab =
+      input.mode === 'paste'
+        ? await loadFromPaste(input.json)
+        : await fetchDocument(input.baseUrl, input.group, { preferCache: true })
     if (tab) {
       activateTab(tab)
     }
+    return true
+  }
+
+  const handleImport = (raw: string) => {
+    importConfig(raw)
+    setSelected(null)
+    setFieldRules({})
+    setArrayLengths({})
+    setStaticResponseText('')
+    setPhase('pick')
   }
 
   const handleTabSelect = (id: string) => {
@@ -246,6 +262,7 @@ function DataMock() {
           activeTabId={activeTabId}
           fetchLoading={fetchLoading}
           onFetch={handleFetch}
+          onImport={handleImport}
           onSelectTab={handleTabSelect}
           onCloseTab={handleCloseTab}
         />
