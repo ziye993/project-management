@@ -35,8 +35,31 @@ function currentMonthKey() {
   return `${d.getFullYear()}-${m}`;
 }
 
+/** 上一自然月，如 2026-07 → 2026-06 */
+function prevMonthKey(month: string): string {
+  const [y, m] = month.split('-').map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function emptyHouseholds(): HouseholdInput[] {
   return [createHousehold(1), createHousehold(2)];
+}
+
+/** 用上月结束读数作为本月起始读数（上上个月读数） */
+function seedFromPrevMonth(prevHouseholds: HouseholdInput[]): HouseholdInput[] {
+  if (!prevHouseholds.length) return emptyHouseholds();
+  return prevHouseholds.map((h, index) => {
+    const next = createHousehold(index + 1);
+    return {
+      ...next,
+      name: h.name || next.name,
+      currentKwh: 0,
+      prevKwh: Number(h.currentKwh) || 0,
+      currentTon: 0,
+      prevTon: Number(h.currentTon) || 0,
+    };
+  });
 }
 
 function formatMonthLabel(month: string) {
@@ -79,7 +102,35 @@ export default function CalcUtilityPage() {
       const res = await getCalcUtilityRecord(nextMonth);
       const record = res.data?.record;
       if (!record) {
-        resetBlank();
+        setTotalKwh('');
+        setTotalBill('');
+        setElecResult(null);
+        setWaterResult(null);
+        setHasSaved(false);
+        setDirty(false);
+        // 本月尚无记录时，用上月本期读数自动填起始读数
+        try {
+          const prevRes = await getCalcUtilityRecord(prevMonthKey(nextMonth));
+          const prev = prevRes.data?.record;
+          if (prev?.households?.length) {
+            setHouseholds(
+              seedFromPrevMonth(
+                prev.households.map(h => ({
+                  id: h.id,
+                  name: h.name || '',
+                  currentKwh: Number(h.currentKwh) || 0,
+                  prevKwh: Number(h.prevKwh) || 0,
+                  currentTon: Number(h.currentTon) || 0,
+                  prevTon: Number(h.prevTon) || 0,
+                })),
+              ),
+            );
+            return;
+          }
+        } catch {
+          /* 无上月数据则空白即可 */
+        }
+        setHouseholds(emptyHouseholds());
         return;
       }
       setTotalKwh(String(record.totalKwh ?? ''));
@@ -103,7 +154,7 @@ export default function CalcUtilityPage() {
     } finally {
       setLoading(false);
     }
-  }, [resetBlank]);
+  }, []);
 
   useEffect(() => {
     refreshMonthList().catch(() => {});
@@ -231,7 +282,7 @@ export default function CalcUtilityPage() {
       <section className={`${shellStyles.panel} ${styles.section}`}>
         <h3 className={shellStyles.panelTitle}>水电费计算</h3>
         <p className={styles.hint}>
-          按月保存与编辑；总表填上期电量/电费，各户电表/水表读数相减后计算（水价 {WATER_UNIT_PRICE} 元/吨）。统计功能后续再做。
+          按月保存与编辑；总表填上期电量/电费，各户电表/水表读数相减后计算（水价 {WATER_UNIT_PRICE} 元/吨）。新建月份时若有上月记录，会自动带入起始读数与户名。
         </p>
 
         <div className={styles.monthBar}>
