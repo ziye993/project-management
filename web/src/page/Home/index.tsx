@@ -19,7 +19,8 @@ import {
   ApiOutlined,
   FileTextOutlined,
   BuildOutlined,
-  SafetyCertificateOutlined,
+  CalculatorOutlined,
+  SafetyCertificateOutlined, 
   LogoutOutlined,
   LockOutlined,
   LoginOutlined,
@@ -52,6 +53,7 @@ const entries: EntryItem[] = [
   { id: 11, moduleKey: 'log', name: '日志管理', desc: '多租户日志收集、查询与 Key 管理', icon: <FileTextOutlined />, path: '/log', accent: 'slate' },
   { id: 12, moduleKey: 'planeEditor', name: '平面布局编辑器', desc: '设备相对位置平面拖拽编辑，支持多主题', icon: <BuildOutlined />, path: '/plane-editor', accent: 'indigo' },
   { id: 14, moduleKey: 'imageCrypto', name: '图片加解密', desc: '像素混淆、幻影坦克隐写、智能显形与双图合并', icon: <LockOutlined />, path: '/image-crypto', accent: 'teal' },
+  { id: 15, moduleKey: 'calc', name: '计算', desc: '水电费分摊与其他常用计算工具', icon: <CalculatorOutlined />, path: '/calc', accent: 'mint' },
   { id: 13, moduleKey: 'auth', name: '权限管理', desc: '用户账号与组织/项目授权', icon: <SafetyCertificateOutlined />, path: '/auth', accent: 'rose' },
 ];
 

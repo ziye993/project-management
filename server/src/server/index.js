@@ -10,6 +10,7 @@ import './upload/index.js';
 import './upload/chunkUpload.js';
 import './config/index.js';
 import './imageCrypto/index.js';
+import './calc/index.js';
 import './system/index.js';
 import './share/index.js';
 import './user/index.js';

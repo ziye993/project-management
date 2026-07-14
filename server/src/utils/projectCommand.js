@@ -23,6 +23,21 @@ export function resolveExistingProjectPath(projectPath) {
   return resolved;
 }
 
+/**
+ * systemd / GUI 启动时 PATH 通常不含 nvm，导致 pnpm/npm 找不到。
+ * 把当前 node 所在目录（同目录一般有 npm、pnpm、corepack）前置到 PATH。
+ */
+function buildChildEnv() {
+  const env = { ...process.env };
+  const pathKey = process.platform === 'win32' ? 'Path' : 'PATH';
+  const nodeBin = path.dirname(process.execPath);
+  const parts = (env[pathKey] || '').split(path.delimiter).filter(Boolean);
+  if (!parts.includes(nodeBin)) {
+    env[pathKey] = [nodeBin, ...parts].join(path.delimiter);
+  }
+  return env;
+}
+
 export function spawnProjectScript(projectPath, scriptName) {
   const cwd = resolveExistingProjectPath(projectPath);
 
@@ -32,7 +47,7 @@ export function spawnProjectScript(projectPath, scriptName) {
     shell: true,
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
-    env: process.env,
+    env: buildChildEnv(),
     detached: !isWin,
   });
 }
@@ -45,7 +60,7 @@ export function spawnCustomShellCommand(projectPath, command) {
     shell: true,
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
-    env: process.env,
+    env: buildChildEnv(),
     detached: !isWin,
   });
 }

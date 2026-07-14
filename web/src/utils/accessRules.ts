@@ -3,11 +3,11 @@ import { normalizeModuleAccess, type ModuleAccessConfig } from '../constants/mod
 
 const LOCAL_MODULES = [
   'project', 'image', 'television', 'config', 'serverInfo', 'LANSharing',
-  'swagger', 'dataMock', 'game', 'localChat', 'planeEditor', 'imageCrypto',
+  'swagger', 'dataMock', 'game', 'localChat', 'planeEditor', 'imageCrypto', 'calc',
 ];
 
 const PUBLIC_ALWAYS = ['game', 'localChat'];
-const PUBLIC_NEVER = ['project', 'config', 'dataMock', 'swagger', 'planeEditor', 'imageCrypto'];
+const PUBLIC_NEVER = ['project', 'config', 'dataMock', 'swagger', 'planeEditor', 'imageCrypto', 'calc'];
 
 export function computeVisibleModulesClient(opts: {
   channel: string;

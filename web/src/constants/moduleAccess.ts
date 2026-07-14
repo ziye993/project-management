@@ -12,6 +12,7 @@ export const CONFIGURABLE_MODULES = [
   { key: 'localChat', name: '局域网对话' },
   { key: 'planeEditor', name: '平面布局编辑器' },
   { key: 'imageCrypto', name: '图片加解密' },
+  { key: 'calc', name: '计算' },
 ] as const;
 
 export type ConfigurableModuleKey = (typeof CONFIGURABLE_MODULES)[number]['key'];

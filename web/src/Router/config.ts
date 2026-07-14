@@ -31,6 +31,10 @@ import ImageCryptoLayout, {
   ImageCryptoSmartRevealPage,
   ImageCryptoBlendPage,
 } from "../page/ImageCrypto/Layout";
+import CalcLayout, {
+  CalcUtilityRoutePage,
+  CalcOtherRoutePage,
+} from "../page/Calc/Layout";
 
 const router: TRouter = [{
     path: '/',
@@ -126,6 +130,14 @@ const router: TRouter = [{
         { path: '/mirage', components: ImageCryptoMiragePage },
         { path: '/smart-reveal', components: ImageCryptoSmartRevealPage },
         { path: '/blend', components: ImageCryptoBlendPage },
+    ]
+}, {
+    path: '/calc',
+    components: CalcLayout,
+    redirect: 'utility',
+    children: [
+        { path: '/utility', components: CalcUtilityRoutePage },
+        { path: '/other', components: CalcOtherRoutePage },
     ]
 }, {
     path: '/auth',
