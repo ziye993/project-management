@@ -2,17 +2,24 @@ import ToolPageLayout, { shellStyles } from '@/components/ToolPageLayout';
 import ChatFilesFilter from '@/components/ChatFilesFilter';
 import LinkCopyModal, { type LinkItem } from '@/components/LinkCopyModal';
 import Button from '@/components/ui/Button';
-import { FolderAddOutlined, UploadOutlined, DeleteOutlined, DownloadOutlined, LinkOutlined } from '@ant-design/icons';
+import { FolderAddOutlined, UploadOutlined, DeleteOutlined, DownloadOutlined, LinkOutlined, EyeOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
 import { useEffect, useRef, useState } from 'react';
 import { createShareFolder, deleteShareItem, getShareList, uploadShareFiles } from '@/api/share';
 import message from '@/components/ui/Modal/message';
+import KkFileViewPreviewModal from '../components/KkFileViewPreviewModal';
+import { buildKkFileViewPreviewUrl, pickFileAccessUrl } from '@/utils/kkFileView';
 
 export default function LANSharingHome() {
   const [currentPath, setCurrentPath] = useState('');
   const [items, setItems] = useState<any[]>([]);
   const [chatOnly, setChatOnly] = useState(false);
   const [linkModal, setLinkModal] = useState<{ open: boolean; links: LinkItem[] }>({ open: false, links: [] });
+  const [preview, setPreview] = useState<{ open: boolean; name: string; url: string }>({
+    open: false,
+    name: '',
+    url: '',
+  });
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async (path = currentPath) => {
@@ -65,6 +72,19 @@ export default function LANSharingHome() {
     if (url) window.open(url, '_blank');
   };
 
+  const openKkFileViewPreview = (item: any) => {
+    const fileUrl = pickFileAccessUrl(item.downloadLinks);
+    if (!fileUrl) {
+      message.error('缺少可访问的文件地址，无法预览');
+      return;
+    }
+    setPreview({
+      open: true,
+      name: item.name,
+      url: buildKkFileViewPreviewUrl(fileUrl),
+    });
+  };
+
   const pathLabel = chatOnly ? '/chat（聊天文件）' : `/${currentPath}`;
 
   return (
@@ -90,6 +110,9 @@ export default function LANSharingHome() {
               <div className={styles.actions}>
                 {!item.isDirectory && (
                   <>
+                    <button type="button" onClick={() => openKkFileViewPreview(item)}>
+                      <EyeOutlined /> 使用kkFileView预览
+                    </button>
                     <button type="button" onClick={() => download(item)}><DownloadOutlined /> 下载</button>
                     <button type="button" onClick={() => setLinkModal({ open: true, links: item.downloadLinks || [] })}><LinkOutlined /> 链接</button>
                   </>
@@ -101,6 +124,12 @@ export default function LANSharingHome() {
         </div>
       </div>
       <LinkCopyModal open={linkModal.open} links={linkModal.links} onClose={() => setLinkModal({ open: false, links: [] })} />
+      <KkFileViewPreviewModal
+        open={preview.open}
+        title={`预览：${preview.name}`}
+        previewUrl={preview.url}
+        onClose={() => setPreview({ open: false, name: '', url: '' })}
+      />
     </ToolPageLayout>
   );
 }
