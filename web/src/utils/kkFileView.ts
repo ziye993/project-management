@@ -1,5 +1,5 @@
 /** kkFileView 预览服务地址（与接入说明中的 onlinePreview 对应） */
-export const KK_FILE_VIEW_BASE_URL = 'http://ziye993.cn:40011';
+export const KK_FILE_VIEW_BASE_URL = 'https://ziye993.cn:40011';
 
 export interface AccessLinkLike {
   type: string;
