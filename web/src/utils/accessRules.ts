@@ -56,7 +56,7 @@ export function computeModuleCapabilitiesClient(opts: {
   visibleModules: string[];
   moduleAccess?: ModuleAccessConfig | null;
 }) {
-  const { channel, deploymentRole, isAuthenticated, isSuperAdmin, orgPermissions, visibleModules } = opts;
+  const { channel, isAuthenticated, isSuperAdmin, orgPermissions, visibleModules } = opts;
   const caps: Record<string, { read: boolean; write: boolean }> = {};
   const hasManage = isSuperAdmin || orgPermissions.some(p => p.role === 'manage');
   const access = normalizeModuleAccess(opts.moduleAccess);
