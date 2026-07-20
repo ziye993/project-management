@@ -4,7 +4,7 @@ import LinkCopyModal, { type LinkItem } from '@/components/LinkCopyModal';
 import Button from '@/components/ui/Button';
 import { FolderAddOutlined, UploadOutlined, DeleteOutlined, DownloadOutlined, LinkOutlined, EyeOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { createShareFolder, deleteShareItem, getShareList, uploadShareFiles } from '@/api/share';
 import message from '@/components/ui/Modal/message';
 import KkFileViewPreviewModal from '../components/KkFileViewPreviewModal';
@@ -14,6 +14,7 @@ export default function LANSharingHome() {
   const [currentPath, setCurrentPath] = useState('');
   const [items, setItems] = useState<any[]>([]);
   const [chatOnly, setChatOnly] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [linkModal, setLinkModal] = useState<{ open: boolean; links: LinkItem[] }>({ open: false, links: [] });
   const [preview, setPreview] = useState<{ open: boolean; name: string; url: string }>({
     open: false,
@@ -54,10 +55,18 @@ export default function LANSharingHome() {
   };
 
   const upload = async (files: FileList | null) => {
-    if (!files?.length) return;
+    if (!files?.length || chatOnly) return;
     await uploadShareFiles(currentPath, Array.from(files));
     message.success('上传成功');
     load();
+  };
+
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    if (chatOnly) return;
+    void upload(e.dataTransfer.files);
   };
 
   const remove = async (item: any) => {
@@ -99,11 +108,38 @@ export default function LANSharingHome() {
         </>
       }
     >
-      <div className={`${shellStyles.contentPanel} ${styles.main}`}>
-        <p className={styles.path}>当前路径：{pathLabel}</p>
+      <div
+        className={`${shellStyles.contentPanel} ${styles.main} ${dragOver ? styles.dragOver : ''}`}
+        onDragEnter={(e) => {
+          if (chatOnly) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOver(true);
+        }}
+        onDragOver={(e) => {
+          if (chatOnly) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOver(false);
+        }}
+        onDrop={onDrop}
+      >
+        <p className={styles.path}>
+          当前路径：{pathLabel}
+          {!chatOnly && <span className={styles.dropHint}>{dragOver ? '松开以上传到此目录' : '可拖拽文件到此处上传'}</span>}
+        </p>
         <input ref={fileRef} type="file" multiple hidden onChange={e => upload(e.target.files)} />
         <div className={styles.list}>
-          {items.length === 0 && <p className={styles.empty}>{chatOnly ? '暂无聊天文件' : '此目录为空'}</p>}
+          {items.length === 0 && (
+            <p className={styles.empty}>
+              {chatOnly ? '暂无聊天文件' : dragOver ? '松开鼠标上传文件' : '此目录为空，可拖拽文件到此处上传'}
+            </p>
+          )}
           {items.map(item => (
             <div key={item.relativePath} className={styles.row}>
               <span className={styles.name} onClick={() => enter(item)}>{item.isDirectory ? '📁' : '📄'} {item.name}</span>

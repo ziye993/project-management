@@ -115,6 +115,14 @@ export function computeVisibleModules({
   const access = normalizeModuleAccess(moduleAccess);
   const hiddenSet = new Set(access.hidden);
 
+  // 超级管理员登录后开放全部功能（含公网下原 LOCAL_ONLY 模块）
+  if (isAuthenticated && isSuperAdmin) {
+    const modules = LOCAL_MODULES.filter(m => !hiddenSet.has(m));
+    modules.push('log');
+    if (deploymentRole === 'log_server') modules.push('auth');
+    return modules;
+  }
+
   if (channel === 'local' || channel === 'lan') {
     const modules = LOCAL_MODULES.filter(m => !hiddenSet.has(m));
     modules.push('log');
@@ -123,10 +131,7 @@ export function computeVisibleModules({
   }
 
   const modules = [...PUBLIC_ALWAYS];
-  if (isAuthenticated && isSuperAdmin) {
-    modules.push('serverInfo', 'image', 'television', 'LANSharing', 'log');
-    if (deploymentRole === 'log_server') modules.push('auth');
-  } else if (isAuthenticated && hasOrg) {
+  if (isAuthenticated && hasOrg) {
     modules.push('log');
   } else {
     modules.push('log');
@@ -155,10 +160,16 @@ export function computeModuleCapabilities({
   const requireLoginSet = new Set(access.requireLogin);
 
   for (const key of visibleModules) {
+    // 超级管理员对所有可见模块具备读写能力
+    if (isAuthenticated && isSuperAdmin) {
+      caps[key] = rw(true, true);
+      continue;
+    }
+
     if (channel === 'local' || channel === 'lan') {
       if (key === 'log') {
         caps[key] = isAuthenticated
-          ? rw(true, isSuperAdmin || hasManage)
+          ? rw(true, hasManage)
           : rw(false, false);
       } else if (key === 'auth') {
         caps[key] = rw(true, true);
@@ -173,13 +184,13 @@ export function computeModuleCapabilities({
     if (key === 'serverInfo') {
       caps[key] = rw(true, false);
     } else if (['image', 'television', 'LANSharing'].includes(key)) {
-      caps[key] = isSuperAdmin ? rw(true, true) : rw(false, false);
+      caps[key] = rw(false, false);
     } else if (key === 'log') {
       caps[key] = isAuthenticated
-        ? rw(true, isSuperAdmin || hasManage)
+        ? rw(true, hasManage)
         : rw(false, false);
     } else if (key === 'auth') {
-      caps[key] = deploymentRole === 'log_server' && isSuperAdmin ? rw(true, true) : rw(false, false);
+      caps[key] = rw(false, false);
     } else if (requireLoginSet.has(key) && !isAuthenticated) {
       caps[key] = rw(false, false);
     } else {

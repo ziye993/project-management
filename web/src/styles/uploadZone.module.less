@@ -13,7 +13,8 @@
   position: relative;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
-  input {
+
+  input:not(.hiddenInput) {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -21,10 +22,24 @@
     opacity: 0;
     cursor: pointer;
   }
-  &:hover {
+
+  .hiddenInput {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  &:hover,
+  &.dragOver {
     border-color: rgba(129, 140, 248, 0.4);
     background: rgba(238, 242, 255, 0.5);
     color: #4f46e5;
+  }
+
+  &.dragOver {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.08);
   }
 
   :global(.anticon) {
@@ -32,7 +47,8 @@
     color: #94a3b8;
   }
 
-  &:hover :global(.anticon) {
+  &:hover :global(.anticon),
+  &.dragOver :global(.anticon) {
     color: #6366f1;
   }
 

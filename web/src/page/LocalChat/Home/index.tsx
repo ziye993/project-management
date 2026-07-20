@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent } from 'react';
 import {
   clearChatHandlers,
   connectChatSocket,
@@ -86,6 +86,7 @@ export default function LocalChatHome() {
   const [groupModal, setGroupModal] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [dragOver, setDragOver] = useState(false);
   const msgEndRef = useRef<HTMLDivElement>(null);
   const picInputRef = useRef<HTMLInputElement>(null);
   const vidInputRef = useRef<HTMLInputElement>(null);
@@ -309,6 +310,16 @@ export default function LocalChatHome() {
     files.forEach(f => sendChatFile(f));
   };
 
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    if (!activeChat) return;
+    const files = Array.from(e.dataTransfer.files || []);
+    if (!files.length) return;
+    files.forEach(f => sendChatFile(f));
+  };
+
   const createGroup = () => {
     if (!groupName.trim()) {
       message.error('请输入群组名称');
@@ -394,7 +405,27 @@ export default function LocalChatHome() {
         </div>
       </aside>
 
-      <section className={styles.chatPanel}>
+      <section
+        className={`${styles.chatPanel} ${dragOver ? styles.dragOver : ''}`}
+        onDragEnter={(e) => {
+          if (!activeChat) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOver(true);
+        }}
+        onDragOver={(e) => {
+          if (!activeChat) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOver(false);
+        }}
+        onDrop={handleDrop}
+      >
         {activeChat ? (
           <>
             <div className={styles.chatHead}>{activeChat.title}</div>
@@ -402,6 +433,7 @@ export default function LocalChatHome() {
               {messages.map(renderMessage)}
               <div ref={msgEndRef} />
             </div>
+            {dragOver && <div className={styles.dropMask}>松开以发送文件</div>}
             <div className={styles.inputBar} onPaste={handlePaste}>
               <input ref={picInputRef} type="file" accept="image/*" hidden onChange={e => {
                 const f = e.target.files?.[0];
@@ -432,7 +464,7 @@ export default function LocalChatHome() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendText())}
-                placeholder="输入消息，可直接粘贴文件..."
+                placeholder="输入消息，可粘贴或拖拽文件..."
               />
               <button type="button" className={styles.sendBtn} onClick={sendText}>
                 <SendOutlined />

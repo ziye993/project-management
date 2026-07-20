@@ -170,11 +170,12 @@ const LOCAL_ONLY_PREFIXES = [
 
 export function blockPublicLocalOnly(req, res, next) {
   if (req.channel !== 'public') return next();
+  // 超级管理员登录后可访问全部本地能力接口
+  if (req.user?.is_super_admin) return next();
 
   const path = req.path || req.url?.split('?')[0] || '';
 
   if (path === '/api/system/getServerStatus') {
-    if (req.user?.is_super_admin) return next();
     return res.status(403).json({ success: false, code: 'FORBIDDEN', msg: '无权访问', data: null });
   }
 

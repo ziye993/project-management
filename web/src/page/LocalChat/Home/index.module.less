@@ -165,6 +165,28 @@
 
 .chatPanel {
   min-width: 0;
+  position: relative;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+
+  &.dragOver {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.04);
+  }
+}
+
+.dropMask {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(99, 102, 241, 0.12);
+  color: #4338ca;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .chatHead {

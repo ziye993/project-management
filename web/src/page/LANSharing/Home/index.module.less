@@ -12,6 +12,14 @@
   padding: 14px 16px;
   min-height: 0;
   overflow: hidden;
+  border: 2px dashed transparent;
+  border-radius: 12px;
+  transition: border-color 0.2s, background 0.2s;
+
+  &.dragOver {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.06);
+  }
 }
 
 .path {
@@ -19,6 +27,20 @@
   font-size: 12px;
   color: #94a3b8;
   padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dropHint {
+  color: #94a3b8;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.main.dragOver .dropHint {
+  color: #4f46e5;
 }
 
 .filterToggle {

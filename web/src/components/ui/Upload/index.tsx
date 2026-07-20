@@ -1,20 +1,19 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import styles from './index.module.less'
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 
 export default function (props: any) {
     const [fileList, setFileList] = useState<any[]>([]);
     const fileListRef = useRef<any[]>([]);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [dragOver, setDragOver] = useState(false);
 
-    const fileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const applyFiles = async (files: FileList | File[] | null) => {
+        if (!files || !files.length) return;
         const newFiles: any[] = [];
         const newFileRef: any[] = [];
-        const files = e?.target?.files;
-        if (!files || !files.length) {
-            return
-        }
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+        const list = Array.from(files as FileList | File[]);
+        for (const file of list) {
             if (file instanceof File) {
                 newFiles.push({
                     name: file.name,
@@ -23,6 +22,7 @@ export default function (props: any) {
                 newFileRef.push(file);
             }
         }
+        if (!newFileRef.length) return;
         setFileList(prev => [...prev, ...newFiles])
         fileListRef.current = [...fileListRef.current, ...newFileRef];
         try {
@@ -30,8 +30,20 @@ export default function (props: any) {
         } catch (error) {
 
         }
-
     }
+
+    const fileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+        await applyFiles(e?.target?.files);
+        e.target.value = '';
+    }
+
+    const onDrop = (e: DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOver(false);
+        void applyFiles(e.dataTransfer.files);
+    }
+
     const deleteListItem = async (index: number) => {
         setFileList(prev => {
             const nprev = [...prev];
@@ -52,10 +64,38 @@ export default function (props: any) {
         return `${(size / 1024 / 1024).toFixed(1)} MB`;
     };
 
+    const { onChange: _onChange, ...inputProps } = props;
+
     return <>
-        <div className={styles.uploadBox} >
-            <PlusOutlined /> <span>选择照片或视频</span>
-            <input type='file' {...props} onChange={(e) => fileChange(e)} />
+        <div
+            className={`${styles.uploadBox} ${dragOver ? styles.dragOver : ''}`}
+            onClick={() => inputRef.current?.click()}
+            onDragEnter={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragOver(true);
+            }}
+            onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragOver(true);
+            }}
+            onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragOver(false);
+            }}
+            onDrop={onDrop}
+        >
+            <PlusOutlined /> <span>{dragOver ? '松开以上传' : '点击或拖拽文件到此处'}</span>
+            <input
+                ref={inputRef}
+                type='file'
+                {...inputProps}
+                className={styles.hiddenInput}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => fileChange(e)}
+            />
         </div>
         <div className={styles.fileList}>
             {fileList.length ? <div className={styles.fileListHeader}>

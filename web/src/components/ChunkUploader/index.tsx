@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type DragEvent } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import { chunkInit, chunkMerge, chunkUpload } from '@/api/media';
 import message from '@/components/ui/Modal/message';
@@ -15,6 +15,7 @@ interface ChunkUploaderProps {
 export default function ChunkUploader(props: ChunkUploaderProps) {
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = async (files: FileList | null) => {
@@ -44,17 +45,54 @@ export default function ChunkUploader(props: ChunkUploaderProps) {
     }
   };
 
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    if (uploading) return;
+    void handleFiles(e.dataTransfer.files);
+  };
+
   return (
     <div className={styles.box}>
-      <div className={`${styles.uploadBox} ${uploading ? styles.disabled : ''}`}>
+      <div
+        className={`${styles.uploadBox} ${uploading ? styles.disabled : ''} ${dragOver ? styles.dragOver : ''}`}
+        onClick={() => !uploading && inputRef.current?.click()}
+        onDragEnter={(e) => {
+          if (uploading) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOver(true);
+        }}
+        onDragOver={(e) => {
+          if (uploading) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOver(false);
+        }}
+        onDrop={onDrop}
+      >
         <PlusOutlined />
-        <span>{uploading ? `上传中 ${progress}%` : '选择视频文件'}</span>
+        <span>
+          {uploading
+            ? `上传中 ${progress}%`
+            : dragOver
+              ? '松开以上传'
+              : '点击或拖拽视频到此处'}
+        </span>
         <input
           ref={inputRef}
           type="file"
           accept={props.accept || 'video/*'}
           multiple
           disabled={uploading}
+          className={styles.hiddenInput}
+          onClick={(e) => e.stopPropagation()}
           onChange={e => handleFiles(e.target.files)}
         />
       </div>
