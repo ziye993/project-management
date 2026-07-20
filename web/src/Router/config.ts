@@ -35,6 +35,10 @@ import CalcLayout, {
   CalcUtilityRoutePage,
   CalcOtherRoutePage,
 } from "../page/Calc/Layout";
+import AppStoreLayout from "../page/AppStore/Layout";
+import AppStoreAppsPage from "../page/AppStore/Apps";
+import AppStoreAppDetailPage from "../page/AppStore/AppDetail";
+import AppStorePublishPage from "../page/AppStore/Publish";
 
 const router: TRouter = [{
     path: '/',
@@ -138,6 +142,15 @@ const router: TRouter = [{
     children: [
         { path: '/utility', components: CalcUtilityRoutePage },
         { path: '/other', components: CalcOtherRoutePage },
+    ]
+}, {
+    path: '/app-store',
+    components: AppStoreLayout,
+    redirect: 'apps',
+    children: [
+        { path: '/apps', components: AppStoreAppsPage },
+        { path: '/app', components: AppStoreAppDetailPage },
+        { path: '/publish', components: AppStorePublishPage },
     ]
 }, {
     path: '/auth',

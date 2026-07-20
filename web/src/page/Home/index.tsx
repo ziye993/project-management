@@ -24,6 +24,7 @@ import {
   LogoutOutlined,
   LockOutlined,
   LoginOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '../../Router';
 import { logout } from '@/api/user';
@@ -54,6 +55,7 @@ const entries: EntryItem[] = [
   { id: 12, moduleKey: 'planeEditor', name: '平面布局编辑器', desc: '设备相对位置平面拖拽编辑，支持多主题', icon: <BuildOutlined />, path: '/plane-editor', accent: 'indigo' },
   { id: 14, moduleKey: 'imageCrypto', name: '图片加解密', desc: '像素混淆、幻影坦克隐写、智能显形与双图合并', icon: <LockOutlined />, path: '/image-crypto', accent: 'teal' },
   { id: 15, moduleKey: 'calc', name: '计算', desc: '水电费分摊与其他常用计算工具', icon: <CalculatorOutlined />, path: '/calc', accent: 'mint' },
+  { id: 17, moduleKey: 'appStore', name: '应用商店', desc: '应用版本统一发布与公网拉取', icon: <AppstoreOutlined />, path: '/app-store', accent: 'indigo' },
   { id: 13, moduleKey: 'auth', name: '权限管理', desc: '用户账号与组织/项目授权', icon: <SafetyCertificateOutlined />, path: '/auth', accent: 'rose' },
 ];
 

@@ -3,7 +3,7 @@ import { normalizeModuleAccess, type ModuleAccessConfig } from '../constants/mod
 
 const LOCAL_MODULES = [
   'project', 'image', 'television', 'config', 'serverInfo', 'LANSharing',
-  'swagger', 'dataMock', 'game', 'localChat', 'planeEditor', 'imageCrypto', 'calc',
+  'swagger', 'dataMock', 'game', 'localChat', 'planeEditor', 'imageCrypto', 'calc', 'appStore',
 ];
 
 const PUBLIC_ALWAYS = ['game', 'localChat'];
@@ -38,6 +38,9 @@ export function computeVisibleModulesClient(opts: {
   }
 
   const modules = [...PUBLIC_ALWAYS];
+  if (!hiddenSet.has('appStore')) {
+    modules.push('appStore');
+  }
   if (isAuthenticated && hasOrg) {
     modules.push('log');
   } else {
@@ -85,7 +88,9 @@ export function computeModuleCapabilitiesClient(opts: {
     }
 
     if (key === 'serverInfo') caps[key] = { read: true, write: false };
-    else if (['image', 'television', 'LANSharing'].includes(key)) {
+    else if (key === 'appStore') {
+      caps[key] = { read: true, write: isAuthenticated };
+    } else if (['image', 'television', 'LANSharing'].includes(key)) {
       caps[key] = { read: false, write: false };
     } else if (key === 'log') {
       caps[key] = isAuthenticated

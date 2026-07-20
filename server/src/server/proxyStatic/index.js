@@ -58,5 +58,9 @@ app.use((req, res, next) => {
   if (req.url.startsWith(sharePrefix)) {
     return sendStaticFile(req, res, next, sharePrefix, getShareDir());
   }
+  if (config?.appStoreRequestPath && config?.appStorePackagePath
+    && req.url.startsWith(config.appStoreRequestPath)) {
+    return sendStaticFile(req, res, next, config.appStoreRequestPath, config.appStorePackagePath);
+  }
   next();
 });

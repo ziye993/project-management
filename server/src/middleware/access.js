@@ -4,6 +4,7 @@ import { DEPLOYMENT_ROLE } from '../config/deployment.js';
 const LOCAL_MODULES = [
   'project', 'image', 'television', 'config', 'serverInfo', 'LANSharing',
   'swagger', 'dataMock', 'game', 'localChat', 'planeEditor', 'imageCrypto', 'calc',
+  'appStore',
 ];
 
 const CONFIGURABLE_MODULE_KEYS = new Set(LOCAL_MODULES);
@@ -136,6 +137,9 @@ export function computeVisibleModules({
   } else {
     modules.push('log');
   }
+  if (!hiddenSet.has('appStore')) {
+    modules.push('appStore');
+  }
 
   return modules.filter(m => !PUBLIC_NEVER.includes(m) && !hiddenSet.has(m));
 }
@@ -185,6 +189,8 @@ export function computeModuleCapabilities({
       caps[key] = rw(true, false);
     } else if (['image', 'television', 'LANSharing'].includes(key)) {
       caps[key] = rw(false, false);
+    } else if (key === 'appStore') {
+      caps[key] = rw(true, !!isAuthenticated);
     } else if (key === 'log') {
       caps[key] = isAuthenticated
         ? rw(true, hasManage)

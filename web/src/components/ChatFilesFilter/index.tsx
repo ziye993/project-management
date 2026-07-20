@@ -1,19 +1,19 @@
 import styles from './index.module.less';
+import ListFilterBar from '@/components/ListFilterBar';
 
 interface ChatFilesFilterProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
 }
 
+/** Thin wrapper around ListFilterBar for backward compatibility. */
 export default function ChatFilesFilter(props: ChatFilesFilterProps) {
   return (
-    <label className={styles.filterToggle}>
-      <input
-        type="checkbox"
-        checked={props.checked}
-        onChange={e => props.onChange(e.target.checked)}
-      />
-      聊天文件
-    </label>
+    <ListFilterBar
+      fields={[{ type: 'toggle', key: 'chatOnly', label: '聊天文件' }]}
+      value={{ chatOnly: props.checked }}
+      onChange={(next) => props.onChange(Boolean(next.chatOnly))}
+      className={styles.filterToggle}
+    />
   );
 }

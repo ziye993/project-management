@@ -1,19 +1,24 @@
 import ToolPageLayout, { shellStyles } from '@/components/ToolPageLayout';
-import ChatFilesFilter from '@/components/ChatFilesFilter';
+import ListFilterBar, { type FilterValue } from '@/components/ListFilterBar';
 import LinkCopyModal, { type LinkItem } from '@/components/LinkCopyModal';
 import Button from '@/components/ui/Button';
 import { FolderAddOutlined, UploadOutlined, DeleteOutlined, DownloadOutlined, LinkOutlined, EyeOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
-import { useEffect, useRef, useState, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { createShareFolder, deleteShareItem, getShareList, uploadShareFiles } from '@/api/share';
 import message from '@/components/ui/Modal/message';
 import KkFileViewPreviewModal from '../components/KkFileViewPreviewModal';
 import { buildKkFileViewPreviewUrl, pickFileAccessUrl } from '@/utils/kkFileView';
 
+const FILTER_FIELDS = [
+  { type: 'toggle' as const, key: 'chatOnly', label: '聊天文件' },
+  { type: 'search' as const, key: 'name', placeholder: '文件名' },
+];
+
 export default function LANSharingHome() {
   const [currentPath, setCurrentPath] = useState('');
   const [items, setItems] = useState<any[]>([]);
-  const [chatOnly, setChatOnly] = useState(false);
+  const [filters, setFilters] = useState<FilterValue>({ chatOnly: false, name: '' });
   const [dragOver, setDragOver] = useState(false);
   const [linkModal, setLinkModal] = useState<{ open: boolean; links: LinkItem[] }>({ open: false, links: [] });
   const [preview, setPreview] = useState<{ open: boolean; name: string; url: string }>({
@@ -22,6 +27,9 @@ export default function LANSharingHome() {
     url: '',
   });
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const chatOnly = Boolean(filters.chatOnly);
+  const nameNeedle = String(filters.name || '').trim().toLowerCase();
 
   const load = async (path = currentPath) => {
     const res = await getShareList(chatOnly ? 'chat' : path, chatOnly);
@@ -33,6 +41,11 @@ export default function LANSharingHome() {
     if (!chatOnly) setCurrentPath('');
     load('');
   }, [chatOnly]);
+
+  const displayItems = useMemo(() => {
+    if (!nameNeedle) return items;
+    return items.filter((item) => String(item.name || '').toLowerCase().includes(nameNeedle));
+  }, [items, nameNeedle]);
 
   const enter = (item: any) => {
     if (chatOnly || !item.isDirectory) return;
@@ -101,7 +114,7 @@ export default function LANSharingHome() {
       className={styles.box}
       actions={
         <>
-          <ChatFilesFilter checked={chatOnly} onChange={setChatOnly} />
+          <ListFilterBar fields={FILTER_FIELDS} value={filters} onChange={setFilters} />
           {!chatOnly && <Button onClick={goUp}>上级</Button>}
           {!chatOnly && <Button onClick={mkdir}><FolderAddOutlined /> 新建文件夹</Button>}
           {!chatOnly && <Button onClick={() => fileRef.current?.click()}><UploadOutlined /> 上传文件</Button>}
@@ -135,12 +148,12 @@ export default function LANSharingHome() {
         </p>
         <input ref={fileRef} type="file" multiple hidden onChange={e => upload(e.target.files)} />
         <div className={styles.list}>
-          {items.length === 0 && (
+          {displayItems.length === 0 && (
             <p className={styles.empty}>
               {chatOnly ? '暂无聊天文件' : dragOver ? '松开鼠标上传文件' : '此目录为空，可拖拽文件到此处上传'}
             </p>
           )}
-          {items.map(item => (
+          {displayItems.map(item => (
             <div key={item.relativePath} className={styles.row}>
               <span className={styles.name} onClick={() => enter(item)}>{item.isDirectory ? '📁' : '📄'} {item.name}</span>
               <div className={styles.actions}>

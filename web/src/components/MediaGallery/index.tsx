@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import ToolPageLayout, { shellStyles } from '@/components/ToolPageLayout';
-import ChatFilesFilter from '@/components/ChatFilesFilter';
+import ListFilterBar, { type FilterValue } from '@/components/ListFilterBar';
 import MediaItemCard from '@/components/MediaItemCard';
 import LinkCopyModal, { type LinkItem } from '@/components/LinkCopyModal';
 import Modal from '@/components/ui/Modal';
@@ -25,6 +25,11 @@ interface MediaGalleryProps {
   }) => ReactNode;
 }
 
+const FILTER_FIELDS = [
+  { type: 'toggle' as const, key: 'chatOnly', label: '聊天文件' },
+  { type: 'search' as const, key: 'name', placeholder: '文件名' },
+];
+
 export default function MediaGallery({
   type,
   uploadLabel,
@@ -37,7 +42,10 @@ export default function MediaGallery({
   const [preview, setPreview] = useState('');
   const [linkModal, setLinkModal] = useState<{ open: boolean; links: LinkItem[] }>({ open: false, links: [] });
   const [deleteTarget, setDeleteTarget] = useState<Record<string, unknown> | null>(null);
-  const [chatOnly, setChatOnly] = useState(false);
+  const [filters, setFilters] = useState<FilterValue>({ chatOnly: false, name: '' });
+
+  const chatOnly = Boolean(filters.chatOnly);
+  const nameNeedle = String(filters.name || '').trim().toLowerCase();
 
   const load = async () => {
     const res = await loadList(chatOnly);
@@ -47,6 +55,14 @@ export default function MediaGallery({
   useEffect(() => {
     void load();
   }, [chatOnly]);
+
+  const displayList = useMemo(() => {
+    if (!nameNeedle) return fileList;
+    return fileList.filter((item) => {
+      const name = String(item.name ?? item.displayName ?? item.originalName ?? '').toLowerCase();
+      return name.includes(nameNeedle);
+    });
+  }, [fileList, nameNeedle]);
 
   const confirmDelete = async () => {
     if (!deleteTarget?.storedName) return;
@@ -63,13 +79,13 @@ export default function MediaGallery({
       className={styles.box}
       actions={(
         <>
-          <ChatFilesFilter checked={chatOnly} onChange={setChatOnly} />
+          <ListFilterBar fields={FILTER_FIELDS} value={filters} onChange={setFilters} />
           <Button onClick={() => setUploadOpen(true)}><UploadOutlined /> {uploadLabel}</Button>
         </>
       )}
     >
       <div className={`${shellStyles.contentPanel} ${styles.content}`}>
-        {fileList.map((item) => (
+        {displayList.map((item) => (
           <MediaItemCard
             key={String(item.storedName)}
             name={String(item.name ?? '')}
