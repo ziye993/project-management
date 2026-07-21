@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CopyOutlined, DownloadOutlined, EditOutlined, CloudUploadOutlined } from '@ant-design/icons';
 import { shellStyles } from '@/components/ToolPageLayout';
 import Button from '@/components/ui/Button';
@@ -42,6 +42,8 @@ export default function AppStoreAppDetailPage() {
   const appId = String(state?.appId || '');
   const { canWriteModule } = useAuth();
   const canWrite = canWriteModule('appStore');
+  const pushRef = useRef(push);
+  pushRef.current = push;
 
   const [app, setApp] = useState<AppStoreApp | null>(null);
   const [versions, setVersions] = useState<AppStoreVersion[]>([]);
@@ -61,11 +63,11 @@ export default function AppStoreAppDetailPage() {
   useEffect(() => {
     if (!appId) {
       message.error('缺少应用信息');
-      push('/app-store/apps');
+      pushRef.current('/app-store/apps');
       return;
     }
     void load();
-  }, [appId, load, push]);
+  }, [appId, load]);
 
   const copyText = async (text: string) => {
     if (!text) return;
