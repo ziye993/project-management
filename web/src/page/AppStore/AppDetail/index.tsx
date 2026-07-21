@@ -14,6 +14,7 @@ import {
   type AppStoreApp,
   type AppStoreVersion,
 } from '@/api/appStore';
+import DownloadCommandPanel from '../components/DownloadCommandPanel';
 import { APP_STORE_FEATURES, packageStaticUrl } from '../utils/features';
 import { compareVersions } from '../utils/version';
 import styles from './index.module.less';
@@ -107,6 +108,9 @@ export default function AppStoreAppDetailPage() {
   }
 
   const updateUrl = app.updateUrl || app.updateLinks?.[0]?.url || '';
+  const latestFileName = versions.find(
+    (v) => v.version === latestVersion && v.status === 'published',
+  )?.file?.originalName || null;
 
   return (
     <div className={styles.page}>
@@ -126,7 +130,7 @@ export default function AppStoreAppDetailPage() {
             <span className={styles.linkLabel}>更新链接</span>
             <code className={styles.linkUrl}>{updateUrl || '-'}</code>
             {updateUrl ? (
-              <Button onClick={() => copyText(updateUrl)}><CopyOutlined /> 复制</Button>
+              <Button onClick={() => copyText(updateUrl)}><CopyOutlined /> 复制链接</Button>
             ) : null}
           </div>
           {app.updateLinks && app.updateLinks.length > 1 ? (
@@ -144,6 +148,7 @@ export default function AppStoreAppDetailPage() {
               ))}
             </div>
           ) : null}
+          <DownloadCommandPanel app={app} latestFileName={latestFileName} />
           <div className={styles.headerActions}>
             {canWrite ? (
               <Button

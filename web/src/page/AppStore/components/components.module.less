@@ -110,3 +110,91 @@
 .packageUploader {
   width: 100%;
 }
+
+.downloadPanel {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.9));
+}
+
+.downloadTitle {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.downloadHint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.downloadControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.downloadField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+
+  span {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  select,
+  input {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+
+    &:focus {
+      border-color: rgba(99, 102, 241, 0.45);
+    }
+  }
+}
+
+.downloadCmdRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.downloadCmd {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 12px;
+  line-height: 1.55;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow: auto;
+  max-height: 120px;
+}
+
+@media (max-width: 900px) {
+  .downloadControls {
+    grid-template-columns: 1fr;
+  }
+}
