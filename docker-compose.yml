@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    image: project-management:latest
+    container_name: project-management
+    restart: unless-stopped
+    ports:
+      - "30014:30014"
+    env_file:
+      - ./server/.env
+    environment:
+      DOCKER: "1"
+      OPEN_BROWSER: "0"
+      # 若 .env 未写，可在此覆盖
+      # DEPLOYMENT_ROLE: log_server
+      # PUBLIC_BASE_URL: https://your-domain:40014
+      # LOG_API_BASE_URL: https://your-domain:40014
+    volumes:
+      # 持久化上传文件、配置、应用商店包等
+      - pm-data:/app/data
+    # 若 MySQL 在宿主机或其它容器，确保容器能访问 LOG_DB_HOST
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+
+volumes:
+  pm-data:

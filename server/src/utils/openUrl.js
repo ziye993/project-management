@@ -1,5 +1,7 @@
 let cmd;
 const openUrl = (port) => {
+  // Docker / 无头环境不要弹浏览器
+  if (process.env.OPEN_BROWSER === '0' || process.env.DOCKER === '1') return;
   const url = `http://localhost:${port}/project/home`;
   switch (process.platform) {
     case 'win32':
