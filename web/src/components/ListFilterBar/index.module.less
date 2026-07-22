@@ -5,6 +5,11 @@
   gap: 10px 14px;
 }
 
+.barFull {
+  display: flex;
+  width: 100%;
+}
+
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -23,7 +28,12 @@
 .select {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.barFull .search {
+  flex: 1;
+  min-width: 0;
 }
 
 .label {
@@ -34,19 +44,35 @@
 
 .search input,
 .select select {
-  height: 30px;
-  min-width: 140px;
-  padding: 0 10px;
+  height: 40px;
+  min-width: 220px;
+  padding: 0 14px;
   border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 8px;
-  background: rgba(248, 250, 252, 0.9);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
   color: #334155;
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 
   &:focus {
     border-color: rgba(99, 102, 241, 0.45);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
   }
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+}
+
+.barFull .search input {
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+.select select {
+  min-width: 160px;
 }
 
 .multiSelect {
