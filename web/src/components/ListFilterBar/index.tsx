@@ -6,17 +6,19 @@ interface ListFilterBarProps {
   value: FilterValue;
   onChange: (next: FilterValue) => void;
   className?: string;
+  /** 搜索框拉满整行（列表页用） */
+  fullWidth?: boolean;
 }
 
 export default function ListFilterBar(props: ListFilterBarProps) {
-  const { fields, value, onChange, className } = props;
+  const { fields, value, onChange, className, fullWidth } = props;
 
   const setKey = (key: string, next: unknown) => {
     onChange({ ...value, [key]: next });
   };
 
   return (
-    <div className={`${styles.bar} ${className || ''}`}>
+    <div className={`${styles.bar} ${fullWidth ? styles.barFull : ''} ${className || ''}`}>
       {fields.map((field) => {
         if (field.type === 'toggle') {
           return (

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { shellStyles } from '@/components/ToolPageLayout';
 import ListFilterBar, { applyFilters, type FilterValue } from '@/components/ListFilterBar';
 import Modal from '@/components/ui/Modal';
 import message from '@/components/ui/Modal/message';
 import { useNavigate } from '@/Router';
 import { listApps, saveApp, type AppStoreApp } from '@/api/appStore';
-import AppCard from '../components/AppCard';
+import { useAuth } from '@/hooks/useAuth';
+import AppCard, { AppListEmpty } from '../components/AppCard';
 import CoverUploader from '../components/CoverUploader';
 import { useAppStoreLayout } from '../Layout';
 import { SLUG_RE } from '../utils/features';
@@ -25,7 +25,9 @@ const emptyForm = () => ({
 
 export default function AppStoreAppsPage() {
   const { push } = useNavigate();
-  const { createRequestId } = useAppStoreLayout();
+  const { createRequestId, requestCreate } = useAppStoreLayout();
+  const { canWriteModule } = useAuth();
+  const canWrite = canWriteModule('appStore');
   const [apps, setApps] = useState<AppStoreApp[]>([]);
   const [filters, setFilters] = useState<FilterValue>({ keyword: '' });
   const [createOpen, setCreateOpen] = useState(false);
@@ -98,13 +100,22 @@ export default function AppStoreAppsPage() {
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>
-        <ListFilterBar fields={FILTER_FIELDS} value={filters} onChange={setFilters} />
+        <ListFilterBar
+          fields={FILTER_FIELDS}
+          value={filters}
+          onChange={setFilters}
+          fullWidth
+        />
       </div>
 
-      <div className={`${shellStyles.contentPanel} ${styles.gridWrap}`}>
-        {visibleApps.length === 0 ? (
-          <p className={styles.empty}>暂无应用，点击右上角「新增」创建</p>
-        ) : (
+      {visibleApps.length === 0 ? (
+        <AppListEmpty
+          keyword={keyword}
+          canCreate={canWrite}
+          onCreate={requestCreate}
+        />
+      ) : (
+        <div className={styles.gridWrap}>
           <div className={styles.grid}>
             {visibleApps.map((app) => (
               <AppCard
@@ -114,8 +125,8 @@ export default function AppStoreAppsPage() {
               />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <Modal
         open={createOpen}

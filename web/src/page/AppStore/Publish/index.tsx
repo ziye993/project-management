@@ -31,6 +31,8 @@ export default function AppStorePublishPage() {
   const appId = String(state?.appId || '');
   const { canWriteModule } = useAuth();
   const canWrite = canWriteModule('appStore');
+  const pushRef = useRef(push);
+  pushRef.current = push;
 
   const [app, setApp] = useState<AppStoreApp | null>(null);
   const [parts, setParts] = useState<VersionParts>(versionPartsFromString('0.0.0.1'));
@@ -41,24 +43,28 @@ export default function AppStorePublishPage() {
   const [conflict, setConflict] = useState(false);
   const [conflictUser, setConflictUser] = useState('');
   const [holding, setHolding] = useState(false);
+  const [lockLoading, setLockLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const sessionRef = useRef<LockSession | null>(null);
 
   useEffect(() => {
     if (!appId) {
       message.error('缺少应用信息');
-      push('/app-store/apps');
+      pushRef.current('/app-store/apps');
       return;
     }
     if (!canWrite) {
       message.error('当前无写入权限');
-      push('/app-store/app', { appId });
+      pushRef.current('/app-store/app', { appId });
       return;
     }
 
     let cancelled = false;
     const session = new LockSession();
     sessionRef.current = session;
+    setLockLoading(true);
+    setConflict(false);
+    setHolding(false);
 
     (async () => {
       try {
@@ -67,7 +73,14 @@ export default function AppStorePublishPage() {
         setApp(appRes.data?.app || null);
 
         const lockRes = await acquireLock(appId);
-        if (cancelled) return;
+        if (cancelled) {
+          // 本轮已取消：若刚好拿到锁，立刻释放，避免脏锁
+          if (!lockRes.conflict && lockRes.lockToken) {
+            session.bind(appId, lockRes.lockToken);
+            void session.release();
+          }
+          return;
+        }
         if (lockRes.conflict) {
           setConflict(true);
           setConflictUser(lockRes.username);
@@ -90,21 +103,25 @@ export default function AppStorePublishPage() {
       } catch {
         if (!cancelled) {
           message.error('进入发布失败');
-          push('/app-store/app', { appId });
+          pushRef.current('/app-store/app', { appId });
         }
+      } finally {
+        if (!cancelled) setLockLoading(false);
       }
     })();
 
     return () => {
       cancelled = true;
       void session.release();
-      sessionRef.current = null;
+      if (sessionRef.current === session) {
+        sessionRef.current = null;
+      }
     };
-  }, [appId, canWrite, push]);
+  }, [appId, canWrite]);
 
   const onPublish = async () => {
     const lockToken = sessionRef.current?.token;
-    if (!appId || !lockToken) {
+    if (!appId || !lockToken || !holding) {
       message.error('发布会话已失效，请重新进入发布。');
       return;
     }
@@ -132,7 +149,7 @@ export default function AppStorePublishPage() {
       message.success('发布成功');
       await sessionRef.current?.release();
       sessionRef.current = null;
-      push('/app-store/app', { appId });
+      pushRef.current('/app-store/app', { appId });
     } catch {
       /* error toast from client */
     } finally {
@@ -140,7 +157,9 @@ export default function AppStorePublishPage() {
     }
   };
 
-  const disabled = conflict || !holding || publishing;
+  // 表单始终可填；仅上传/发布依赖锁
+  const formDisabled = publishing;
+  const actionDisabled = conflict || !holding || publishing || lockLoading;
 
   return (
     <div className={styles.page}>
@@ -150,11 +169,16 @@ export default function AppStorePublishPage() {
           {app ? <span className={styles.sub}>{app.name}（{app.ownerSlug}/{app.appSlug}）</span> : null}
         </h1>
 
-        <PublishLockBanner conflict={conflict} username={conflictUser} holding={holding} />
+        <PublishLockBanner
+          conflict={conflict}
+          username={conflictUser}
+          holding={holding}
+          loading={lockLoading}
+        />
 
         <section className={styles.section}>
           <h2>版本号</h2>
-          <VersionInputs value={parts} onChange={setParts} disabled={disabled} />
+          <VersionInputs value={parts} onChange={setParts} disabled={formDisabled} />
         </section>
 
         <section className={styles.section}>
@@ -163,14 +187,14 @@ export default function AppStorePublishPage() {
             className={styles.input}
             value={title}
             placeholder="版本标题（可选）"
-            disabled={disabled}
+            disabled={formDisabled}
             onChange={(e) => setTitle(e.target.value)}
           />
         </section>
 
         <section className={styles.section}>
           <h2>更新说明</h2>
-          <ChangelogEditor value={changelog} onChange={setChangelog} disabled={disabled} />
+          <ChangelogEditor value={changelog} onChange={setChangelog} disabled={formDisabled} />
         </section>
 
         {APP_STORE_FEATURES.branchField ? (
@@ -180,7 +204,7 @@ export default function AppStorePublishPage() {
               className={styles.input}
               value={branch}
               placeholder="可选，如 main / release"
-              disabled={disabled}
+              disabled={formDisabled}
               onChange={(e) => setBranch(e.target.value)}
             />
           </section>
@@ -189,7 +213,7 @@ export default function AppStorePublishPage() {
         <section className={styles.section}>
           <h2>安装包</h2>
           <PackageUploader
-            disabled={disabled}
+            disabled={actionDisabled}
             onUploaded={(file) => setTempFile(file)}
           />
         </section>
@@ -197,15 +221,15 @@ export default function AppStorePublishPage() {
         <div className={styles.actions}>
           <Button
             color="primary"
-            onClick={() => { if (!disabled) void onPublish(); }}
-            style={disabled ? { opacity: 0.55, pointerEvents: 'none' } : undefined}
+            onClick={() => { if (!actionDisabled) void onPublish(); }}
+            style={actionDisabled ? { opacity: 0.55, pointerEvents: 'none' } : undefined}
           >
             <CloudUploadOutlined /> {publishing ? '发布中…' : '确认发布'}
           </Button>
           <Button
             onClick={() => {
               void sessionRef.current?.release();
-              push('/app-store/app', { appId });
+              pushRef.current('/app-store/app', { appId });
             }}
           >
             取消

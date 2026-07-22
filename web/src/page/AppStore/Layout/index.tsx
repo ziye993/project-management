@@ -42,7 +42,7 @@ export default function AppStoreLayout(props: { children?: React.ReactNode }) {
     <AppStoreLayoutContext.Provider value={ctx}>
       <ToolPageLayout
         actions={showCreate ? (
-          <Button color="primary" onClick={requestCreate}>
+          <Button onClick={requestCreate}>
             <PlusOutlined /> 新增
           </Button>
         ) : null}

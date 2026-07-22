@@ -16,6 +16,12 @@ export class LockSession {
     return this.appId;
   }
 
+  /** Bind lock without starting heartbeat (e.g. immediate release after cancelled acquire). */
+  bind(appId: string, lockToken: string) {
+    this.appId = appId;
+    this.lockToken = lockToken;
+  }
+
   startHeartbeat(appId: string, lockToken: string, intervalMs = DEFAULT_INTERVAL_MS) {
     this.stopHeartbeat();
     this.appId = appId;

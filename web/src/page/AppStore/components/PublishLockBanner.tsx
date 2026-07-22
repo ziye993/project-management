@@ -4,6 +4,7 @@ interface PublishLockBannerProps {
   conflict: boolean;
   username?: string;
   holding?: boolean;
+  loading?: boolean;
 }
 
 export default function PublishLockBanner(props: PublishLockBannerProps) {
@@ -14,6 +15,13 @@ export default function PublishLockBanner(props: PublishLockBannerProps) {
       </div>
     );
   }
+  if (props.loading) {
+    return (
+      <div className={`${styles.lockBanner} ${styles.lockLoading}`}>
+        正在获取发布锁…
+      </div>
+    );
+  }
   if (props.holding) {
     return (
       <div className={`${styles.lockBanner} ${styles.lockOk}`}>
@@ -21,5 +29,9 @@ export default function PublishLockBanner(props: PublishLockBannerProps) {
       </div>
     );
   }
-  return null;
+  return (
+    <div className={`${styles.lockBanner} ${styles.lockConflict}`}>
+      发布会话未就绪，请返回详情后重新进入发布。
+    </div>
+  );
 }
