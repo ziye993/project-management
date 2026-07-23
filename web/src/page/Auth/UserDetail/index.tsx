@@ -198,7 +198,7 @@ export default function AuthUserDetail() {
   }
 
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} ${styles.detailPanel}`}>
       <p className={styles.hint}>
         本页配置用户的业务能力授权（日志、权限、应用商店写等），不是勾选首页模块显隐。
         流程：超管在「租户管理」建租户并指定管理员 →「租户工作台」建项目/Key → 再在此给用户授能力。

@@ -1,6 +1,6 @@
 import type { CapabilityGrant } from '../context/AuthContext';
 import { normalizeModuleAccess, type ModuleAccessConfig } from '../constants/moduleAccess';
-import { MODULE_WRITE_CAPS, MODULE_READ_CAPS } from '../constants/capabilities';
+import { MODULE_WRITE_CAPS, MODULE_ENTRY_CAPS } from '../constants/capabilities';
 
 const LOCAL_MODULES = [
   'project', 'image', 'television', 'config', 'serverInfo', 'LANSharing',
@@ -36,6 +36,12 @@ function hasAnyCap(grants: CapabilityGrant[], caps: string[], isSuperAdmin: bool
   return grants.some(g => set.has(g.capability));
 }
 
+function hasModuleEntry(moduleKey: string, grants: CapabilityGrant[], isSuperAdmin: boolean) {
+  const caps = MODULE_ENTRY_CAPS[moduleKey];
+  if (!caps) return false;
+  return hasAnyCap(grants, caps, isSuperAdmin);
+}
+
 function hasAppStoreWrite(grants: CapabilityGrant[], isSuperAdmin: boolean) {
   if (isSuperAdmin) return true;
   return grants.some(g =>
@@ -53,31 +59,38 @@ export function computeVisibleModulesClient(opts: {
   grants: CapabilityGrant[];
   moduleAccess?: ModuleAccessConfig | null;
 }) {
-  const { channel, deploymentRole, isAuthenticated, isSuperAdmin } = opts;
+  const { channel, deploymentRole, isAuthenticated, isSuperAdmin, grants } = opts;
   const access = normalizeModuleAccess(opts.moduleAccess);
-  const hiddenSet = new Set(access.hidden);
+  const guestHidden = !isAuthenticated ? new Set(access.hidden) : new Set<string>();
 
   if (isAuthenticated && isSuperAdmin) {
-    const modules = LOCAL_MODULES.filter(m => !hiddenSet.has(m));
-    modules.push('log');
-    if (deploymentRole === 'log_server') modules.push('auth');
-    return modules;
+    return [...LOCAL_MODULES, 'log', 'auth'];
   }
 
   if (channel === 'local' || channel === 'lan') {
-    const modules = LOCAL_MODULES.filter(m => !hiddenSet.has(m));
+    const modules = LOCAL_MODULES.filter(m => !guestHidden.has(m));
     modules.push('log');
-    if (deploymentRole === 'log_server') modules.push('auth');
+    if (!isAuthenticated) {
+      if (deploymentRole === 'log_server') modules.push('auth');
+    } else if (hasModuleEntry('auth', grants, false)) {
+      modules.push('auth');
+    }
     return modules;
   }
 
   const modules = [...PUBLIC_ALWAYS];
-  if (!hiddenSet.has('appStore')) {
+  if (!guestHidden.has('appStore')) {
     modules.push('appStore');
   }
-  modules.push('log');
 
-  return modules.filter(m => !PUBLIC_NEVER.includes(m) && !hiddenSet.has(m));
+  if (!isAuthenticated) {
+    if (!guestHidden.has('log')) modules.push('log');
+  } else {
+    if (hasModuleEntry('log', grants, false)) modules.push('log');
+    if (hasModuleEntry('auth', grants, false)) modules.push('auth');
+  }
+
+  return modules.filter(m => !PUBLIC_NEVER.includes(m) && !guestHidden.has(m));
 }
 
 export function computeModuleCapabilitiesClient(opts: {
@@ -92,7 +105,7 @@ export function computeModuleCapabilitiesClient(opts: {
   const { channel, isAuthenticated, isSuperAdmin, grants, visibleModules } = opts;
   const caps: Record<string, { read: boolean; write: boolean }> = {};
   const access = normalizeModuleAccess(opts.moduleAccess);
-  const requireLoginSet = new Set(access.requireLogin);
+  const requireLoginSet = !isAuthenticated ? new Set(access.requireLogin) : new Set<string>();
 
   for (const key of visibleModules) {
     if (isAuthenticated && isSuperAdmin) {
@@ -111,7 +124,7 @@ export function computeModuleCapabilitiesClient(opts: {
       } else if (key === 'auth') {
         caps[key] = isAuthenticated
           ? {
-            read: hasAnyCap(grants, MODULE_READ_CAPS.auth, false),
+            read: hasModuleEntry('auth', grants, false),
             write: hasAnyCap(grants, MODULE_WRITE_CAPS.auth, false),
           }
           : { read: false, write: false };
@@ -120,7 +133,7 @@ export function computeModuleCapabilitiesClient(opts: {
           read: true,
           write: isAuthenticated && hasAppStoreWrite(grants, false),
         };
-      } else if (requireLoginSet.has(key) && !isAuthenticated) {
+      } else if (requireLoginSet.has(key)) {
         caps[key] = { read: false, write: false };
       } else {
         caps[key] = { read: true, write: true };
@@ -139,18 +152,18 @@ export function computeModuleCapabilitiesClient(opts: {
     } else if (key === 'log') {
       caps[key] = isAuthenticated
         ? {
-          read: true,
+          read: hasModuleEntry('log', grants, false),
           write: hasAnyCap(grants, MODULE_WRITE_CAPS.log, false),
         }
         : { read: false, write: false };
     } else if (key === 'auth') {
       caps[key] = isAuthenticated
         ? {
-          read: hasAnyCap(grants, MODULE_READ_CAPS.auth, false),
+          read: hasModuleEntry('auth', grants, false),
           write: hasAnyCap(grants, MODULE_WRITE_CAPS.auth, false),
         }
         : { read: false, write: false };
-    } else if (requireLoginSet.has(key) && !isAuthenticated) {
+    } else if (requireLoginSet.has(key)) {
       caps[key] = { read: false, write: false };
     } else {
       caps[key] = { read: true, write: true };

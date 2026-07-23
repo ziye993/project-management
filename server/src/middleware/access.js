@@ -1,6 +1,9 @@
 import { isIPv4, isIPv6 } from 'node:net';
 import { DEPLOYMENT_ROLE } from '../config/deployment.js';
-import { MODULE_WRITE_CAPS, MODULE_READ_CAPS } from '../auth/capabilities.js';
+import {
+  MODULE_WRITE_CAPS,
+  MODULE_ENTRY_CAPS,
+} from '../auth/capabilities.js';
 import { hasAnyCapability, hasCapability } from '../auth/grants.js';
 
 const LOCAL_MODULES = [
@@ -106,47 +109,71 @@ export function isLocalAgentTrusted(req) {
   return channel === 'local' || channel === 'lan';
 }
 
+function asUser(isSuperAdmin) {
+  return { is_super_admin: !!isSuperAdmin };
+}
+
+function hasModuleEntry(moduleKey, isSuperAdmin, grants) {
+  const caps = MODULE_ENTRY_CAPS[moduleKey];
+  if (!caps) return false;
+  return hasAnyCapability(asUser(isSuperAdmin), grants || [], caps);
+}
+
+/**
+ * moduleAccess.hidden / requireLogin 仅约束未登录用户。
+ * 已登录：超管全开；auth/log 入口由能力推导；局域网本地工具保持信道默认。
+ */
 export function computeVisibleModules({
   channel,
   deploymentRole,
   isAuthenticated,
   isSuperAdmin,
+  grants,
   moduleAccess,
 }) {
   const access = normalizeModuleAccess(moduleAccess);
-  const hiddenSet = new Set(access.hidden);
+  const guestHidden = (!isAuthenticated ? new Set(access.hidden) : new Set());
 
   if (isAuthenticated && isSuperAdmin) {
-    const modules = LOCAL_MODULES.filter(m => !hiddenSet.has(m));
-    modules.push('log');
-    if (deploymentRole === 'log_server') modules.push('auth');
-    return modules;
+    return [...LOCAL_MODULES, 'log', 'auth'];
   }
 
   if (channel === 'local' || channel === 'lan') {
-    const modules = LOCAL_MODULES.filter(m => !hiddenSet.has(m));
+    const modules = LOCAL_MODULES.filter(m => !guestHidden.has(m));
     modules.push('log');
-    if (deploymentRole === 'log_server') modules.push('auth');
+    if (!isAuthenticated) {
+      // 未登录：log_server 仍展示权限入口（进页再登录）
+      if (deploymentRole === 'log_server') modules.push('auth');
+    } else if (hasModuleEntry('auth', false, grants)) {
+      modules.push('auth');
+    }
     return modules;
   }
 
+  // public
   const modules = [...PUBLIC_ALWAYS];
-  if (!hiddenSet.has('appStore')) {
+  if (!guestHidden.has('appStore')) {
     modules.push('appStore');
   }
-  // 公网展示 log 入口；数据层按 grant 过滤
-  modules.push('log');
 
-  return modules.filter(m => !PUBLIC_NEVER.includes(m) && !hiddenSet.has(m));
+  if (!isAuthenticated) {
+    if (!guestHidden.has('log')) modules.push('log');
+  } else {
+    if (hasModuleEntry('log', false, grants)) modules.push('log');
+    if (hasModuleEntry('auth', false, grants)) modules.push('auth');
+  }
+
+  return modules.filter(m => !PUBLIC_NEVER.includes(m) && !guestHidden.has(m));
 }
 
 function rw(read = true, write = true) {
   return { read, write };
 }
 
-function moduleWriteFromGrants(moduleKey, user, grants) {
+function moduleWriteFromGrants(moduleKey, isSuperAdmin, grants) {
   const caps = MODULE_WRITE_CAPS[moduleKey];
   if (!caps) return false;
+  const user = asUser(isSuperAdmin);
   if (moduleKey === 'appStore') {
     return hasCapability(
       user,
@@ -155,13 +182,6 @@ function moduleWriteFromGrants(moduleKey, user, grants) {
       grants,
     );
   }
-  return hasAnyCapability(user, grants, caps);
-}
-
-function moduleReadFromGrants(moduleKey, user, grants) {
-  if (moduleKey === 'appStore') return true;
-  const caps = MODULE_READ_CAPS[moduleKey];
-  if (!caps) return !!user;
   return hasAnyCapability(user, grants, caps);
 }
 
@@ -176,10 +196,8 @@ export function computeModuleCapabilities({
 }) {
   const caps = {};
   const access = normalizeModuleAccess(moduleAccess);
-  const requireLoginSet = new Set(access.requireLogin);
-  const user = isAuthenticated
-    ? { is_super_admin: isSuperAdmin }
-    : null;
+  // requireLogin 仅约束未登录
+  const requireLoginSet = !isAuthenticated ? new Set(access.requireLogin) : new Set();
   const grantList = grants || [];
 
   for (const key of visibleModules) {
@@ -191,24 +209,21 @@ export function computeModuleCapabilities({
     if (channel === 'local' || channel === 'lan') {
       if (key === 'log') {
         caps[key] = isAuthenticated
-          ? rw(
-            moduleReadFromGrants('log', user, grantList) || true,
-            moduleWriteFromGrants('log', user, grantList),
-          )
+          ? rw(true, moduleWriteFromGrants('log', false, grantList))
           : rw(false, false);
       } else if (key === 'auth') {
         caps[key] = isAuthenticated
           ? rw(
-            moduleReadFromGrants('auth', user, grantList) || isSuperAdmin,
-            moduleWriteFromGrants('auth', user, grantList),
+            hasModuleEntry('auth', false, grantList),
+            moduleWriteFromGrants('auth', false, grantList),
           )
           : rw(false, false);
       } else if (key === 'appStore') {
         caps[key] = rw(
           true,
-          isAuthenticated && moduleWriteFromGrants('appStore', user, grantList),
+          isAuthenticated && moduleWriteFromGrants('appStore', false, grantList),
         );
-      } else if (requireLoginSet.has(key) && !isAuthenticated) {
+      } else if (requireLoginSet.has(key)) {
         caps[key] = rw(false, false);
       } else {
         caps[key] = rw(true, true);
@@ -223,23 +238,23 @@ export function computeModuleCapabilities({
     } else if (key === 'appStore') {
       caps[key] = rw(
         true,
-        isAuthenticated && moduleWriteFromGrants('appStore', user, grantList),
+        isAuthenticated && moduleWriteFromGrants('appStore', false, grantList),
       );
     } else if (key === 'log') {
       caps[key] = isAuthenticated
         ? rw(
-          moduleReadFromGrants('log', user, grantList) || true,
-          moduleWriteFromGrants('log', user, grantList),
+          hasModuleEntry('log', false, grantList),
+          moduleWriteFromGrants('log', false, grantList),
         )
         : rw(false, false);
     } else if (key === 'auth') {
       caps[key] = isAuthenticated
         ? rw(
-          moduleReadFromGrants('auth', user, grantList),
-          moduleWriteFromGrants('auth', user, grantList),
+          hasModuleEntry('auth', false, grantList),
+          moduleWriteFromGrants('auth', false, grantList),
         )
         : rw(false, false);
-    } else if (requireLoginSet.has(key) && !isAuthenticated) {
+    } else if (requireLoginSet.has(key)) {
       caps[key] = rw(false, false);
     } else {
       caps[key] = rw(true, true);

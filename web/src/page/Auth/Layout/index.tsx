@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LoginOutlined } from '@ant-design/icons';
-import { useRouterIds } from '@/Router';
+import { useNavigate, useRouterIds } from '@/Router';
 import LoginModal from '@/components/LoginModal';
 import ModuleNavLinks from '@/components/ModuleNavLinks';
 import ToolPageLayout from '@/components/ToolPageLayout';
@@ -14,19 +14,51 @@ const NAV_ITEMS = [
 ];
 
 export default function AuthLayout(props: { children?: React.ReactNode }) {
+  const { push } = useNavigate();
   const routerIds = useRouterIds();
   const current = String(routerIds[routerIds.length - 1] || 'home');
-  const { isAuthenticated, user, isSuperAdmin, canManageLog } = useAuth();
+  const { isAuthenticated, user, isSuperAdmin, hasCapability } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
 
-  const showTenantNav = isSuperAdmin || canManageLog;
+  const canUsers = isSuperAdmin
+    || hasCapability('auth.user.create')
+    || hasCapability('auth.user.update')
+    || hasCapability('auth.grant')
+    || hasCapability('auth.grant.list');
+  const canTenants = isSuperAdmin
+    || hasCapability('log.org.read')
+    || hasCapability('log.org.update');
+  const canWorkspace = isSuperAdmin
+    || hasCapability('log.project.read')
+    || hasCapability('log.project.create')
+    || hasCapability('log.project.update')
+    || hasCapability('log.key.list')
+    || hasCapability('log.key.create')
+    || hasCapability('log.key.toggle')
+    || hasCapability('log.key.delete');
+
+  useEffect(() => {
+    if (current === 'detail') return;
+    if (current === 'home' && !canUsers) {
+      if (canWorkspace) push('/auth/workspace');
+      else if (canTenants) push('/auth/tenants');
+    } else if (current === 'tenants' && !canTenants) {
+      if (canUsers) push('/auth/home');
+      else if (canWorkspace) push('/auth/workspace');
+    } else if (current === 'workspace' && !canWorkspace) {
+      if (canUsers) push('/auth/home');
+      else if (canTenants) push('/auth/tenants');
+    }
+  }, [current, canUsers, canTenants, canWorkspace, push]);
 
   const navItems = NAV_ITEMS.map(item => ({
     ...item,
-    hidden: (item.match === 'tenants' || item.match === 'workspace') && !showTenantNav,
+    hidden:
+      (item.match === 'home' && !canUsers)
+      || (item.match === 'tenants' && !canTenants)
+      || (item.match === 'workspace' && !canWorkspace),
   }));
 
-  // 用户详情页用「用户管理」高亮
   const navCurrent = current === 'detail' ? 'home' : current;
 
   const headerActions = (

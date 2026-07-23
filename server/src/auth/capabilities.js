@@ -53,6 +53,26 @@ export const MODULE_READ_CAPS = {
   appStore: ['module.appStore.write'],
 };
 
+/**
+ * 推导模块入口：持有任一即展示/可读该模块
+ * auth 含租户工作台相关 log.*（页面已迁到权限管理）
+ */
+export const MODULE_ENTRY_CAPS = {
+  auth: [
+    'auth.user.create', 'auth.user.update', 'auth.grant', 'auth.grant.list',
+    'log.org.read', 'log.org.update',
+    'log.project.create', 'log.project.update', 'log.project.read',
+    'log.key.list', 'log.key.create', 'log.key.toggle', 'log.key.delete',
+  ],
+  log: [
+    'log.org.read', 'log.org.update',
+    'log.project.create', 'log.project.update', 'log.project.read',
+    'log.key.list', 'log.key.create', 'log.key.toggle', 'log.key.delete',
+    'log.query', 'log.query.detail',
+  ],
+  appStore: ['module.appStore.write'],
+};
+
 export function getCapabilityMeta(capability) {
   return CAPABILITIES[capability] || null;
 }

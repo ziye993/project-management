@@ -32,6 +32,11 @@
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+.detailPanel {
+  max-width: min(720px, 52%);
+  width: 100%;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -170,8 +175,8 @@
   li {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 16px;
-    justify-content: space-between;
+    gap: 8px 12px;
+    justify-content: flex-start;
     align-items: center;
     padding: 8px 0;
     border-bottom: 1px solid #f1f5f9;
@@ -182,6 +187,7 @@
       border-radius: 6px;
       background: #fff;
       cursor: pointer;
+      margin-left: auto;
     }
   }
 }
@@ -216,8 +222,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  min-width: 220px;
+  flex: 1 1 100%;
+  min-width: 0;
 
   code {
     font-size: 11px;
