@@ -247,15 +247,12 @@ export function saveApp(payload, user) {
   return getApp(newId);
 }
 
-/** Soft-delete: status → archived */
+/** Hard-delete app record from app-store.json (files cleaned by caller). */
 export function deleteApp(appId) {
   if (!appId) return false;
   const store = readStore();
-  const app = store.apps[appId];
-  if (!app) return false;
-  app.status = 'archived';
-  app.updatedAt = Date.now();
-  app.publishLock = null;
+  if (!store.apps[appId]) return false;
+  delete store.apps[appId];
   writeStore(store);
   return true;
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CopyOutlined, DownloadOutlined, EditOutlined, CloudUploadOutlined } from '@ant-design/icons';
+import { CopyOutlined, DownloadOutlined, EditOutlined, CloudUploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { shellStyles } from '@/components/ToolPageLayout';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
@@ -11,6 +11,7 @@ import {
   listVersions,
   updateVersionMeta,
   yankVersion,
+  deleteApp,
   type AppStoreApp,
   type AppStoreVersion,
 } from '@/api/appStore';
@@ -43,8 +44,8 @@ function versionDownloadUrl(app: AppStoreApp | null, ver: AppStoreVersion): stri
 export default function AppStoreAppDetailPage() {
   const { state, push } = useNavigate();
   const appId = String(state?.appId || '');
-  const { canWriteModule } = useAuth();
-  const canWrite = canWriteModule('appStore');
+  const { canWriteModule, isSuperAdmin } = useAuth();
+  const canWrite = isSuperAdmin || canWriteModule('appStore');
   const pushRef = useRef(push);
   pushRef.current = push;
 
@@ -53,6 +54,7 @@ export default function AppStoreAppDetailPage() {
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<AppStoreVersion | null>(null);
   const [editForm, setEditForm] = useState({ title: '', changelog: '' });
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     if (!appId) return;
@@ -124,6 +126,19 @@ export default function AppStoreAppDetailPage() {
     await load();
   };
 
+  const onDeleteApp = async () => {
+    if (!canWrite || !appId || !app) return;
+    if (!confirm(`确定删除应用「${app.name}」？将清除安装包、封面及商店记录，且不可恢复。`)) return;
+    setDeleting(true);
+    try {
+      await deleteApp(appId);
+      message.success('已删除');
+      pushRef.current('/app-store/apps');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!app) {
     return <p className={styles.empty}>加载中…</p>;
   }
@@ -151,6 +166,14 @@ export default function AppStoreAppDetailPage() {
                 onClick={() => push('/app-store/publish', { appId: app.id })}
               >
                 <CloudUploadOutlined /> 发布新版本
+              </Button>
+            ) : null}
+            {canWrite ? (
+              <Button
+                onClick={() => { if (!deleting) void onDeleteApp(); }}
+                style={deleting ? { opacity: 0.55, pointerEvents: 'none' } : undefined}
+              >
+                <DeleteOutlined /> {deleting ? '删除中…' : '删除应用'}
               </Button>
             ) : null}
             <Button onClick={() => push('/app-store/apps')}>返回列表</Button>

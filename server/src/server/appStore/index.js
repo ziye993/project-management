@@ -19,7 +19,7 @@ import {
 } from './version.js';
 import * as lockApi from './lock.js';
 import { pruneVersions } from './prune.js';
-import { moveTempToPackage } from './packageStore.js';
+import { moveTempToPackage, removeAppFiles } from './packageStore.js';
 import { recordAppStorePublish } from './publishLog.js';
 import { hasCapability } from '../../auth/grants.js';
 
@@ -110,7 +110,8 @@ app.post('/api/appStore/app/delete', (req, res) => {
     if (!appId) return fail(res, 400, 1, '缺少 appId');
     const removed = deleteApp(appId);
     if (!removed) return fail(res, 404, 1, '应用不存在');
-    ok(res, { appId }, '已归档');
+    removeAppFiles(appId);
+    ok(res, { appId }, '已删除');
   } catch (err) {
     fail(res, 500, 1, err instanceof Error ? err.message : '删除失败');
   }

@@ -134,6 +134,24 @@ export function deletePackageFile(app, version) {
   }
 }
 
+/** Remove packages/{appId} and covers/{appId} directories (best-effort). */
+export function removeAppFiles(appId) {
+  if (!appId) return;
+  assertNoDotDot([String(appId)]);
+  try {
+    const root = resolvePackageRoot();
+    for (const sub of ['packages', 'covers']) {
+      const dir = path.join(root, sub, String(appId));
+      assertUnderRoot(dir, root);
+      if (fs.existsSync(dir)) {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  } catch {
+    // ignore missing root / path errors
+  }
+}
+
 export function resolvePackageAbsolutePath(relativePath) {
   if (!relativePath || typeof relativePath !== 'string') return null;
   const root = resolvePackageRoot();
