@@ -18,6 +18,97 @@ const LEVEL_CLASS: Record<string, string> = {
   FATAL: shared.levelFatal,
 };
 
+type ContentFormat = 'txt' | 'json' | 'markdown' | 'html';
+
+const CONTENT_FORMATS: { value: ContentFormat; label: string }[] = [
+  { value: 'txt', label: 'TXT' },
+  { value: 'json', label: 'JSON' },
+  { value: 'markdown', label: 'Markdown' },
+  { value: 'html', label: 'HTML' },
+];
+
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatJsonContent(raw: string): { text: string; error?: string } {
+  try {
+    return { text: JSON.stringify(JSON.parse(raw), null, 2) };
+  } catch {
+    return { text: raw, error: '内容不是合法 JSON，已按原文展示' };
+  }
+}
+
+/** 轻量 Markdown → HTML（日志预览用，不做完整规格） */
+function markdownToHtml(raw: string): string {
+  const codeBlocks: string[] = [];
+  let text = raw.replace(/```([\s\S]*?)```/g, (_, code) => {
+    const i = codeBlocks.length;
+    codeBlocks.push(`<pre><code>${escapeHtml(code.replace(/^\n|\n$/g, ''))}</code></pre>`);
+    return `\u0000CB${i}\u0000`;
+  });
+
+  text = escapeHtml(text);
+  text = text.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
+  text = text.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
+  text = text.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
+  text = text.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+  text = text.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+  text = text.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+  text = text.replace(/^&gt;\s?(.+)$/gm, '<blockquote>$1</blockquote>');
+  text = text.replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>');
+  text = text.replace(/(?:<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+  text = text.replace(/\n{2,}/g, '</p><p>');
+  text = text.replace(/\n/g, '<br/>');
+  text = `<p>${text}</p>`;
+  text = text.replace(/\u0000CB(\d+)\u0000/g, (_, i) => codeBlocks[Number(i)]);
+  return text;
+}
+
+function LogContentView({ content, format }: { content: string; format: ContentFormat }) {
+  if (format === 'json') {
+    const { text, error } = formatJsonContent(content);
+    return (
+      <>
+        {error && <p className={shared.contentFormatHint}>{error}</p>}
+        <pre className={`${shared.contentView} ${shared.contentViewPre}`}>{text}</pre>
+      </>
+    );
+  }
+
+  if (format === 'markdown') {
+    return (
+      <div
+        className={`${shared.contentView} ${shared.contentViewMd}`}
+        dangerouslySetInnerHTML={{ __html: markdownToHtml(content || '') }}
+      />
+    );
+  }
+
+  if (format === 'html') {
+    return (
+      <div className={`${shared.contentView} ${shared.contentViewHtml}`}>
+        <iframe
+          title="log-html-preview"
+          sandbox=""
+          srcDoc={content || ''}
+        />
+      </div>
+    );
+  }
+
+  return <pre className={`${shared.contentView} ${shared.contentViewPre}`}>{content}</pre>;
+}
+
 export default function LogQuery() {
   const logApi = useLogApi();
   const [orgs, setOrgs] = useState<OrgItem[]>([]);
@@ -41,6 +132,7 @@ export default function LogQuery() {
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detail, setDetail] = useState<any>(null);
+  const [contentFormat, setContentFormat] = useState<ContentFormat>('txt');
 
   useEffect(() => {
     logApi.listOrgs({ page: 1, pageSize: 500 }).then(res => {
@@ -87,6 +179,7 @@ export default function LogQuery() {
   const openDetail = async (id: number) => {
     const res = await logApi.getLogDetail(id);
     setDetail(res.data);
+    setContentFormat('txt');
     setDetailOpen(true);
   };
 
@@ -208,7 +301,7 @@ export default function LogQuery() {
         title={`日志详情 #${detail?.id || ''}`}
         onClose={() => setDetailOpen(false)}
         onOK={() => setDetailOpen(false)}
-        width="640px"
+        width="720px"
       >
         {detail && (
           <>
@@ -223,8 +316,19 @@ export default function LogQuery() {
               <p>IP：{detail.client_ip || '-'} · UA：{detail.user_agent || '-'}</p>
             </div>
             <div className={shared.detailSection}>
-              <h4>内容</h4>
-              <p>{detail.content}</p>
+              <div className={shared.detailSectionHead}>
+                <h4>内容</h4>
+                <select
+                  value={contentFormat}
+                  onChange={e => setContentFormat(e.target.value as ContentFormat)}
+                  aria-label="内容格式"
+                >
+                  {CONTENT_FORMATS.map(f => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+              </div>
+              <LogContentView content={detail.content || ''} format={contentFormat} />
             </div>
             {detail.data != null && (
               <div className={shared.detailSection}>
