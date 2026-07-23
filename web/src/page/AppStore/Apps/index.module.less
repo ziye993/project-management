@@ -20,13 +20,17 @@
 
 .gridWrap {
   min-height: 280px;
-  padding: 4px 0 8px;
+  padding: 8px 0 16px;
+  display: flex;
+  justify-content: flex-start;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 18px;
+  width: 100%;
+  justify-content: start;
 }
 
 @keyframes emptyDrift {
@@ -368,7 +372,8 @@
     }
 
     input,
-    textarea {
+    textarea,
+    select {
       width: 100%;
       padding: 8px 10px;
       border: 1px solid rgba(148, 163, 184, 0.35);
@@ -380,6 +385,11 @@
 
       &:focus {
         border-color: rgba(99, 102, 241, 0.45);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
     }
   }

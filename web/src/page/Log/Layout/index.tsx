@@ -9,7 +9,7 @@ import navStyles from '@/components/ModuleNavLinks/index.module.less';
 
 const NAV_ITEMS = [
   { path: '/log/home', label: '模块首页', match: 'home' },
-  { path: '/log/query', label: '日志查询', match: 'query' },
+  { path: '/log/query', label: '活动日志', match: 'query' },
 ];
 
 export default function LogLayout(props: { children?: React.ReactNode }) {

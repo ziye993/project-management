@@ -14,7 +14,10 @@ import {
   type AppStoreApp,
   type AppStoreVersion,
 } from '@/api/appStore';
-import DownloadCommandPanel from '../components/DownloadCommandPanel';
+import {
+  buildDownloadCommand,
+  suggestDownloadFilename,
+} from '../utils/downloadCommands';
 import { APP_STORE_FEATURES, packageStaticUrl } from '../utils/features';
 import { compareVersions } from '../utils/version';
 import styles from './index.module.less';
@@ -79,6 +82,22 @@ export default function AppStoreAppDetailPage() {
     }
   };
 
+  const copyVersionCommand = (ver: AppStoreVersion) => {
+    if (!app) return;
+    const dl = versionDownloadUrl(app, ver);
+    const isLatest = ver.version === latestVersion && ver.status === 'published';
+    const url = isLatest && app.updateUrl ? app.updateUrl : dl;
+    const cmd = buildDownloadCommand({
+      shell: 'linux-curl',
+      url,
+      filename: suggestDownloadFilename({
+        appSlug: app.appSlug,
+        originalName: ver.file?.originalName,
+      }),
+    });
+    void copyText(cmd);
+  };
+
   const openEdit = (ver: AppStoreVersion) => {
     setEditTarget(ver);
     setEditForm({ title: ver.title || '', changelog: ver.changelog || '' });
@@ -110,9 +129,6 @@ export default function AppStoreAppDetailPage() {
   }
 
   const updateUrl = app.updateUrl || app.updateLinks?.[0]?.url || '';
-  const latestFileName = versions.find(
-    (v) => v.version === latestVersion && v.status === 'published',
-  )?.file?.originalName || null;
 
   return (
     <div className={styles.page}>
@@ -128,29 +144,6 @@ export default function AppStoreAppDetailPage() {
           <h1 className={styles.title}>{app.name}</h1>
           <p className={styles.slug}>{app.ownerSlug}/{app.appSlug}</p>
           <p className={styles.desc}>{app.description || '暂无简介'}</p>
-          <div className={styles.linkRow}>
-            <span className={styles.linkLabel}>更新链接</span>
-            <code className={styles.linkUrl}>{updateUrl || '-'}</code>
-            {updateUrl ? (
-              <Button onClick={() => copyText(updateUrl)}><CopyOutlined /> 复制链接</Button>
-            ) : null}
-          </div>
-          {app.updateLinks && app.updateLinks.length > 1 ? (
-            <div className={styles.linksExtra}>
-              {app.updateLinks.map((link) => (
-                <button
-                  key={`${link.type}-${link.url}`}
-                  type="button"
-                  className={styles.linkChip}
-                  onClick={() => copyText(link.url)}
-                  title={link.url}
-                >
-                  {link.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <DownloadCommandPanel app={app} latestFileName={latestFileName} />
           <div className={styles.headerActions}>
             {canWrite ? (
               <Button
@@ -211,6 +204,11 @@ export default function AppStoreAppDetailPage() {
                           {ver.status === 'published' && dl ? (
                             <button type="button" onClick={() => window.open(isLatest && updateUrl ? updateUrl : dl, '_blank')}>
                               <DownloadOutlined /> 下载
+                            </button>
+                          ) : null}
+                          {ver.status === 'published' && dl ? (
+                            <button type="button" onClick={() => copyVersionCommand(ver)}>
+                              <CopyOutlined /> 复制指令
                             </button>
                           ) : null}
                           {canWrite ? (

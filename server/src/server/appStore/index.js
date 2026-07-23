@@ -245,6 +245,8 @@ app.post('/api/appStore/version/publish', async (req, res) => {
       uploader: { userId: user.id, username: user.username || '' },
       channel: req.channel,
       uploadedAt: now,
+      orgId: record.orgId,
+      projectId: record.projectId,
     });
 
     ok(res, {

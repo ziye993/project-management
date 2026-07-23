@@ -21,6 +21,7 @@ import VersionInputs, {
   versionPartsToString,
   type VersionParts,
 } from '../components/VersionInputs';
+import { useAppStoreLayout } from '../Layout';
 import { APP_STORE_FEATURES } from '../utils/features';
 import { LockSession } from '../utils/lockSession';
 import { isValidVersion, VERSION_INVALID_MSG } from '../utils/version';
@@ -31,8 +32,10 @@ export default function AppStorePublishPage() {
   const appId = String(state?.appId || '');
   const { canWriteModule } = useAuth();
   const canWrite = canWriteModule('appStore');
+  const { setHeaderActions } = useAppStoreLayout();
   const pushRef = useRef(push);
   pushRef.current = push;
+  const sessionRef = useRef<LockSession | null>(null);
 
   const [app, setApp] = useState<AppStoreApp | null>(null);
   const [parts, setParts] = useState<VersionParts>(versionPartsFromString('0.0.0.1'));
@@ -45,7 +48,24 @@ export default function AppStorePublishPage() {
   const [holding, setHolding] = useState(false);
   const [lockLoading, setLockLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
-  const sessionRef = useRef<LockSession | null>(null);
+
+  useEffect(() => {
+    const goBack = (toList: boolean) => {
+      void sessionRef.current?.release();
+      sessionRef.current = null;
+      if (toList) pushRef.current('/app-store/apps');
+      else if (appId) pushRef.current('/app-store/app', { appId });
+      else pushRef.current('/app-store/apps');
+    };
+
+    setHeaderActions(
+      <>
+        <Button onClick={() => goBack(false)}>取消</Button>
+        <Button onClick={() => goBack(true)}>返回列表</Button>
+      </>,
+    );
+    return () => setHeaderActions(null);
+  }, [appId, setHeaderActions]);
 
   useEffect(() => {
     if (!appId) {
@@ -74,7 +94,6 @@ export default function AppStorePublishPage() {
 
         const lockRes = await acquireLock(appId);
         if (cancelled) {
-          // 本轮已取消：若刚好拿到锁，立刻释放，避免脏锁
           if (!lockRes.conflict && lockRes.lockToken) {
             session.bind(appId, lockRes.lockToken);
             void session.release();
@@ -157,7 +176,6 @@ export default function AppStorePublishPage() {
     }
   };
 
-  // 表单始终可填；仅上传/发布依赖锁
   const formDisabled = publishing;
   const actionDisabled = conflict || !holding || publishing || lockLoading;
 
@@ -166,7 +184,7 @@ export default function AppStorePublishPage() {
       <div className={`${shellStyles.contentPanel} ${styles.panel}`}>
         <h1 className={styles.title}>
           发布新版本
-          {app ? <span className={styles.sub}>{app.name}（{app.ownerSlug}/{app.appSlug}）</span> : null}
+          {app ? <span className={styles.sub}>{app.name}（{app.appSlug}）</span> : null}
         </h1>
 
         <PublishLockBanner
@@ -225,14 +243,6 @@ export default function AppStorePublishPage() {
             style={actionDisabled ? { opacity: 0.55, pointerEvents: 'none' } : undefined}
           >
             <CloudUploadOutlined /> {publishing ? '发布中…' : '确认发布'}
-          </Button>
-          <Button
-            onClick={() => {
-              void sessionRef.current?.release();
-              pushRef.current('/app-store/app', { appId });
-            }}
-          >
-            取消
           </Button>
         </div>
       </div>

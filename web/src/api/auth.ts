@@ -4,8 +4,13 @@ export const createAuthApi = (logApiBaseUrl: string) => ({
   listUsers: (params: { username?: string; status?: number | ''; page?: number; pageSize?: number }) =>
     postLogApi(logApiBaseUrl, '/auth/user/list', params),
 
-  createUser: (data: { username: string; password: string; email?: string }) =>
-    postLogApi(logApiBaseUrl, '/auth/user/create', data),
+  createUser: (data: {
+    username: string;
+    password: string;
+    email?: string;
+    orgId?: number;
+    projectId?: number;
+  }) => postLogApi(logApiBaseUrl, '/auth/user/create', data),
 
   updateUser: (data: { id: number; email?: string; status?: number; is_super_admin?: number }) =>
     postLogApi(logApiBaseUrl, '/auth/user/update', data),
@@ -18,6 +23,9 @@ export const createAuthApi = (logApiBaseUrl: string) => ({
 
   capabilityMine: () =>
     postLogApi(logApiBaseUrl, '/auth/capability/mine', {}),
+
+  capabilityScopes: () =>
+    postLogApi(logApiBaseUrl, '/auth/capability/scopes', {}),
 
   listGrantsByUser: (userId: number) =>
     postLogApi(logApiBaseUrl, '/auth/capability/listByUser', { userId }),

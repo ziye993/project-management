@@ -6,6 +6,8 @@ export interface AppStoreApp {
   name: string;
   ownerSlug: string;
   appSlug: string;
+  orgId?: number | null;
+  projectId?: number | null;
   coverPath?: string;
   description?: string;
   status?: string;
@@ -54,9 +56,10 @@ export const getApp = (appId: string) =>
 export const saveApp = (payload: {
   id?: string;
   name: string;
-  ownerSlug: string;
   appSlug: string;
   description: string;
+  orgId?: number;
+  projectId?: number;
   coverPath?: string;
   status?: string;
 }) => post('/appStore/app/save', payload) as Promise<{ data: { app: AppStoreApp } }>;

@@ -123,7 +123,7 @@ export default function LogQuery() {
         </div>
         <div className={shared.field}>
           <label>模块</label>
-          <input value={module} onChange={e => setModule(e.target.value)} placeholder="模糊匹配" />
+          <input value={module} onChange={e => setModule(e.target.value)} placeholder="如 appStore" />
         </div>
         <div className={shared.field}>
           <label>Trace ID</label>

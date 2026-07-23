@@ -10,6 +10,7 @@ import {
   capabilityListByUser,
   capabilityGrant,
   capabilityRevoke,
+  capabilityScopes,
 } from './user.js';
 
 const gate = [authenticateToken];
@@ -21,6 +22,7 @@ app.post('/api/auth/user/resetPassword', ...gate, resetPassword);
 
 app.post('/api/auth/capability/catalog', ...gate, capabilityCatalog);
 app.post('/api/auth/capability/mine', ...gate, capabilityMine);
+app.post('/api/auth/capability/scopes', ...gate, capabilityScopes);
 app.post('/api/auth/capability/listByUser', ...gate, capabilityListByUser);
 app.post('/api/auth/capability/grant', ...gate, capabilityGrant);
 app.post('/api/auth/capability/revoke', ...gate, capabilityRevoke);

@@ -103,6 +103,31 @@ export function getOrgIdsWithCapability(grants, capabilityIds) {
   return [...orgIds];
 }
 
+/** 操作者可管理的 org / project 作用域（用于用户列表与挂靠） */
+export function getManageableScopes(grants) {
+  const orgIds = new Set();
+  const projectIds = new Set();
+  for (const g of grants || []) {
+    if (g.scopeType === 'org' && Number(g.scopeId) !== 0) {
+      orgIds.add(Number(g.scopeId));
+    } else if (g.scopeType === 'project') {
+      projectIds.add(Number(g.scopeId));
+    }
+  }
+  return {
+    orgIds: [...orgIds],
+    projectIds: [...projectIds],
+  };
+}
+
+export function getOrgsWhereCanCreateUser(grants) {
+  return getOrgIdsWithCapability(grants, ['auth.user.create']);
+}
+
+export function getOrgsWhereCanGrant(grants) {
+  return getOrgIdsWithCapability(grants, ['auth.grant']);
+}
+
 export function getAccessibleOrgIdsFromGrants(user, grants) {
   if (user?.is_super_admin) return null;
   const orgIds = new Set();
@@ -281,7 +306,7 @@ export function canGrantCapability(operator, operatorGrants, {
 /**
  * 校验操作者能否收回某条 grant
  */
-export function canRevokeGrant(operator, operatorGrants, targetGrant) {
+export function canRevokeGrant(operator, operatorGrants, targetGrant, projectOrgId = null) {
   if (!operator || !targetGrant) return { ok: false, error: '参数无效' };
   if (operator.is_super_admin) return { ok: true, reason: 'super' };
 
@@ -303,7 +328,7 @@ export function canRevokeGrant(operator, operatorGrants, targetGrant) {
     operatorGrants,
     targetGrant.capability,
     checkScope,
-    null,
+    projectOrgId,
   );
   const peer = matches.find(g => g.canRevokePeer);
   if (peer) return { ok: true, reason: 'peer' };

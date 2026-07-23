@@ -7,8 +7,8 @@ import styles from './index.module.less';
 
 const ENTRIES = [
   {
-    name: '日志查询',
-    desc: '跨租户检索、筛选与详情查看',
+    name: '活动日志',
+    desc: '业务上报与应用发布等组织内活动，同一套查询权限',
     icon: <SearchOutlined />,
     path: '/log/query',
     accent: 'indigo',
@@ -20,7 +20,9 @@ export default function LogHome() {
 
   return (
     <div className={styles.box}>
-      <p className={styles.subtitle}>多租户日志收集与查询。租户 / 项目 / Key 请到「权限管理」配置。</p>
+      <p className={styles.subtitle}>
+        按组织/项目检索活动记录（含业务日志与应用发布）。权限与「日志查询」能力一致。
+      </p>
       <div className={styles.grid}>
         {ENTRIES.map(item => (
           <button

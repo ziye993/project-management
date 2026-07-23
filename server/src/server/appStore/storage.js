@@ -166,45 +166,62 @@ export function findAppBySlug(ownerSlug, appSlug) {
 
 /**
  * Create or update an app.
+ * Create requires orgId + projectId; ownerSlug auto = org{orgId} (download path).
  * @param {object} payload
  * @param {object} user
  */
 export function saveApp(payload, user) {
   const name = typeof payload?.name === 'string' ? payload.name.trim() : '';
-  const ownerSlug = typeof payload?.ownerSlug === 'string' ? payload.ownerSlug.trim().toLowerCase() : '';
   const appSlug = typeof payload?.appSlug === 'string' ? payload.appSlug.trim().toLowerCase() : '';
   const description = typeof payload?.description === 'string' ? payload.description : '';
   const coverPath = typeof payload?.coverPath === 'string' ? payload.coverPath : '';
   const status = payload?.status === 'archived' ? 'archived' : 'active';
+  const orgId = payload?.orgId != null && payload.orgId !== '' ? Number(payload.orgId) : null;
+  const projectId = payload?.projectId != null && payload.projectId !== '' ? Number(payload.projectId) : null;
 
   if (!name) throw new Error('应用名称不能为空');
-  if (!isValidSlug(ownerSlug) || !isValidSlug(appSlug)) {
-    throw new Error('ownerSlug / appSlug 须为小写字母数字与连字符，最长 64');
+  if (!isValidSlug(appSlug)) {
+    throw new Error('appSlug 须为小写字母数字与连字符，最长 64');
   }
 
   const store = readStore();
   const now = Date.now();
   const id = payload?.id && store.apps[payload.id] ? payload.id : null;
 
-  for (const existing of Object.values(store.apps)) {
-    if (!existing) continue;
-    if (id && existing.id === id) continue;
-    if (existing.ownerSlug === ownerSlug && existing.appSlug === appSlug && existing.status !== 'archived') {
-      throw new Error(`应用标识 ${ownerSlug}/${appSlug} 已存在`);
-    }
-  }
-
   if (id) {
     const app = store.apps[id];
+    const ownerSlug = app.ownerSlug;
+    for (const existing of Object.values(store.apps)) {
+      if (!existing || existing.id === id) continue;
+      if (existing.ownerSlug === ownerSlug && existing.appSlug === appSlug && existing.status !== 'archived') {
+        throw new Error(`应用标识 ${appSlug} 已存在`);
+      }
+    }
     app.name = name;
-    app.ownerSlug = ownerSlug;
     app.appSlug = appSlug;
     app.description = description;
     app.coverPath = coverPath;
     app.status = status;
+    if (orgId != null) app.orgId = orgId;
+    if (projectId != null) app.projectId = projectId;
     app.updatedAt = now;
     writeStore(store);
     return getApp(id);
+  }
+
+  if (orgId == null || projectId == null) {
+    throw new Error('请选择所属组织与项目');
+  }
+  const ownerSlug = `org${orgId}`;
+  if (!isValidSlug(ownerSlug)) {
+    throw new Error('组织标识无效');
+  }
+
+  for (const existing of Object.values(store.apps)) {
+    if (!existing) continue;
+    if (existing.ownerSlug === ownerSlug && existing.appSlug === appSlug && existing.status !== 'archived') {
+      throw new Error(`该组织下应用标识 ${appSlug} 已存在`);
+    }
   }
 
   const newId = randomUUID();
@@ -213,6 +230,8 @@ export function saveApp(payload, user) {
     name,
     ownerSlug,
     appSlug,
+    orgId,
+    projectId,
     coverPath,
     description,
     status,

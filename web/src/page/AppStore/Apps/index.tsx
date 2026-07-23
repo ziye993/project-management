@@ -4,7 +4,9 @@ import Modal from '@/components/ui/Modal';
 import message from '@/components/ui/Modal/message';
 import { useNavigate } from '@/Router';
 import { listApps, saveApp, type AppStoreApp } from '@/api/appStore';
+import type { OrgItem, ProjectItem } from '@/api/log';
 import { useAuth } from '@/hooks/useAuth';
+import { useLogApi } from '@/hooks/useLogApi';
 import AppCard, { AppListEmpty } from '../components/AppCard';
 import CoverUploader from '../components/CoverUploader';
 import { useAppStoreLayout } from '../Layout';
@@ -17,10 +19,11 @@ const FILTER_FIELDS = [
 
 const emptyForm = () => ({
   name: '',
-  ownerSlug: '',
   appSlug: '',
   description: '',
   coverPath: '',
+  orgId: '' as number | '',
+  projectId: '' as number | '',
 });
 
 export default function AppStoreAppsPage() {
@@ -28,11 +31,14 @@ export default function AppStoreAppsPage() {
   const { createRequestId, requestCreate } = useAppStoreLayout();
   const { canWriteModule } = useAuth();
   const canWrite = canWriteModule('appStore');
+  const logApi = useLogApi();
   const [apps, setApps] = useState<AppStoreApp[]>([]);
   const [filters, setFilters] = useState<FilterValue>({ keyword: '' });
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [orgs, setOrgs] = useState<OrgItem[]>([]);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
 
   const load = useCallback(async (keyword?: string) => {
     const res = await listApps(keyword || undefined);
@@ -50,9 +56,25 @@ export default function AppStoreAppsPage() {
     }
   }, [createRequestId]);
 
+  useEffect(() => {
+    if (!createOpen) return;
+    logApi.listOrgs({ page: 1, pageSize: 500 }).then((res) => {
+      setOrgs(res.data?.list || []);
+    }).catch(() => setOrgs([]));
+  }, [createOpen, logApi]);
+
+  useEffect(() => {
+    if (!createOpen || !form.orgId) {
+      setProjects([]);
+      return;
+    }
+    logApi.listProjects(Number(form.orgId)).then((res) => {
+      setProjects(res.data || []);
+    }).catch(() => setProjects([]));
+  }, [createOpen, form.orgId, logApi]);
+
   const keyword = String(filters.keyword || '').trim();
 
-  // Server search on debounce-ish: reload when keyword changes (simple)
   useEffect(() => {
     const t = setTimeout(() => {
       void load(keyword);
@@ -69,22 +91,26 @@ export default function AppStoreAppsPage() {
 
   const submitCreate = async () => {
     const name = form.name.trim();
-    const ownerSlug = form.ownerSlug.trim().toLowerCase();
     const appSlug = form.appSlug.trim().toLowerCase();
+    if (!form.orgId || !form.projectId) {
+      message.error('请选择所属组织与项目');
+      return;
+    }
     if (!name) {
       message.error('请填写应用名称');
       return;
     }
-    if (!SLUG_RE.test(ownerSlug) || !SLUG_RE.test(appSlug)) {
-      message.error('ownerSlug / appSlug 须为小写字母数字，可含中划线，最长 64');
+    if (!SLUG_RE.test(appSlug)) {
+      message.error('appSlug 须为小写字母数字，可含中划线，最长 64');
       return;
     }
     setSaving(true);
     try {
       await saveApp({
         name,
-        ownerSlug,
         appSlug,
+        orgId: Number(form.orgId),
+        projectId: Number(form.projectId),
         description: form.description.trim(),
         coverPath: form.coverPath.trim() || undefined,
       });
@@ -137,7 +163,39 @@ export default function AppStoreAppsPage() {
       >
         <div className={styles.form}>
           <label>
-            <span>名称</span>
+            <span>所属组织 *</span>
+            <select
+              value={form.orgId === '' ? '' : String(form.orgId)}
+              onChange={(e) => setForm({
+                ...form,
+                orgId: e.target.value ? Number(e.target.value) : '',
+                projectId: '',
+              })}
+            >
+              <option value="">请选择组织</option>
+              {orgs.map((o) => (
+                <option key={o.id} value={o.id}>{o.org_name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>所属项目 *</span>
+            <select
+              value={form.projectId === '' ? '' : String(form.projectId)}
+              disabled={!form.orgId}
+              onChange={(e) => setForm({
+                ...form,
+                projectId: e.target.value ? Number(e.target.value) : '',
+              })}
+            >
+              <option value="">请选择项目</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.project_name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>名称 *</span>
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -145,15 +203,7 @@ export default function AppStoreAppsPage() {
             />
           </label>
           <label>
-            <span>ownerSlug</span>
-            <input
-              value={form.ownerSlug}
-              onChange={(e) => setForm({ ...form, ownerSlug: e.target.value.toLowerCase() })}
-              placeholder="qingshan"
-            />
-          </label>
-          <label>
-            <span>appSlug</span>
+            <span>appSlug *</span>
             <input
               value={form.appSlug}
               onChange={(e) => setForm({ ...form, appSlug: e.target.value.toLowerCase() })}
