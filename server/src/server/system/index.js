@@ -21,7 +21,7 @@ import {
 app.post('/api/system/accessContext', optionalAuthenticate, (req, res) => {
   const isAuthenticated = !!req.user;
   const isSuperAdmin = !!req.user?.is_super_admin;
-  const orgPermissions = req.orgPermissions || [];
+  const grants = req.grants || [];
   const channel = req.channel;
   const moduleAccess = normalizeModuleAccess(getConfig(true)?.moduleAccess);
 
@@ -30,7 +30,7 @@ app.post('/api/system/accessContext', optionalAuthenticate, (req, res) => {
     deploymentRole: DEPLOYMENT_ROLE,
     isAuthenticated,
     isSuperAdmin,
-    orgPermissions,
+    grants,
     moduleAccess,
   });
 
@@ -39,7 +39,7 @@ app.post('/api/system/accessContext', optionalAuthenticate, (req, res) => {
     deploymentRole: DEPLOYMENT_ROLE,
     isAuthenticated,
     isSuperAdmin,
-    orgPermissions,
+    grants,
     visibleModules,
     moduleAccess,
   });
@@ -61,10 +61,10 @@ app.post('/api/system/accessContext', optionalAuthenticate, (req, res) => {
         username: req.user.username,
         email: req.user.email,
         is_super_admin: isSuperAdmin,
+        isSuperAdmin,
       } : null,
       isSuperAdmin,
-      orgPermissions,
-      projectPermissions: req.projectPermissions || [],
+      grants,
       visibleModules,
       moduleCapabilities,
       moduleAccess,

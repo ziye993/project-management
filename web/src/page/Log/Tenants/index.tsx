@@ -13,6 +13,9 @@ type FormState = {
   contact_phone: string;
   remark: string;
   status: number;
+  bootstrapUsername: string;
+  bootstrapPassword: string;
+  bootstrapEmail: string;
 };
 
 const emptyForm = (): FormState => ({
@@ -21,11 +24,17 @@ const emptyForm = (): FormState => ({
   contact_phone: '',
   remark: '',
   status: 1,
+  bootstrapUsername: '',
+  bootstrapPassword: '',
+  bootstrapEmail: '',
 });
 
 export default function LogTenants() {
   const logApi = useLogApi();
-  const { canManageLog } = useAuth();
+  const { isSuperAdmin, hasCapability } = useAuth();
+  const canCreateTenant = isSuperAdmin;
+  const canUpdateOrg = (orgId: number) =>
+    isSuperAdmin || hasCapability('log.org.update', { scopeType: 'org', scopeId: orgId });
   const [list, setList] = useState<OrgItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -64,6 +73,9 @@ export default function LogTenants() {
       contact_phone: row.contact_phone || '',
       remark: row.remark || '',
       status: row.status,
+      bootstrapUsername: '',
+      bootstrapPassword: '',
+      bootstrapEmail: '',
     });
     setModalOpen(true);
   };
@@ -84,11 +96,20 @@ export default function LogTenants() {
       });
       message.success('已更新');
     } else {
+      if (!form.bootstrapUsername.trim() || !form.bootstrapPassword) {
+        message.error('请填写租户管理员账号和密码');
+        return;
+      }
       await logApi.createOrg({
         org_name: form.org_name,
         contact_name: form.contact_name,
         contact_phone: form.contact_phone,
         remark: form.remark,
+        bootstrapUser: {
+          username: form.bootstrapUsername.trim(),
+          password: form.bootstrapPassword,
+          email: form.bootstrapEmail || undefined,
+        },
       });
       message.success('已创建');
     }
@@ -120,7 +141,7 @@ export default function LogTenants() {
           </select>
         </div>
         <button type="button" className={shared.btn} onClick={() => load(1)}>查询</button>
-        <button type="button" className={`${shared.btn} ${shared.btnGhost}`} onClick={openCreate} disabled={!canManageLog}>新建租户</button>
+        <button type="button" className={`${shared.btn} ${shared.btnGhost}`} onClick={openCreate} disabled={!canCreateTenant}>新建租户</button>
       </div>
 
       <div className={shared.panel}>
@@ -150,8 +171,8 @@ export default function LogTenants() {
                   <td>{row.create_time}</td>
                   <td>
                     <div className={shared.actions}>
-                      <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => openEdit(row)} disabled={!canManageLog}>编辑</button>
-                      <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => toggle(row.id)} disabled={!canManageLog}>
+                      <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => openEdit(row)} disabled={!canUpdateOrg(row.id)}>编辑</button>
+                      <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} onClick={() => toggle(row.id)} disabled={!canUpdateOrg(row.id)}>
                         {row.status === 1 ? '禁用' : '启用'}
                       </button>
                     </div>
@@ -189,6 +210,22 @@ export default function LogTenants() {
             <label>备注</label>
             <textarea value={form.remark} onChange={e => setForm({ ...form, remark: e.target.value })} />
           </div>
+          {form.id == null && (
+            <>
+              <div className={shared.formField}>
+                <label>管理员用户名 *</label>
+                <input value={form.bootstrapUsername} onChange={e => setForm({ ...form, bootstrapUsername: e.target.value })} />
+              </div>
+              <div className={shared.formField}>
+                <label>管理员密码 *</label>
+                <input type="password" value={form.bootstrapPassword} onChange={e => setForm({ ...form, bootstrapPassword: e.target.value })} />
+              </div>
+              <div className={shared.formField}>
+                <label>管理员邮箱</label>
+                <input value={form.bootstrapEmail} onChange={e => setForm({ ...form, bootstrapEmail: e.target.value })} />
+              </div>
+            </>
+          )}
           {form.id != null && (
             <div className={shared.formField}>
               <label>状态</label>

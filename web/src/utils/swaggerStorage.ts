@@ -5,6 +5,7 @@ import { isFetchableSourceUrl } from './openapi'
 
 const SESSION_KEY = 'swagger_session'
 const HISTORY_KEY = 'swagger_history'
+const SEARCH_KEY = 'swagger_search'
 const MAX_HISTORY = 20
 const EXPORT_VERSION = 1 as const
 
@@ -26,6 +27,22 @@ export interface SwaggerHistoryEntry {
   group: string
   label: string
   loadedAt: number
+}
+
+export function loadSwaggerSearch(): string {
+  try {
+    return localStorage.getItem(SEARCH_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function saveSwaggerSearch(query: string) {
+  try {
+    localStorage.setItem(SEARCH_KEY, query)
+  } catch {
+    /* quota exceeded — ignore */
+  }
 }
 
 export function loadSwaggerSession(): SwaggerSession | null {

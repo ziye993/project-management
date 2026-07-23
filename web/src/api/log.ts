@@ -68,6 +68,7 @@ export const createLogApi = (logApiBaseUrl: string) => ({
     contact_name?: string;
     contact_phone?: string;
     remark?: string;
+    bootstrapUser: { username: string; password: string; email?: string } | { userId: number };
   }) => logPost(logApiBaseUrl, '/org/create', data),
 
   updateOrg: (data: {

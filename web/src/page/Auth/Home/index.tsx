@@ -70,6 +70,9 @@ export default function AuthHome() {
           <button type="button" className={shared.btn} onClick={() => load(1)}>查询</button>
           <button type="button" className={shared.btn} onClick={() => setCreateOpen(true)}>新建用户</button>
         </div>
+        <p className={shared.hint} style={{ marginBottom: 12 }}>
+          业务操作权限在用户「授权管理」中配置；模块显隐请到系统配置 → 模块访问控制。
+        </p>
 
         <div className={shared.panel}>
           <div className={shared.tableWrap}>

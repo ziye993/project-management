@@ -8,7 +8,7 @@ import {
   recordLoginFailure,
   clearLoginAttempts,
 } from '../../utils/loginRateLimit.js';
-import { loadUserPermissions } from '../../middleware/auth.js';
+import { loadUserGrants } from '../../auth/grants.js';
 import { sendVerificationCode } from './mail.js';
 import { decryptLoginPassword, getPasswordPublicKey } from '../../utils/passwordCrypto.js';
 
@@ -88,9 +88,6 @@ export const login = async (req, res) => {
     }
 
     const match = await bcrypt.compare(plainPassword, user.password_hash);
-
-      const hash = await bcrypt.hash('123456', 10);
-      console.log('hash', hash, 'plainPassword',plainPassword,'user?.password_hash', user?.password_hash);
     if (!match) {
       recordLoginFailure(ip, username);
       return res.status(200).json({ success: false, code: 1, msg: '用户名或密码错误', data: null });
@@ -98,7 +95,7 @@ export const login = async (req, res) => {
 
     clearLoginAttempts(ip, username);
     setToken(res, req, user);
-    const perms = await loadUserPermissions(user.id);
+    const grants = await loadUserGrants(user.id);
 
     return res.status(200).json({
       success: true,
@@ -106,8 +103,7 @@ export const login = async (req, res) => {
       msg: 'success',
       data: {
         ...sanitizeUser(user),
-        orgPermissions: perms.orgPermissions,
-        projectPermissions: perms.projectPermissions,
+        grants,
       },
     });
   } catch (error) {
@@ -142,15 +138,14 @@ export const me = async (req, res) => {
       return res.status(403).json({ success: false, code: 'INVALID_USER', msg: '用户无效', data: null });
     }
 
-    const perms = await loadUserPermissions(user.id);
+    const grants = await loadUserGrants(user.id);
     return res.status(200).json({
       success: true,
       code: 0,
       msg: '',
       data: {
         ...sanitizeUser(user),
-        orgPermissions: perms.orgPermissions,
-        projectPermissions: perms.projectPermissions,
+        grants,
       },
     });
   } catch {

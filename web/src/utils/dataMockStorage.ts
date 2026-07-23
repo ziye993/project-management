@@ -1,6 +1,7 @@
 import type { ArrayLengthsMap, FieldRulesMap } from './mockRules'
 
 const RULES_KEY = 'dataMockEndpointRules'
+const SEARCH_KEY = 'dataMock_search'
 
 export interface MockSessionInfo {
   mockId: string
@@ -19,6 +20,22 @@ type EndpointRulesStore = Record<
   string,
   { fieldRules: FieldRulesMap; arrayLengths: ArrayLengthsMap; staticResponseText?: string }
 >
+
+export function loadDataMockSearch(): string {
+  try {
+    return localStorage.getItem(SEARCH_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function saveDataMockSearch(query: string) {
+  try {
+    localStorage.setItem(SEARCH_KEY, query)
+  } catch {
+    /* quota exceeded — ignore */
+  }
+}
 
 function endpointKey(sourceUrl: string, method: string, path: string) {
   return `${sourceUrl}|${method.toLowerCase()}|${path}`

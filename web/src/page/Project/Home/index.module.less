@@ -142,11 +142,6 @@
   overflow-y: auto;
   padding: 16px 14px;
 
-  .panelTitle {
-    padding-bottom: 16px;
-    margin-bottom: 8px;
-  }
-
   .itemBox {
     padding: 14px 12px;
     margin: 6px 0;
@@ -158,9 +153,23 @@
   .runningDots {
     max-height: 24px;
   }
+}
 
-  .panelTitle :global(.anticon) {
-    color: #818cf8;
+.sectionLabel {
+  width: 100%;
+  font-size: 12px;
+  font-weight: 500;
+  color: @text-soft;
+  letter-spacing: 0.06em;
+  padding: 8px 4px 6px;
+  margin: 10px 0 4px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  line-height: 1.3;
+  text-align: left;
+
+  &:first-child {
+    margin-top: 0;
+    padding-top: 2px;
   }
 }
 

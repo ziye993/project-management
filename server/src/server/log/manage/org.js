@@ -1,8 +1,11 @@
 import app from '../../../app.js';
+import bcrypt from 'bcrypt';
 import pool from '../../../db/logDb.js';
 import { fail, ok } from '../utils/response.js';
-import { authenticateToken, requireOrgPermission, auditLog } from '../../../middleware/auth.js';
-import { assertOrgAccess, getAccessibleOrgIds } from '../utils/permissions.js';
+import { authenticateToken, requireSuperAdmin, auditLog } from '../../../middleware/auth.js';
+import { assertOrgCapability, assertOrgReadable, getAccessibleOrgIds } from '../utils/permissions.js';
+import { bootstrapTenantAdmin } from '../../../auth/grants.js';
+import { PRESET_TENANT_ADMIN } from '../../../auth/capabilities.js';
 
 app.post('/api/log/manage/org/list', authenticateToken, async (req, res) => {
   try {
@@ -23,7 +26,7 @@ app.post('/api/log/manage/org/list', authenticateToken, async (req, res) => {
       params.push(parseInt(status, 10));
     }
 
-    const accessible = getAccessibleOrgIds(req);
+    const accessible = await getAccessibleOrgIds(req);
     if (accessible !== null) {
       if (!accessible.length) {
         return ok(res, { list: [], total: 0, page: p, pageSize: ps });
@@ -61,7 +64,9 @@ app.post('/api/log/manage/org/detail', authenticateToken, async (req, res) => {
   try {
     const { id } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
-    if (!assertOrgAccess(req, id, 'view')) return fail(res, 403, 2, '无权访问该组织');
+    if (!assertOrgReadable(req, id) && !assertOrgCapability(req, 'log.org.read', id)) {
+      return fail(res, 403, 2, '无权访问该组织');
+    }
 
     const [rows] = await pool.execute(
       `SELECT o.*,
@@ -78,36 +83,99 @@ app.post('/api/log/manage/org/detail', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/log/manage/org/create', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
+app.post('/api/log/manage/org/create', authenticateToken, requireSuperAdmin, async (req, res) => {
+  const conn = await pool.getConnection();
   try {
-    if (!req.user?.is_super_admin) {
-      return fail(res, 403, 2, '仅超级管理员可创建组织');
-    }
+    const {
+      org_name,
+      contact_name,
+      contact_phone,
+      remark,
+      bootstrapUser,
+    } = req.body || {};
 
-    const { org_name, contact_name, contact_phone, remark } = req.body || {};
     if (!org_name || !String(org_name).trim()) {
       return fail(res, 400, 1, 'org_name 必填');
     }
+    if (!bootstrapUser || typeof bootstrapUser !== 'object') {
+      return fail(res, 400, 1, 'bootstrapUser 必填');
+    }
 
-    const [result] = await pool.execute(
+    await conn.beginTransaction();
+
+    const [orgResult] = await conn.execute(
       `INSERT INTO sys_org (org_name, contact_name, contact_phone, remark)
        VALUES (?, ?, ?, ?)`,
       [org_name.trim(), contact_name || null, contact_phone || null, remark || null],
     );
+    const orgId = orgResult.insertId;
 
-    await auditLog(req, 'org.create', 'org', result.insertId, { org_name });
-    ok(res, { id: result.insertId });
+    let bootstrapUserId = null;
+    if (bootstrapUser.userId) {
+      const [users] = await conn.execute(
+        'SELECT id, status FROM sys_user WHERE id = ?',
+        [bootstrapUser.userId],
+      );
+      if (!users.length || users[0].status !== 1) {
+        throw Object.assign(new Error('bootstrap 用户不存在或已禁用'), { http: 400 });
+      }
+      bootstrapUserId = users[0].id;
+    } else {
+      const { username, password, email } = bootstrapUser;
+      if (!username?.trim() || !password) {
+        throw Object.assign(new Error('bootstrapUser 需提供 username+password 或 userId'), { http: 400 });
+      }
+      const hash = await bcrypt.hash(password, 10);
+      try {
+        const [userResult] = await conn.execute(
+          'INSERT INTO sys_user (username, password_hash, email) VALUES (?, ?, ?)',
+          [username.trim(), hash, email || null],
+        );
+        bootstrapUserId = userResult.insertId;
+      } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+          throw Object.assign(new Error('bootstrap 用户名已存在'), { http: 400 });
+        }
+        throw err;
+      }
+    }
+
+    await bootstrapTenantAdmin(conn, {
+      userId: bootstrapUserId,
+      orgId,
+      grantedBy: req.user.id,
+    });
+
+    await conn.commit();
+
+    await auditLog(req, 'org.create', 'org', orgId, {
+      org_name,
+      bootstrapUserId,
+    });
+    await auditLog(req, 'grant.bootstrap', 'org', orgId, {
+      orgId,
+      userId: bootstrapUserId,
+      preset: PRESET_TENANT_ADMIN,
+    });
+
+    ok(res, { id: orgId, bootstrapUserId });
   } catch (err) {
+    try { await conn.rollback(); } catch { /* ignore */ }
+    if (err.http === 400) return fail(res, 400, 1, err.message);
     console.error('[org/create]', err);
     fail(res, 500, 9, '数据库异常');
+  } finally {
+    conn.release();
   }
 });
 
-app.post('/api/log/manage/org/update', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
+app.post('/api/log/manage/org/update', authenticateToken, async (req, res) => {
   try {
     const { id, org_name, contact_name, contact_phone, remark, status } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
-    if (!assertOrgAccess(req, id, 'manage')) return fail(res, 403, 2, '无权修改该组织');
+    if (!assertOrgCapability(req, 'log.org.update', id)) {
+      return fail(res, 403, 2, '无权修改该组织');
+    }
     if (!org_name || !String(org_name).trim()) {
       return fail(res, 400, 1, 'org_name 必填');
     }
@@ -135,11 +203,13 @@ app.post('/api/log/manage/org/update', authenticateToken, requireOrgPermission('
   }
 });
 
-app.post('/api/log/manage/org/toggleStatus', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
+app.post('/api/log/manage/org/toggleStatus', authenticateToken, async (req, res) => {
   try {
     const { id } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
-    if (!assertOrgAccess(req, id, 'manage')) return fail(res, 403, 2, '无权修改该组织');
+    if (!assertOrgCapability(req, 'log.org.update', id)) {
+      return fail(res, 403, 2, '无权修改该组织');
+    }
 
     const [result] = await pool.execute(
       'UPDATE sys_org SET status = IF(status = 1, 0, 1) WHERE id = ?',

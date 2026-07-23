@@ -1,10 +1,14 @@
 import app from '../../../app.js';
 import pool from '../../../db/logDb.js';
 import { fail, ok, truncate } from '../utils/response.js';
-import { authenticateToken, requireOrgPermission } from '../../../middleware/auth.js';
-import { assertOrgAccess, getAccessibleOrgIds } from '../utils/permissions.js';
+import { authenticateToken } from '../../../middleware/auth.js';
+import {
+  assertOrgCapability,
+  assertProjectCapability,
+  getAccessibleOrgIds,
+} from '../utils/permissions.js';
 
-app.post('/api/log/manage/log/list', authenticateToken, requireOrgPermission('view'), async (req, res) => {
+app.post('/api/log/manage/log/list', authenticateToken, async (req, res) => {
   try {
     const {
       orgId,
@@ -19,14 +23,14 @@ app.post('/api/log/manage/log/list', authenticateToken, requireOrgPermission('vi
       pageSize = 20,
     } = req.body || {};
 
-    if (orgId && !assertOrgAccess(req, orgId, 'view')) {
-      return fail(res, 403, 2, '无权查询该组织日志');
-    }
     if (projectId) {
-      const [projRows] = await pool.execute('SELECT org_id FROM sys_project WHERE id = ?', [projectId]);
-      if (!projRows.length) return fail(res, 400, 1, '项目不存在');
-      if (!assertOrgAccess(req, projRows[0].org_id, 'view')) {
+      if (!(await assertProjectCapability(req, 'log.query', projectId))) {
         return fail(res, 403, 2, '无权查询该项目日志');
+      }
+    } else if (orgId) {
+      // bootstrap 将 log.query 授在 org 作用域
+      if (!assertOrgCapability(req, 'log.query', orgId)) {
+        return fail(res, 403, 2, '无权查询该组织日志');
       }
     }
 
@@ -71,7 +75,7 @@ app.post('/api/log/manage/log/list', authenticateToken, requireOrgPermission('vi
     }
 
     if (!req.user?.is_super_admin) {
-      const accessible = getAccessibleOrgIds(req);
+      const accessible = await getAccessibleOrgIds(req);
       if (!accessible.length) {
         return ok(res, { list: [], total: 0, page: p, pageSize: ps });
       }
@@ -115,7 +119,7 @@ app.post('/api/log/manage/log/list', authenticateToken, requireOrgPermission('vi
   }
 });
 
-app.post('/api/log/manage/log/detail', authenticateToken, requireOrgPermission('view'), async (req, res) => {
+app.post('/api/log/manage/log/detail', authenticateToken, async (req, res) => {
   try {
     const { id } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
@@ -130,11 +134,15 @@ app.post('/api/log/manage/log/detail', authenticateToken, requireOrgPermission('
     );
     if (!rows.length) return fail(res, 400, 1, '日志不存在');
 
-    if (!assertOrgAccess(req, rows[0].org_id, 'view')) {
+    const row = rows[0];
+    if (row.project_id) {
+      if (!(await assertProjectCapability(req, 'log.query.detail', row.project_id))) {
+        return fail(res, 403, 2, '无权查看该日志');
+      }
+    } else if (!assertOrgCapability(req, 'log.query.detail', row.org_id)) {
       return fail(res, 403, 2, '无权查看该日志');
     }
 
-    const row = rows[0];
     if (typeof row.data === 'string') {
       try {
         row.data = JSON.parse(row.data);

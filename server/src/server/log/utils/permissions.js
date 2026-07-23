@@ -1,47 +1,44 @@
-export function getAccessibleOrgIds(req) {
-  if (req.user?.is_super_admin) return null;
-  const orgIds = new Set();
-  for (const p of req.orgPermissions || []) {
-    orgIds.add(Number(p.orgId));
-  }
-  for (const p of req.projectPermissions || []) {
-    if (p.orgId != null) orgIds.add(Number(p.orgId));
-  }
-  return [...orgIds];
+import {
+  resolveAccessibleOrgIds,
+  hasCapability,
+  resolveProjectOrgId,
+} from '../../../auth/grants.js';
+
+/** @returns {Promise<null|number[]>} null = 超管不限 */
+export async function getAccessibleOrgIds(req) {
+  return resolveAccessibleOrgIds(req.user, req.grants);
 }
 
-export function getManageOrgIds(req) {
-  if (req.user?.is_super_admin) return null;
-  const orgIds = new Set();
-  for (const p of req.orgPermissions || []) {
-    if (p.role === 'manage') orgIds.add(Number(p.orgId));
-  }
-  for (const p of req.projectPermissions || []) {
-    if (p.role === 'manage' && p.orgId != null) orgIds.add(Number(p.orgId));
-  }
-  return [...orgIds];
+export function assertOrgCapability(req, capability, orgId) {
+  return hasCapability(
+    req.user,
+    capability,
+    { scopeType: 'org', scopeId: Number(orgId) },
+    req.grants || [],
+  );
 }
 
-export function buildOrgScope(req, column = 'o.id') {
-  const orgIds = getAccessibleOrgIds(req);
-  if (orgIds === null) return { clause: '', params: [] };
-  if (!orgIds.length) return { clause: ' AND 1=0', params: [] };
-  const placeholders = orgIds.map(() => '?').join(',');
-  return { clause: ` AND ${column} IN (${placeholders})`, params: orgIds };
+export async function assertProjectCapability(req, capability, projectId) {
+  const orgId = await resolveProjectOrgId(projectId);
+  if (orgId == null && !req.user?.is_super_admin) return false;
+  return hasCapability(
+    req.user,
+    capability,
+    { scopeType: 'project', scopeId: Number(projectId) },
+    req.grants || [],
+    orgId,
+  );
 }
 
-export function assertOrgAccess(req, orgId, level = 'view') {
+/** 是否可查看该 org（任一相关读能力或写能力） */
+export function assertOrgReadable(req, orgId) {
   if (req.user?.is_super_admin) return true;
-  const need = level === 'manage' ? 2 : 1;
-  const orgPerm = req.orgPermissions?.find(p => Number(p.orgId) === Number(orgId));
-  if (orgPerm) {
-    const lv = orgPerm.role === 'manage' ? 2 : 1;
-    if (lv >= need) return true;
-  }
-  const projectPerm = req.projectPermissions?.find(p => Number(p.orgId) === Number(orgId));
-  if (projectPerm) {
-    const lv = projectPerm.role === 'manage' ? 2 : 1;
-    if (lv >= need) return true;
-  }
-  return false;
+  const caps = [
+    'log.org.read', 'log.org.update',
+    'log.project.create', 'log.project.update', 'log.project.read',
+    'log.key.list', 'log.key.create', 'log.key.toggle', 'log.key.delete',
+    'log.query', 'log.query.detail',
+    'auth.grant', 'auth.grant.list', 'auth.user.create', 'auth.user.update',
+  ];
+  return caps.some(c => assertOrgCapability(req, c, orgId));
 }

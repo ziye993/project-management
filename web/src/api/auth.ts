@@ -7,21 +7,35 @@ export const createAuthApi = (logApiBaseUrl: string) => ({
   createUser: (data: { username: string; password: string; email?: string }) =>
     postLogApi(logApiBaseUrl, '/auth/user/create', data),
 
-  updateUser: (data: { id: number; email?: string; status?: number }) =>
+  updateUser: (data: { id: number; email?: string; status?: number; is_super_admin?: number }) =>
     postLogApi(logApiBaseUrl, '/auth/user/update', data),
 
   resetPassword: (data: { id: number; password: string }) =>
     postLogApi(logApiBaseUrl, '/auth/user/resetPassword', data),
 
-  grantOrg: (data: { userId: number; orgId: number; role: 'manage' | 'view' }) =>
-    postLogApi(logApiBaseUrl, '/auth/grant/org', data),
+  capabilityCatalog: () =>
+    postLogApi(logApiBaseUrl, '/auth/capability/catalog', {}),
 
-  grantProject: (data: { userId: number; projectId: number; role: 'manage' | 'view' }) =>
-    postLogApi(logApiBaseUrl, '/auth/grant/project', data),
+  capabilityMine: () =>
+    postLogApi(logApiBaseUrl, '/auth/capability/mine', {}),
 
-  revokeGrant: (data: { userId: number; orgId?: number; projectId?: number }) =>
-    postLogApi(logApiBaseUrl, '/auth/grant/revoke', data),
+  listGrantsByUser: (userId: number) =>
+    postLogApi(logApiBaseUrl, '/auth/capability/listByUser', { userId }),
 
-  listGrants: (userId: number) =>
-    postLogApi(logApiBaseUrl, '/auth/grant/list', { userId }),
+  grantCapability: (data: {
+    userId: number;
+    capability: string;
+    scopeType: 'org' | 'project';
+    scopeId: number;
+    canDelegate?: boolean;
+    canRevokePeer?: boolean;
+  }) => postLogApi(logApiBaseUrl, '/auth/capability/grant', data),
+
+  revokeCapability: (data: {
+    grantId?: number;
+    userId?: number;
+    capability?: string;
+    scopeType?: 'org' | 'project';
+    scopeId?: number;
+  }) => postLogApi(logApiBaseUrl, '/auth/capability/revoke', data),
 });

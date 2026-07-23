@@ -8,6 +8,7 @@ import {
   filterEndpoints,
   groupEndpointsByTag,
 } from '../../../utils/openapi'
+import { loadSwaggerSearch, saveSwaggerSearch } from '../../../utils/swaggerStorage'
 import { DocRemarkModal } from './DocRemarkModal'
 import { EndpointCard } from './EndpointCard'
 import styles from './index.module.less'
@@ -37,7 +38,7 @@ export function ApiDocViewer({
   refreshing = false,
   onRefresh,
 }: ApiDocViewerProps) {
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(loadSwaggerSearch)
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [remarkModalOpen, setRemarkModalOpen] = useState(false)
 
@@ -91,7 +92,11 @@ export function ApiDocViewer({
           className={styles.searchInput}
           placeholder="搜索路径、摘要、Operation ID…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value
+            setSearch(next)
+            saveSwaggerSearch(next)
+          }}
         />
         <div className={styles.cookieToolbar}>
           <label className={styles.cookieToolbarLabel} htmlFor="doc-cookie">

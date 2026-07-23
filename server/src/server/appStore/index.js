@@ -21,6 +21,7 @@ import * as lockApi from './lock.js';
 import { pruneVersions } from './prune.js';
 import { moveTempToPackage } from './packageStore.js';
 import { recordAppStorePublish } from './publishLog.js';
+import { hasCapability } from '../../auth/grants.js';
 
 const INVALID_VERSION_MSG = '版本号须为 0~999 四段，可选 -特殊值；不能为 0.0.0.0，最低 0.0.0.1。';
 
@@ -30,6 +31,23 @@ function requireUser(req, res) {
     return null;
   }
   return req.user;
+}
+
+/** 写操作：登录 +（超管或 module.appStore.write） */
+function requireAppStoreWrite(req, res) {
+  const user = requireUser(req, res);
+  if (!user) return null;
+  const okWrite = hasCapability(
+    user,
+    'module.appStore.write',
+    { scopeType: 'platform', scopeId: 0 },
+    req.grants || [],
+  );
+  if (!okWrite) {
+    fail(res, 403, 403, '缺少应用商店写权限');
+    return null;
+  }
+  return user;
 }
 
 function handleLockConflict(res, err) {
@@ -75,7 +93,7 @@ app.post('/api/appStore/app/get', (req, res) => {
 
 app.post('/api/appStore/app/save', (req, res) => {
   try {
-    const user = requireUser(req, res);
+    const user = requireAppStoreWrite(req, res);
     if (!user) return;
     const record = saveApp(req.body ?? {}, user);
     ok(res, { app: record }, '已保存');
@@ -86,7 +104,7 @@ app.post('/api/appStore/app/save', (req, res) => {
 
 app.post('/api/appStore/app/delete', (req, res) => {
   try {
-    const user = requireUser(req, res);
+    const user = requireAppStoreWrite(req, res);
     if (!user) return;
     const appId = req.body?.appId;
     if (!appId) return fail(res, 400, 1, '缺少 appId');
@@ -146,7 +164,7 @@ app.post('/api/appStore/version/suggest', (req, res) => {
 
 app.post('/api/appStore/version/publish', async (req, res) => {
   try {
-    const user = requireUser(req, res);
+    const user = requireAppStoreWrite(req, res);
     if (!user) return;
 
     const body = req.body || {};
@@ -242,7 +260,7 @@ app.post('/api/appStore/version/publish', async (req, res) => {
 
 app.post('/api/appStore/version/updateMeta', (req, res) => {
   try {
-    const user = requireUser(req, res);
+    const user = requireAppStoreWrite(req, res);
     if (!user) return;
 
     const { appId, version, title, changelog } = req.body || {};
@@ -265,7 +283,7 @@ app.post('/api/appStore/version/updateMeta', (req, res) => {
 
 app.post('/api/appStore/version/yank', (req, res) => {
   try {
-    const user = requireUser(req, res);
+    const user = requireAppStoreWrite(req, res);
     if (!user) return;
 
     const { appId, version } = req.body || {};
@@ -293,7 +311,7 @@ app.post('/api/appStore/version/yank', (req, res) => {
 
 app.post('/api/appStore/lock/acquire', (req, res) => {
   try {
-    const user = requireUser(req, res);
+    const user = requireAppStoreWrite(req, res);
     if (!user) return;
     const appId = req.body?.appId;
     if (!appId) return fail(res, 400, 1, '缺少 appId');
@@ -307,7 +325,7 @@ app.post('/api/appStore/lock/acquire', (req, res) => {
 
 app.post('/api/appStore/lock/heartbeat', (req, res) => {
   try {
-    const user = requireUser(req, res);
+    const user = requireAppStoreWrite(req, res);
     if (!user) return;
     const { appId, lockToken } = req.body || {};
     if (!appId || !lockToken) return fail(res, 400, 1, '缺少参数');
@@ -321,7 +339,7 @@ app.post('/api/appStore/lock/heartbeat', (req, res) => {
 
 app.post('/api/appStore/lock/release', (req, res) => {
   try {
-    const user = requireUser(req, res);
+    const user = requireAppStoreWrite(req, res);
     if (!user) return;
     const { appId, lockToken } = req.body || {};
     if (!appId || !lockToken) return fail(res, 400, 1, '缺少参数');

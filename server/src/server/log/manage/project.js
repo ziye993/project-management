@@ -1,14 +1,16 @@
 import app from '../../../app.js';
 import pool from '../../../db/logDb.js';
 import { fail, ok } from '../utils/response.js';
-import { authenticateToken, requireOrgPermission, auditLog } from '../../../middleware/auth.js';
-import { assertOrgAccess } from '../utils/permissions.js';
+import { authenticateToken, auditLog } from '../../../middleware/auth.js';
+import { assertOrgCapability, assertOrgReadable } from '../utils/permissions.js';
 
 app.post('/api/log/manage/project/list', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.body || {};
     if (!orgId) return fail(res, 400, 1, '缺少 orgId 参数');
-    if (!assertOrgAccess(req, orgId, 'view')) return fail(res, 403, 2, '无权访问该组织');
+    if (!assertOrgCapability(req, 'log.project.read', orgId) && !assertOrgReadable(req, orgId)) {
+      return fail(res, 403, 2, '无权访问该组织');
+    }
 
     const [rows] = await pool.execute(
       `SELECT id, org_id, project_name, project_code, description, status, create_time, update_time
@@ -23,11 +25,13 @@ app.post('/api/log/manage/project/list', authenticateToken, async (req, res) => 
   }
 });
 
-app.post('/api/log/manage/project/create', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
+app.post('/api/log/manage/project/create', authenticateToken, async (req, res) => {
   try {
     const { orgId, project_name, project_code, description } = req.body || {};
     if (!orgId) return fail(res, 400, 1, '缺少 orgId 参数');
-    if (!assertOrgAccess(req, orgId, 'manage')) return fail(res, 403, 2, '无权在该组织下创建项目');
+    if (!assertOrgCapability(req, 'log.project.create', orgId)) {
+      return fail(res, 403, 2, '无权在该组织下创建项目');
+    }
     if (!project_name || !String(project_name).trim()) {
       return fail(res, 400, 1, 'project_name 必填');
     }
@@ -55,7 +59,7 @@ app.post('/api/log/manage/project/create', authenticateToken, requireOrgPermissi
   }
 });
 
-app.post('/api/log/manage/project/update', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
+app.post('/api/log/manage/project/update', authenticateToken, async (req, res) => {
   try {
     const { id, project_name, description, status } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
@@ -65,7 +69,7 @@ app.post('/api/log/manage/project/update', authenticateToken, requireOrgPermissi
 
     const [projRows] = await pool.execute('SELECT org_id FROM sys_project WHERE id = ?', [id]);
     if (!projRows.length) return fail(res, 400, 1, '项目不存在');
-    if (!assertOrgAccess(req, projRows[0].org_id, 'manage')) {
+    if (!assertOrgCapability(req, 'log.project.update', projRows[0].org_id)) {
       return fail(res, 403, 2, '无权修改该项目');
     }
 
@@ -90,14 +94,14 @@ app.post('/api/log/manage/project/update', authenticateToken, requireOrgPermissi
   }
 });
 
-app.post('/api/log/manage/project/toggleStatus', authenticateToken, requireOrgPermission('manage'), async (req, res) => {
+app.post('/api/log/manage/project/toggleStatus', authenticateToken, async (req, res) => {
   try {
     const { id } = req.body || {};
     if (!id) return fail(res, 400, 1, '缺少 id 参数');
 
     const [projRows] = await pool.execute('SELECT org_id FROM sys_project WHERE id = ?', [id]);
     if (!projRows.length) return fail(res, 400, 1, '项目不存在');
-    if (!assertOrgAccess(req, projRows[0].org_id, 'manage')) {
+    if (!assertOrgCapability(req, 'log.project.update', projRows[0].org_id)) {
       return fail(res, 403, 2, '无权修改该项目');
     }
 

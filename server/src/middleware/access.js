@@ -1,5 +1,7 @@
 import { isIPv4, isIPv6 } from 'node:net';
 import { DEPLOYMENT_ROLE } from '../config/deployment.js';
+import { MODULE_WRITE_CAPS, MODULE_READ_CAPS } from '../auth/capabilities.js';
+import { hasAnyCapability, hasCapability } from '../auth/grants.js';
 
 const LOCAL_MODULES = [
   'project', 'image', 'television', 'config', 'serverInfo', 'LANSharing',
@@ -109,14 +111,11 @@ export function computeVisibleModules({
   deploymentRole,
   isAuthenticated,
   isSuperAdmin,
-  orgPermissions,
   moduleAccess,
 }) {
-  const hasOrg = Array.isArray(orgPermissions) && orgPermissions.length > 0;
   const access = normalizeModuleAccess(moduleAccess);
   const hiddenSet = new Set(access.hidden);
 
-  // 超级管理员登录后开放全部功能（含公网下原 LOCAL_ONLY 模块）
   if (isAuthenticated && isSuperAdmin) {
     const modules = LOCAL_MODULES.filter(m => !hiddenSet.has(m));
     modules.push('log');
@@ -132,14 +131,11 @@ export function computeVisibleModules({
   }
 
   const modules = [...PUBLIC_ALWAYS];
-  if (isAuthenticated && hasOrg) {
-    modules.push('log');
-  } else {
-    modules.push('log');
-  }
   if (!hiddenSet.has('appStore')) {
     modules.push('appStore');
   }
+  // 公网展示 log 入口；数据层按 grant 过滤
+  modules.push('log');
 
   return modules.filter(m => !PUBLIC_NEVER.includes(m) && !hiddenSet.has(m));
 }
@@ -148,23 +144,45 @@ function rw(read = true, write = true) {
   return { read, write };
 }
 
+function moduleWriteFromGrants(moduleKey, user, grants) {
+  const caps = MODULE_WRITE_CAPS[moduleKey];
+  if (!caps) return false;
+  if (moduleKey === 'appStore') {
+    return hasCapability(
+      user,
+      'module.appStore.write',
+      { scopeType: 'platform', scopeId: 0 },
+      grants,
+    );
+  }
+  return hasAnyCapability(user, grants, caps);
+}
+
+function moduleReadFromGrants(moduleKey, user, grants) {
+  if (moduleKey === 'appStore') return true;
+  const caps = MODULE_READ_CAPS[moduleKey];
+  if (!caps) return !!user;
+  return hasAnyCapability(user, grants, caps);
+}
+
 export function computeModuleCapabilities({
   channel,
   deploymentRole,
   isAuthenticated,
   isSuperAdmin,
-  orgPermissions,
+  grants,
   visibleModules,
   moduleAccess,
 }) {
   const caps = {};
-  const hasOrg = Array.isArray(orgPermissions) && orgPermissions.length > 0;
-  const hasManage = isSuperAdmin || orgPermissions?.some(p => p.role === 'manage');
   const access = normalizeModuleAccess(moduleAccess);
   const requireLoginSet = new Set(access.requireLogin);
+  const user = isAuthenticated
+    ? { is_super_admin: isSuperAdmin }
+    : null;
+  const grantList = grants || [];
 
   for (const key of visibleModules) {
-    // 超级管理员对所有可见模块具备读写能力
     if (isAuthenticated && isSuperAdmin) {
       caps[key] = rw(true, true);
       continue;
@@ -173,10 +191,23 @@ export function computeModuleCapabilities({
     if (channel === 'local' || channel === 'lan') {
       if (key === 'log') {
         caps[key] = isAuthenticated
-          ? rw(true, hasManage)
+          ? rw(
+            moduleReadFromGrants('log', user, grantList) || true,
+            moduleWriteFromGrants('log', user, grantList),
+          )
           : rw(false, false);
       } else if (key === 'auth') {
-        caps[key] = rw(true, true);
+        caps[key] = isAuthenticated
+          ? rw(
+            moduleReadFromGrants('auth', user, grantList) || isSuperAdmin,
+            moduleWriteFromGrants('auth', user, grantList),
+          )
+          : rw(false, false);
+      } else if (key === 'appStore') {
+        caps[key] = rw(
+          true,
+          isAuthenticated && moduleWriteFromGrants('appStore', user, grantList),
+        );
       } else if (requireLoginSet.has(key) && !isAuthenticated) {
         caps[key] = rw(false, false);
       } else {
@@ -190,13 +221,24 @@ export function computeModuleCapabilities({
     } else if (['image', 'television', 'LANSharing'].includes(key)) {
       caps[key] = rw(false, false);
     } else if (key === 'appStore') {
-      caps[key] = rw(true, !!isAuthenticated);
+      caps[key] = rw(
+        true,
+        isAuthenticated && moduleWriteFromGrants('appStore', user, grantList),
+      );
     } else if (key === 'log') {
       caps[key] = isAuthenticated
-        ? rw(true, hasManage)
+        ? rw(
+          moduleReadFromGrants('log', user, grantList) || true,
+          moduleWriteFromGrants('log', user, grantList),
+        )
         : rw(false, false);
     } else if (key === 'auth') {
-      caps[key] = rw(false, false);
+      caps[key] = isAuthenticated
+        ? rw(
+          moduleReadFromGrants('auth', user, grantList),
+          moduleWriteFromGrants('auth', user, grantList),
+        )
+        : rw(false, false);
     } else if (requireLoginSet.has(key) && !isAuthenticated) {
       caps[key] = rw(false, false);
     } else {
@@ -204,6 +246,7 @@ export function computeModuleCapabilities({
     }
   }
 
+  void deploymentRole;
   return caps;
 }
 

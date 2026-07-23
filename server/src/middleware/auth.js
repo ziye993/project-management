@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import pool from '../db/logDb.js';
 import { JWT_SECRET } from '../config/deployment.js';
-import { isLogServerTrusted, getClientIp } from './access.js';
+import { getClientIp } from './access.js';
+import { loadUserGrants } from '../auth/grants.js';
 
 export function verifyToken(token) {
   try {
@@ -11,24 +12,20 @@ export function verifyToken(token) {
   }
 }
 
+/** @deprecated 使用 loadUserGrants；保留别名避免漏改 */
 export async function loadUserPermissions(userId) {
-  const [orgRows] = await pool.execute(
-    `SELECT uo.org_id AS orgId, uo.role, o.org_name AS orgName
-     FROM sys_user_org uo
-     LEFT JOIN sys_org o ON o.id = uo.org_id
-     WHERE uo.user_id = ?`,
-    [userId],
-  );
+  const grants = await loadUserGrants(userId);
+  return { grants };
+}
 
-  const [projectRows] = await pool.execute(
-    `SELECT up.project_id AS projectId, up.role, p.org_id AS orgId, p.project_name AS projectName
-     FROM sys_user_project up
-     LEFT JOIN sys_project p ON p.id = up.project_id
-     WHERE up.user_id = ?`,
-    [userId],
-  );
-
-  return { orgPermissions: orgRows, projectPermissions: projectRows };
+async function attachUserAndGrants(req, user) {
+  req.user = {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    is_super_admin: !!user.is_super_admin,
+  };
+  req.grants = await loadUserGrants(user.id);
 }
 
 export async function authenticateToken(req, res, next) {
@@ -51,16 +48,7 @@ export async function authenticateToken(req, res, next) {
     return res.status(403).json({ success: false, code: 'INVALID_USER', msg: '用户不存在或已禁用', data: null });
   }
 
-  req.user = {
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    is_super_admin: !!user.is_super_admin,
-  };
-
-  const perms = await loadUserPermissions(user.id);
-  req.orgPermissions = perms.orgPermissions;
-  req.projectPermissions = perms.projectPermissions;
+  await attachUserAndGrants(req, user);
   next();
 }
 
@@ -77,86 +65,27 @@ export function optionalAuthenticate(req, _res, next) {
   ).then(async ([rows]) => {
     const user = rows[0];
     if (user && user.status === 1) {
-      req.user = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        is_super_admin: !!user.is_super_admin,
-      };
-      const perms = await loadUserPermissions(user.id);
-      req.orgPermissions = perms.orgPermissions;
-      req.projectPermissions = perms.projectPermissions;
+      await attachUserAndGrants(req, user);
     }
     next();
   }).catch(() => next());
 }
 
-export function isEffectiveSuperAdmin(req) {
-  if (req.user?.is_super_admin) return true;
-  if (isLogServerTrusted(req) && req.path?.startsWith('/api/auth')) return true;
-  return false;
-}
-
+/** 仅登录的平台超管；局域网访客不再放行 */
 export function requireSuperAdmin(req, res, next) {
-  if (isEffectiveSuperAdmin(req) || isLogServerTrusted(req)) {
-    return next();
+  if (req.user?.is_super_admin) return next();
+  if (!req.user) {
+    return res.status(401).json({ success: false, code: 'NOT_TOKEN', msg: '未登录', data: null });
   }
   return res.status(403).json({ success: false, code: 'FORBIDDEN', msg: '需要超级管理员权限', data: null });
 }
 
 export function requireRealSuperAdmin(req, res, next) {
   if (req.user?.is_super_admin) return next();
-  return res.status(403).json({ success: false, code: 'FORBIDDEN', msg: '需要超级管理员权限', data: null });
-}
-
-function roleLevel(role) {
-  return role === 'manage' ? 2 : 1;
-}
-
-export function hasOrgPermission(req, orgId, level = 'view') {
-  if (req.user?.is_super_admin) return true;
-  const need = roleLevel(level);
-  const orgPerm = req.orgPermissions?.find(p => Number(p.orgId) === Number(orgId));
-  if (orgPerm && roleLevel(orgPerm.role) >= need) return true;
-  const projectPerm = req.projectPermissions?.find(p => Number(p.orgId) === Number(orgId));
-  if (projectPerm && roleLevel(projectPerm.role) >= need) return true;
-  return false;
-}
-
-export function hasProjectPermission(req, projectId, orgId, level = 'view') {
-  if (req.user?.is_super_admin) return true;
-  const need = roleLevel(level);
-  const projectPerm = req.projectPermissions?.find(p => Number(p.projectId) === Number(projectId));
-  if (projectPerm && roleLevel(projectPerm.role) >= need) return true;
-  if (orgId != null) {
-    const orgPerm = req.orgPermissions?.find(p => Number(p.orgId) === Number(orgId));
-    if (orgPerm && roleLevel(orgPerm.role) >= need) return true;
+  if (!req.user) {
+    return res.status(401).json({ success: false, code: 'NOT_TOKEN', msg: '未登录', data: null });
   }
-  return false;
-}
-
-export function requireOrgPermission(level = 'view') {
-  return async (req, res, next) => {
-    if (req.user?.is_super_admin) return next();
-
-    const orgId = req.body?.orgId ?? req.body?.org_id ?? req.body?.id;
-    const projectId = req.body?.projectId ?? req.body?.project_id;
-
-    if (projectId) {
-      let resolvedOrgId = orgId;
-      if (!resolvedOrgId) {
-        const [rows] = await pool.execute('SELECT org_id FROM sys_project WHERE id = ?', [projectId]);
-        resolvedOrgId = rows[0]?.org_id;
-      }
-      if (hasProjectPermission(req, projectId, resolvedOrgId, level)) return next();
-    } else if (orgId) {
-      if (hasOrgPermission(req, orgId, level)) return next();
-    } else if (level === 'view') {
-      return next();
-    }
-
-    return res.status(403).json({ success: false, code: 'FORBIDDEN', msg: '权限不足', data: null });
-  };
+  return res.status(403).json({ success: false, code: 'FORBIDDEN', msg: '需要超级管理员权限', data: null });
 }
 
 const LOCAL_ONLY_PREFIXES = [
@@ -170,7 +99,6 @@ const LOCAL_ONLY_PREFIXES = [
 
 export function blockPublicLocalOnly(req, res, next) {
   if (req.channel !== 'public') return next();
-  // 超级管理员登录后可访问全部本地能力接口
   if (req.user?.is_super_admin) return next();
 
   const path = req.path || req.url?.split('?')[0] || '';

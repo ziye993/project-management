@@ -233,7 +233,7 @@ export default function ConfigHome() {
           <div className={`${shellStyles.panel} ${styles.configItemBox}`}>
             <span className={styles.configItemTitle}>模块访问控制</span>
             <p className={styles.hint}>
-              仅配置需要登录或不展示的模块；默认展示的模块无需设置。日志模块始终展示，进入后需登录；权限管理不在此配置内。
+              仅影响模块是否出现 / 是否要登录，不授予业务数据权限。业务操作权限请到「权限管理」配置能力授权。
             </p>
             <div className={styles.moduleAccessList}>
               {CONFIGURABLE_MODULES.map(item => (

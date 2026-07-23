@@ -1,25 +1,28 @@
 import app from '../../app.js';
-import { requireSuperAdmin, optionalAuthenticate } from '../../middleware/auth.js';
+import { authenticateToken } from '../../middleware/auth.js';
 import {
   listUsers,
   createUser,
   updateUser,
   resetPassword,
-  grantOrg,
-  grantProject,
-  revokeGrant,
-  listGrants,
+  capabilityCatalog,
+  capabilityMine,
+  capabilityListByUser,
+  capabilityGrant,
+  capabilityRevoke,
 } from './user.js';
 
-const authGate = [optionalAuthenticate, requireSuperAdmin];
+const gate = [authenticateToken];
 
-app.post('/api/auth/user/list', ...authGate, listUsers);
-app.post('/api/auth/user/create', ...authGate, createUser);
-app.post('/api/auth/user/update', ...authGate, updateUser);
-app.post('/api/auth/user/resetPassword', ...authGate, resetPassword);
-app.post('/api/auth/grant/org', ...authGate, grantOrg);
-app.post('/api/auth/grant/project', ...authGate, grantProject);
-app.post('/api/auth/grant/revoke', ...authGate, revokeGrant);
-app.post('/api/auth/grant/list', ...authGate, listGrants);
+app.post('/api/auth/user/list', ...gate, listUsers);
+app.post('/api/auth/user/create', ...gate, createUser);
+app.post('/api/auth/user/update', ...gate, updateUser);
+app.post('/api/auth/user/resetPassword', ...gate, resetPassword);
 
-console.log('[AuthService] 权限管理模块已注册');
+app.post('/api/auth/capability/catalog', ...gate, capabilityCatalog);
+app.post('/api/auth/capability/mine', ...gate, capabilityMine);
+app.post('/api/auth/capability/listByUser', ...gate, capabilityListByUser);
+app.post('/api/auth/capability/grant', ...gate, capabilityGrant);
+app.post('/api/auth/capability/revoke', ...gate, capabilityRevoke);
+
+console.log('[AuthService] 能力授权模块已注册');

@@ -409,7 +409,7 @@ export default function ProjectManage() {
 
   return (
     <ToolPageLayout className={styles.box} actions={<Header forceRefreshList={forceRefreshList} onColorRefresh={loadColorGroups} />} mainClassName={styles.contentBox}>
-        <Left projectList={projectList} setProjectChecked={setProjectChecked} onProjectRemoved={init} />
+        <Left projectList={projectList} customRunMap={customRunMap} setProjectChecked={setProjectChecked} onProjectRemoved={init} />
         <Center
           commandBoxRef={commandBoxRef}
           currentCommand={currentCommand}

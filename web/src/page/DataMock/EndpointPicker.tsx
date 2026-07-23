@@ -5,7 +5,11 @@ import {
   filterEndpoints,
   groupEndpointsByTag,
 } from '../../utils/openapi'
-import { endpointRouteKey } from '../../utils/dataMockStorage'
+import {
+  endpointRouteKey,
+  loadDataMockSearch,
+  saveDataMockSearch,
+} from '../../utils/dataMockStorage'
 import styles from './index.module.less'
 
 const METHOD_COLORS: Record<string, string> = {
@@ -24,7 +28,7 @@ interface EndpointPickerProps {
 }
 
 export function EndpointPicker({ spec, selected, runningKeys, onSelect }: EndpointPickerProps) {
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(loadDataMockSearch)
   const [activeTag, setActiveTag] = useState<string | null>(null)
 
   const allGroups = useMemo(() => groupEndpointsByTag(spec), [spec])
@@ -52,7 +56,11 @@ export function EndpointPicker({ spec, selected, runningKeys, onSelect }: Endpoi
           className={styles.searchInput}
           placeholder="搜索路径、摘要…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value
+            setSearch(next)
+            saveDataMockSearch(next)
+          }}
         />
       </div>
 

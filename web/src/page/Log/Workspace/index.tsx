@@ -14,9 +14,18 @@ import shared from '../shared.module.less';
 
 export default function LogWorkspace() {
   const logApi = useLogApi();
-  const { canManageLog } = useAuth();
+  const { isSuperAdmin, hasCapability } = useAuth();
   const [orgs, setOrgs] = useState<OrgItem[]>([]);
   const [orgId, setOrgId] = useState<number | ''>('');
+  const orgIdNum = orgId === '' ? null : Number(orgId);
+  const canCreateProject = isSuperAdmin || (orgIdNum != null && hasCapability('log.project.create', { scopeType: 'org', scopeId: orgIdNum }));
+  const canUpdateProject = isSuperAdmin || (orgIdNum != null && hasCapability('log.project.update', { scopeType: 'org', scopeId: orgIdNum }));
+  const canCreateKey = (projectId: number) =>
+    isSuperAdmin || hasCapability('log.key.create', { scopeType: 'project', scopeId: projectId }, orgIdNum);
+  const canToggleKey = (projectId: number) =>
+    isSuperAdmin || hasCapability('log.key.toggle', { scopeType: 'project', scopeId: projectId }, orgIdNum);
+  const canDeleteKey = (projectId: number) =>
+    isSuperAdmin || hasCapability('log.key.delete', { scopeType: 'project', scopeId: projectId }, orgIdNum);
   const [orgDetail, setOrgDetail] = useState<any>(null);
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [keysMap, setKeysMap] = useState<Record<number, ApiKeyItem[]>>({});
@@ -134,7 +143,7 @@ export default function LogWorkspace() {
             ))}
           </select>
         </div>
-        <button type="button" className={shared.btn} disabled={!canManageLog} onClick={() => { setProjectForm({ project_name: '', project_code: '', description: '' }); setProjectModalOpen(true); }}>
+        <button type="button" className={shared.btn} disabled={!canCreateProject} onClick={() => { setProjectForm({ project_name: '', project_code: '', description: '' }); setProjectModalOpen(true); }}>
           新建项目
         </button>
       </div>
@@ -165,8 +174,8 @@ export default function LogWorkspace() {
               </span>
             </div>
             <div className={shared.actions}>
-              <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} disabled={!canManageLog} onClick={() => openCreateKey(project.id)}>新建 Key</button>
-              <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} disabled={!canManageLog} onClick={() => toggleProject(project.id)}>
+              <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} disabled={!canCreateKey(project.id)} onClick={() => openCreateKey(project.id)}>新建 Key</button>
+              <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} disabled={!canUpdateProject} onClick={() => toggleProject(project.id)}>
                 {project.status === 1 ? '禁用项目' : '启用项目'}
               </button>
             </div>
@@ -199,10 +208,10 @@ export default function LogWorkspace() {
                     <td>{key.create_time}</td>
                     <td>
                       <div className={shared.actions}>
-                        <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} disabled={!canManageLog} onClick={() => toggleKey(key.id)}>
+                        <button type="button" className={`${shared.btn} ${shared.btnGhost} ${shared.btnSmall}`} disabled={!canToggleKey(project.id)} onClick={() => toggleKey(key.id)}>
                           {key.status === 1 ? '禁用' : '启用'}
                         </button>
-                        <button type="button" className={`${shared.btn} ${shared.btnDanger} ${shared.btnSmall}`} disabled={!canManageLog} onClick={() => removeKey(key.id)}>删除</button>
+                        <button type="button" className={`${shared.btn} ${shared.btnDanger} ${shared.btnSmall}`} disabled={!canDeleteKey(project.id)} onClick={() => removeKey(key.id)}>删除</button>
                       </div>
                     </td>
                   </tr>
