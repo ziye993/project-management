@@ -8,11 +8,11 @@ import {
   type ProjectItem,
   type ApiKeyItem,
 } from '@/api/log';
-import { useLogApi } from '../../../hooks/useLogApi';
-import { useAuth } from '../../../hooks/useAuth';
-import shared from '../shared.module.less';
+import { useLogApi } from '@/hooks/useLogApi';
+import { useAuth } from '@/hooks/useAuth';
+import shared from '@/page/Log/shared.module.less';
 
-export default function LogWorkspace() {
+export default function AuthWorkspace() {
   const logApi = useLogApi();
   const { isSuperAdmin, hasCapability } = useAuth();
   const [orgs, setOrgs] = useState<OrgItem[]>([]);

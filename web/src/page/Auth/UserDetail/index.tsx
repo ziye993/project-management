@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from '../../../Router';
-import ToolPageLayout from '@/components/ToolPageLayout';
 import message from '@/components/ui/Modal/message';
 import { useAuthApi } from '../../../hooks/useAuthApi';
 import { useLogApi } from '../../../hooks/useLogApi';
@@ -195,27 +194,21 @@ export default function AuthUserDetail() {
   const canEditAuth = isSuperAdmin || hasCapability('auth.grant') || hasCapability('auth.user.update');
 
   if (!userId) {
-    return (
-      <ToolPageLayout homePath="/auth/home">
-        <p>无效用户</p>
-      </ToolPageLayout>
-    );
+    return <p>无效用户</p>;
   }
 
   return (
-    <ToolPageLayout homePath="/auth/home">
-      <div className={styles.panel}>
-        <p className={styles.hint}>
-          本页只管理「日志模块」的租户/项目访问权，不是勾选首页各功能模块。
-          流程：先在「日志 → 租户管理」建组织，在「租户工作台」建项目，再回到这里给用户授权。
-          首页模块的显示/需登录请到「系统配置 → 模块访问控制」（全局生效，不按用户）。
-        </p>
+    <div className={styles.panel}>
+      <p className={styles.hint}>
+        本页配置用户的业务能力授权（日志、权限、应用商店写等），不是勾选首页模块显隐。
+        流程：超管在「租户管理」建租户并指定管理员 →「租户工作台」建项目/Key → 再在此给用户授能力。
+        首页模块显示/需登录请到「系统配置 → 模块访问控制」。
+      </p>
 
-        <div className={styles.section}>
-          <h3>用户 #{userId}</h3>
-          {isTenantAdmin && <span className={styles.badge}>租户管理员（能力包）</span>}
-          <p className={styles.hint}>业务操作权限在此配置；模块显隐请到「系统配置 → 模块访问控制」。</p>
-        </div>
+      <div className={styles.section}>
+        <h3>用户 #{userId}</h3>
+        {isTenantAdmin && <span className={styles.badge}>租户管理员（能力包）</span>}
+      </div>
 
         {canEditAuth && (
           <div className={styles.section}>
@@ -346,7 +339,6 @@ export default function AuthUserDetail() {
             {!targetGrants.length && <li>暂无授权</li>}
           </ul>
         </div>
-      </div>
-    </ToolPageLayout>
+      </div> 
   );
 }

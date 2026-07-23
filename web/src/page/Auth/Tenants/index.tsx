@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import message from '@/components/ui/Modal/message';
 import { type OrgItem } from '@/api/log';
-import { useLogApi } from '../../../hooks/useLogApi';
-import { useAuth } from '../../../hooks/useAuth';
-import shared from '../shared.module.less';
+import { useLogApi } from '@/hooks/useLogApi';
+import { useAuth } from '@/hooks/useAuth';
+import shared from '@/page/Log/shared.module.less';
 
 type FormState = {
   id?: number;
@@ -29,7 +29,7 @@ const emptyForm = (): FormState => ({
   bootstrapEmail: '',
 });
 
-export default function LogTenants() {
+export default function AuthTenants() {
   const logApi = useLogApi();
   const { isSuperAdmin, hasCapability } = useAuth();
   const canCreateTenant = isSuperAdmin;

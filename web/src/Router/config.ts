@@ -20,11 +20,12 @@ import GomokuHome from "../page/Game/Gomoku";
 import LogLayout from "../page/Log/Layout";
 import LogHome from "../page/Log/Home";
 import LogQuery from "../page/Log/Query";
-import LogTenants from "../page/Log/Tenants";
-import LogWorkspace from "../page/Log/Workspace";
 import PlaneEditorHome from "../page/PlaneEditor/Home";
+import AuthLayout from "../page/Auth/Layout";
 import AuthHome from "../page/Auth/Home";
 import AuthUserDetail from "../page/Auth/UserDetail";
+import AuthTenants from "../page/Auth/Tenants";
+import AuthWorkspace from "../page/Auth/Workspace";
 import ImageCryptoLayout, {
   ImageCryptoScramblePage,
   ImageCryptoMiragePage,
@@ -116,8 +117,6 @@ const router: TRouter = [{
     children: [
         { path: '/home', components: LogHome },
         { path: '/query', components: LogQuery },
-        { path: '/tenants', components: LogTenants },
-        { path: '/workspace', components: LogWorkspace },
     ]
 }, {
     path: '/plane-editor',
@@ -154,10 +153,13 @@ const router: TRouter = [{
     ]
 }, {
     path: '/auth',
+    components: AuthLayout,
     redirect: 'home',
     children: [
         { path: '/home', components: AuthHome },
         { path: '/detail', components: AuthUserDetail },
+        { path: '/tenants', components: AuthTenants },
+        { path: '/workspace', components: AuthWorkspace },
     ]
 }, {
     path: '/404',

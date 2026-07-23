@@ -26,8 +26,6 @@ export const PATH_MODULE_MAP: Record<string, string> = {
   '/log': 'log',
   '/log/home': 'log',
   '/log/query': 'log',
-  '/log/tenants': 'log',
-  '/log/workspace': 'log',
   '/plane-editor': 'planeEditor',
   '/plane-editor/home': 'planeEditor',
   '/image-crypto': 'imageCrypto',
@@ -45,6 +43,8 @@ export const PATH_MODULE_MAP: Record<string, string> = {
   '/auth': 'auth',
   '/auth/home': 'auth',
   '/auth/detail': 'auth',
+  '/auth/tenants': 'auth',
+  '/auth/workspace': 'auth',
 };
 
 export function resolveModuleKey(pathname: string): string | null {

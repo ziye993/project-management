@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from '@/Router';
-import ToolPageLayout from '@/components/ToolPageLayout';
 import Modal from '@/components/ui/Modal';
 import message from '@/components/ui/Modal/message';
 import { useAuthApi } from '@/hooks/useAuthApi';
@@ -55,7 +54,7 @@ export default function AuthHome() {
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
   return (
-    <ToolPageLayout>
+    <>
       <div className={shared.page}>
         <div className={shared.toolbar}>
           <div className={`${shared.field} ${shared.fieldWide}`}>
@@ -71,7 +70,7 @@ export default function AuthHome() {
           <button type="button" className={shared.btn} onClick={() => setCreateOpen(true)}>新建用户</button>
         </div>
         <p className={shared.hint} style={{ marginBottom: 12 }}>
-          业务操作权限在用户「授权管理」中配置；模块显隐请到系统配置 → 模块访问控制。
+          业务操作权限在用户「授权管理」中配置；租户 / 项目 / Key 见上方导航；模块显隐请到系统配置。
         </p>
 
         <div className={shared.panel}>
@@ -141,6 +140,6 @@ export default function AuthHome() {
           </div>
         </div>
       </Modal>
-    </ToolPageLayout>
+    </>
   );
 }

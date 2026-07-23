@@ -1,8 +1,6 @@
 import {
   RightOutlined,
   SearchOutlined,
-  TeamOutlined,
-  ToolOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '../../../Router';
 import styles from './index.module.less';
@@ -15,20 +13,6 @@ const ENTRIES = [
     path: '/log/query',
     accent: 'indigo',
   },
-  {
-    name: '租户管理',
-    desc: '组织 CRUD、启用与禁用',
-    icon: <TeamOutlined />,
-    path: '/log/tenants',
-    accent: 'teal',
-  },
-  {
-    name: '租户工作台',
-    desc: '项目与 API Key 管理',
-    icon: <ToolOutlined />,
-    path: '/log/workspace',
-    accent: 'amber',
-  },
 ];
 
 export default function LogHome() {
@@ -36,7 +20,7 @@ export default function LogHome() {
 
   return (
     <div className={styles.box}>
-      <p className={styles.subtitle}>多租户日志收集、查询与 Key 管理</p>
+      <p className={styles.subtitle}>多租户日志收集与查询。租户 / 项目 / Key 请到「权限管理」配置。</p>
       <div className={styles.grid}>
         {ENTRIES.map(item => (
           <button
