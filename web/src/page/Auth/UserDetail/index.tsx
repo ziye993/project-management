@@ -205,6 +205,12 @@ export default function AuthUserDetail() {
   return (
     <ToolPageLayout homePath="/auth/home">
       <div className={styles.panel}>
+        <p className={styles.hint}>
+          本页只管理「日志模块」的租户/项目访问权，不是勾选首页各功能模块。
+          流程：先在「日志 → 租户管理」建组织，在「租户工作台」建项目，再回到这里给用户授权。
+          首页模块的显示/需登录请到「系统配置 → 模块访问控制」（全局生效，不按用户）。
+        </p>
+
         <div className={styles.section}>
           <h3>用户 #{userId}</h3>
           {isTenantAdmin && <span className={styles.badge}>租户管理员（能力包）</span>}

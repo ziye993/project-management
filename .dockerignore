@@ -1,0 +1,14 @@
+# 构建上下文忽略项（不影响运行时 .gitignore）
+node_modules
+**/node_modules
+.git
+.idea
+data
+html
+*.log
+nohup.out
+doc
+agent-transcripts
+.cursor
+**/.env
+server/.env
