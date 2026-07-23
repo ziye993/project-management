@@ -4,6 +4,7 @@ import { auditLog } from '../../middleware/auth.js';
 import {
   listCapabilityCatalog,
   MODULE_WRITE_CAPS,
+  getCapabilityMeta,
 } from '../../auth/capabilities.js';
 import {
   loadUserGrants,
@@ -344,9 +345,9 @@ export async function capabilityCatalog(req, res) {
         .filter(g => g.canDelegate)
         .map(g => g.capability),
     );
-    // 非超管不可授平台级能力
+    // 可再授权的能力均可出现在目录（含平台级 module.*.access）
     ok(res, {
-      list: catalog.filter(c => delegable.has(c.id) && c.scope !== 'platform'),
+      list: catalog.filter(c => delegable.has(c.id)),
     });
   } catch (err) {
     console.error('[auth/capability/catalog]', err);
@@ -447,12 +448,19 @@ export async function capabilityScopes(req, res) {
 
     const createUserOrgIds = [...createOrgs];
 
+    const canPlatform = (req.grants || []).some(g =>
+      g.canDelegate
+      && g.scopeType === 'org'
+      && Number(g.scopeId) === 0
+      && getCapabilityMeta(g.capability)?.scope === 'platform',
+    );
+
     ok(res, {
       orgs,
       projects,
       canOrgLevelByOrg,
       createUserOrgIds,
-      platform: false,
+      platform: canPlatform,
     });
   } catch (err) {
     console.error('[auth/capability/scopes]', err);

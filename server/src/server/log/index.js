@@ -5,6 +5,7 @@ import './manage/org.js';
 import './manage/project.js';
 import './manage/key.js';
 import './manage/logQuery.js';
+import './manage/auditQuery.js';
 import { cleanupOldLogs } from './utils/retention.js';
 import { fail, ok } from './utils/response.js';
 import { authenticateToken, requireRealSuperAdmin } from '../../middleware/auth.js';

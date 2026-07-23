@@ -51,7 +51,7 @@ const entries: EntryItem[] = [
   { id: 8, moduleKey: 'localChat', name: '局域网对话', desc: '纯匿名局域网聊天，支持图片与视频', icon: <MessageOutlined />, path: '/local-chat', accent: 'rose' },
   { id: 16, moduleKey: 'swagger', name: 'swagger', desc: '更加可视化和简单的weagger文档', icon: <PercentageOutlined />, path: '/swagger', accent: 'swagger' },
   { id: 10, moduleKey: 'dataMock', name: '数据 Mock', desc: '根据 Swagger 文档启动 Mock 服务，按字段规则返回 JSON', icon: <ApiOutlined />, path: '/data-mock', accent: 'teal' },
-  { id: 11, moduleKey: 'log', name: '日志管理', desc: '多租户活动日志查询（业务上报与应用发布）', icon: <FileTextOutlined />, path: '/log', accent: 'slate' },
+  { id: 11, moduleKey: 'log', name: '日志管理', desc: '普通日志（组织）与系统日志（超管审计）', icon: <FileTextOutlined />, path: '/log', accent: 'slate' },
   { id: 12, moduleKey: 'planeEditor', name: '平面布局编辑器', desc: '设备相对位置平面拖拽编辑，支持多主题', icon: <BuildOutlined />, path: '/plane-editor', accent: 'indigo' },
   { id: 14, moduleKey: 'imageCrypto', name: '图片加解密', desc: '像素混淆、幻影坦克隐写、智能显形与双图合并', icon: <LockOutlined />, path: '/image-crypto', accent: 'teal' },
   { id: 15, moduleKey: 'calc', name: '计算', desc: '水电费分摊与其他常用计算工具', icon: <CalculatorOutlined />, path: '/calc', accent: 'mint' },

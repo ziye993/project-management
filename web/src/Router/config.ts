@@ -20,6 +20,7 @@ import GomokuHome from "../page/Game/Gomoku";
 import LogLayout from "../page/Log/Layout";
 import LogHome from "../page/Log/Home";
 import LogQuery from "../page/Log/Query";
+import LogSystem from "../page/Log/System";
 import PlaneEditorHome from "../page/PlaneEditor/Home";
 import AuthLayout from "../page/Auth/Layout";
 import AuthHome from "../page/Auth/Home";
@@ -117,6 +118,7 @@ const router: TRouter = [{
     children: [
         { path: '/home', components: LogHome },
         { path: '/query', components: LogQuery },
+        { path: '/system', components: LogSystem },
     ]
 }, {
     path: '/plane-editor',

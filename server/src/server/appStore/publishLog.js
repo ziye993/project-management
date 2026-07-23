@@ -1,46 +1,34 @@
 import pool from '../../db/logDb.js';
-import { getConfig } from '../../utils/jsonFile.js';
 import { getClientIp } from '../../middleware/access.js';
 import { auditLog } from '../../middleware/auth.js';
 
 /**
- * Prefer app's org/project; api_key_id = first active key of that project, else config fallback.
- * Same log.query permission covers these rows when filtered by org/project.
+ * Prefer app's org/project; api_key_id = first active key of that project.
+ * No config fallback into arbitrary orgs — missing org → system audit log.
  */
 async function resolveLogIds(app) {
   const orgId = app?.orgId != null ? Number(app.orgId) : null;
   const projectId = app?.projectId != null ? Number(app.projectId) : null;
+  if (orgId == null || projectId == null) return null;
 
   let apiKeyId = null;
-  if (projectId) {
-    try {
-      const [rows] = await pool.execute(
-        'SELECT id FROM sys_api_key WHERE project_id = ? AND status = 1 ORDER BY id ASC LIMIT 1',
-        [projectId],
-      );
-      apiKeyId = rows[0]?.id ?? null;
-    } catch {
-      /* ignore */
-    }
+  try {
+    const [rows] = await pool.execute(
+      'SELECT id FROM sys_api_key WHERE project_id = ? AND status = 1 ORDER BY id ASC LIMIT 1',
+      [projectId],
+    );
+    apiKeyId = rows[0]?.id ?? null;
+  } catch {
+    /* ignore */
   }
 
-  if (apiKeyId != null && orgId != null && projectId != null) {
-    return { apiKeyId, orgId, projectId };
-  }
-
-  const config = getConfig() || {};
-  const logCfg = config.appStoreLog && typeof config.appStoreLog === 'object'
-    ? config.appStoreLog
-    : {};
-  return {
-    apiKeyId: apiKeyId ?? logCfg.apiKeyId ?? config.appStoreLogApiKeyId ?? null,
-    orgId: orgId ?? logCfg.orgId ?? config.appStoreLogOrgId ?? null,
-    projectId: projectId ?? logCfg.projectId ?? config.appStoreLogProjectId ?? null,
-  };
+  if (apiKeyId == null) return null;
+  return { apiKeyId, orgId, projectId };
 }
 
 /**
  * Record an appStore publish into sys_log under the app's org/project.
+ * Without org/project/key → sys_audit_log (system log).
  */
 export async function recordAppStorePublish(req, payload) {
   const {
@@ -90,21 +78,21 @@ export async function recordAppStorePublish(req, payload) {
   const content = JSON.stringify(contentObj);
   const logTitle = `应用发布 ${appName || appSlug}@${version}`;
   const userAgent = String(req.headers?.['user-agent'] || '').slice(0, 500);
-  const { apiKeyId, orgId, projectId } = await resolveLogIds({
+  const ids = await resolveLogIds({
     orgId: payloadOrgId,
     projectId: payloadProjectId,
   });
 
-  if (apiKeyId != null && orgId != null && projectId != null) {
+  if (ids) {
     try {
       await pool.execute(
         `INSERT INTO sys_log
           (api_key_id, org_id, project_id, level, module, title, content, data, trace_id, client_ip, user_agent)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          apiKeyId,
-          orgId,
-          projectId,
+          ids.apiKeyId,
+          ids.orgId,
+          ids.projectId,
           'INFO',
           'appStore',
           logTitle,

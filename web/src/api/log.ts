@@ -128,6 +128,18 @@ export const createLogApi = (logApiBaseUrl: string) => ({
 
   getLogDetail: (id: number) => logPost(logApiBaseUrl, '/log/detail', { id }),
 
+  listAuditLogs: (params: {
+    action?: string;
+    username?: string;
+    keyword?: string;
+    startTime?: string;
+    endTime?: string;
+    page?: number;
+    pageSize?: number;
+  }) => logPost(logApiBaseUrl, '/audit/list', params),
+
+  getAuditDetail: (id: number) => logPost(logApiBaseUrl, '/audit/detail', { id }),
+
   runRetention: () => logPost(logApiBaseUrl, '/retention/run', {}),
 });
 

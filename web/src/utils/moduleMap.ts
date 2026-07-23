@@ -26,6 +26,7 @@ export const PATH_MODULE_MAP: Record<string, string> = {
   '/log': 'log',
   '/log/home': 'log',
   '/log/query': 'log',
+  '/log/system': 'log',
   '/plane-editor': 'planeEditor',
   '/plane-editor/home': 'planeEditor',
   '/image-crypto': 'imageCrypto',

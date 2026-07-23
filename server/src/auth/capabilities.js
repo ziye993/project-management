@@ -16,9 +16,20 @@ export const CAPABILITIES = {
   'log.key.toggle': { scope: 'project', title: '启停 Key', group: 'log' },
   'log.key.delete': { scope: 'project', title: '删除 Key', group: 'log' },
 
-  'log.query': { scope: 'project', title: '查询日志', group: 'log' },
-  'log.query.detail': { scope: 'project', title: '日志详情', group: 'log' },
+  'log.query': { scope: 'project', title: '查询普通日志', group: 'log' },
+  'log.query.detail': { scope: 'project', title: '普通日志详情', group: 'log' },
 
+  'module.project.access': { scope: 'platform', title: '代码管理', group: 'modules' },
+  'module.image.access': { scope: 'platform', title: '图像', group: 'modules' },
+  'module.television.access': { scope: 'platform', title: '影视', group: 'modules' },
+  'module.config.access': { scope: 'platform', title: '系统配置', group: 'modules' },
+  'module.serverInfo.access': { scope: 'platform', title: '服务器状态', group: 'modules' },
+  'module.LANSharing.access': { scope: 'platform', title: '局域网共享', group: 'modules' },
+  'module.swagger.access': { scope: 'platform', title: 'Swagger', group: 'modules' },
+  'module.dataMock.access': { scope: 'platform', title: '数据 Mock', group: 'modules' },
+  'module.planeEditor.access': { scope: 'platform', title: '平面布局编辑器', group: 'modules' },
+  'module.imageCrypto.access': { scope: 'platform', title: '图片加解密', group: 'modules' },
+  'module.calc.access': { scope: 'platform', title: '计算', group: 'modules' },
   'module.appStore.write': { scope: 'platform', title: '应用商店写入', group: 'appStore' },
 };
 
@@ -56,6 +67,7 @@ export const MODULE_READ_CAPS = {
 /**
  * 推导模块入口：持有任一即展示/可读该模块
  * auth 含租户工作台相关 log.*（页面已迁到权限管理）
+ * 本地工具：module.*.access（平台级 org+0）
  */
 export const MODULE_ENTRY_CAPS = {
   auth: [
@@ -71,6 +83,17 @@ export const MODULE_ENTRY_CAPS = {
     'log.query', 'log.query.detail',
   ],
   appStore: ['module.appStore.write'],
+  project: ['module.project.access'],
+  image: ['module.image.access'],
+  television: ['module.television.access'],
+  config: ['module.config.access'],
+  serverInfo: ['module.serverInfo.access'],
+  LANSharing: ['module.LANSharing.access'],
+  swagger: ['module.swagger.access'],
+  dataMock: ['module.dataMock.access'],
+  planeEditor: ['module.planeEditor.access'],
+  imageCrypto: ['module.imageCrypto.access'],
+  calc: ['module.calc.access'],
 };
 
 export function getCapabilityMeta(capability) {

@@ -10,6 +10,9 @@ const LOCAL_MODULES = [
 const PUBLIC_ALWAYS = ['game', 'localChat'];
 const PUBLIC_NEVER = ['project', 'config', 'dataMock', 'swagger', 'planeEditor', 'imageCrypto', 'calc'];
 
+/** 登录后仍默认可见（公开读 / 休闲），无需 module.*.access */
+const AUTH_ALWAYS = ['game', 'localChat', 'appStore'];
+
 export function matchScopeClient(
   grant: CapabilityGrant,
   needType: string,
@@ -51,6 +54,11 @@ function hasAppStoreWrite(grants: CapabilityGrant[], isSuperAdmin: boolean) {
   );
 }
 
+/**
+ * 未登录：按信道默认（局域网本地工具开放）。
+ * 已登录超管：全开。
+ * 已登录非超管：仅 AUTH_ALWAYS + 所持 MODULE_ENTRY_CAPS 对应模块。
+ */
 export function computeVisibleModulesClient(opts: {
   channel: string;
   deploymentRole: string;
@@ -67,30 +75,30 @@ export function computeVisibleModulesClient(opts: {
     return [...LOCAL_MODULES, 'log', 'auth'];
   }
 
-  if (channel === 'local' || channel === 'lan') {
-    const modules = LOCAL_MODULES.filter(m => !guestHidden.has(m));
-    modules.push('log');
-    if (!isAuthenticated) {
-      if (deploymentRole === 'log_server') modules.push('auth');
-    } else if (hasModuleEntry('auth', grants, false)) {
-      modules.push('auth');
-    }
-    return modules;
-  }
-
-  const modules = [...PUBLIC_ALWAYS];
-  if (!guestHidden.has('appStore')) {
-    modules.push('appStore');
-  }
-
   if (!isAuthenticated) {
+    if (channel === 'local' || channel === 'lan') {
+      const modules = LOCAL_MODULES.filter(m => !guestHidden.has(m));
+      modules.push('log');
+      if (deploymentRole === 'log_server') modules.push('auth');
+      return modules;
+    }
+    const modules = [...PUBLIC_ALWAYS];
+    if (!guestHidden.has('appStore')) modules.push('appStore');
     if (!guestHidden.has('log')) modules.push('log');
-  } else {
-    if (hasModuleEntry('log', grants, false)) modules.push('log');
-    if (hasModuleEntry('auth', grants, false)) modules.push('auth');
+    return modules.filter(m => !PUBLIC_NEVER.includes(m) && !guestHidden.has(m));
   }
 
-  return modules.filter(m => !PUBLIC_NEVER.includes(m) && !guestHidden.has(m));
+  // authenticated non-super：能力驱动
+  const modules = new Set<string>(AUTH_ALWAYS);
+
+  for (const key of LOCAL_MODULES) {
+    if (AUTH_ALWAYS.includes(key)) continue;
+    if (hasModuleEntry(key, grants, false)) modules.add(key);
+  }
+  if (hasModuleEntry('log', grants, false)) modules.add('log');
+  if (hasModuleEntry('auth', grants, false)) modules.add('auth');
+
+  return [...modules];
 }
 
 export function computeModuleCapabilitiesClient(opts: {
@@ -113,27 +121,10 @@ export function computeModuleCapabilitiesClient(opts: {
       continue;
     }
 
-    if (channel === 'local' || channel === 'lan') {
-      if (key === 'log') {
-        caps[key] = isAuthenticated
-          ? {
-            read: true,
-            write: hasAnyCap(grants, MODULE_WRITE_CAPS.log, false),
-          }
-          : { read: false, write: false };
-      } else if (key === 'auth') {
-        caps[key] = isAuthenticated
-          ? {
-            read: hasModuleEntry('auth', grants, false),
-            write: hasAnyCap(grants, MODULE_WRITE_CAPS.auth, false),
-          }
-          : { read: false, write: false };
-      } else if (key === 'appStore') {
-        caps[key] = {
-          read: true,
-          write: isAuthenticated && hasAppStoreWrite(grants, false),
-        };
-      } else if (requireLoginSet.has(key)) {
+    if (!isAuthenticated) {
+      if (requireLoginSet.has(key)) {
+        caps[key] = { read: false, write: false };
+      } else if (key === 'log' || key === 'auth') {
         caps[key] = { read: false, write: false };
       } else {
         caps[key] = { read: true, write: true };
@@ -141,34 +132,30 @@ export function computeModuleCapabilitiesClient(opts: {
       continue;
     }
 
-    if (key === 'serverInfo') caps[key] = { read: true, write: false };
-    else if (key === 'appStore') {
+    // authenticated non-super
+    if (key === 'log') {
+      caps[key] = {
+        read: hasModuleEntry('log', grants, false),
+        write: hasAnyCap(grants, MODULE_WRITE_CAPS.log, false),
+      };
+    } else if (key === 'auth') {
+      caps[key] = {
+        read: hasModuleEntry('auth', grants, false),
+        write: hasAnyCap(grants, MODULE_WRITE_CAPS.auth, false),
+      };
+    } else if (key === 'appStore') {
       caps[key] = {
         read: true,
-        write: isAuthenticated && hasAppStoreWrite(grants, false),
+        write: hasAppStoreWrite(grants, false),
       };
-    } else if (['image', 'television', 'LANSharing'].includes(key)) {
-      caps[key] = { read: false, write: false };
-    } else if (key === 'log') {
-      caps[key] = isAuthenticated
-        ? {
-          read: hasModuleEntry('log', grants, false),
-          write: hasAnyCap(grants, MODULE_WRITE_CAPS.log, false),
-        }
-        : { read: false, write: false };
-    } else if (key === 'auth') {
-      caps[key] = isAuthenticated
-        ? {
-          read: hasModuleEntry('auth', grants, false),
-          write: hasAnyCap(grants, MODULE_WRITE_CAPS.auth, false),
-        }
-        : { read: false, write: false };
-    } else if (requireLoginSet.has(key)) {
-      caps[key] = { read: false, write: false };
+    } else if (MODULE_ENTRY_CAPS[key]) {
+      const ok = hasModuleEntry(key, grants, false);
+      caps[key] = { read: ok, write: ok };
     } else {
       caps[key] = { read: true, write: true };
     }
   }
 
+  void channel;
   return caps;
 }

@@ -105,8 +105,11 @@ export default function AuthUserDetail() {
     for (const cap of caps) {
       const meta = CAPABILITIES[cap.id];
       if (!meta) continue;
-      if (meta.scope === 'platform') {
-        if (!(scopeType === 'org' && scopeId === 0)) continue;
+      // 平台级（org+0）只展示 platform 能力；组织/项目不展示 platform 能力
+      if (scopeId === 0) {
+        if (meta.scope !== 'platform') continue;
+      } else if (meta.scope === 'platform') {
+        continue;
       } else if (meta.scope === 'org' && scopeType !== 'org') {
         continue;
       }
@@ -257,7 +260,7 @@ export default function AuthUserDetail() {
             }}
           >
             <option value="">① 选择组织</option>
-            {allowPlatform && <option value="__platform__">平台级（应用商店写）</option>}
+            {allowPlatform && <option value="__platform__">平台级（功能模块 / 应用商店）</option>}
             {orgs.map(o => (
               <option key={o.id} value={o.id}>{o.org_name}</option>
             ))}
