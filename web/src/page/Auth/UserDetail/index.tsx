@@ -168,7 +168,7 @@ export default function AuthUserDetail() {
   };
 
   const save = async () => {
-    if (selectedOrgId === '' && selectedOrgId !== 0) {
+    if (selectedOrgId === '') {
       message.error('请先选择组织');
       return;
     }
