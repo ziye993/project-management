@@ -5,6 +5,26 @@
   flex-wrap: wrap;
 }
 
+@media (max-width: 768px) {
+  .nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .navLink {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    font-size: 13px;
+    min-height: 32px;
+  }
+}
+
 .navLink {
   display: inline-flex;
   align-items: center;

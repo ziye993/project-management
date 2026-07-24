@@ -18,11 +18,13 @@ import { loadChatIdentity } from '../../../utils/chatIdentity';
 import { fileNameFromUrl, getClipboardFiles, uploadChatFile } from '../../../utils/chatFileUpload';
 import { useNavigate } from '../../../Router';
 import type { ActiveChat, ChatGroup, ChatMessage, ChatUser, Conversation } from '../../../type/chat';
-import { FileOutlined, MessageOutlined, PaperClipOutlined, PictureOutlined, SendOutlined, TeamOutlined, VideoCameraOutlined } from '@ant-design/icons';
+import { FileOutlined, LeftOutlined, MessageOutlined, PaperClipOutlined, PictureOutlined, SendOutlined, TeamOutlined, UserAddOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import message from '@/components/ui/Modal/message';
 import styles from './index.module.less';
+
+type MobilePane = 'list' | 'chat' | 'discover';
 
 function formatTime(ts?: number) {
   if (!ts) return '';
@@ -87,6 +89,7 @@ export default function LocalChatHome() {
   const [groupName, setGroupName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [mobilePane, setMobilePane] = useState<MobilePane>('list');
   const msgEndRef = useRef<HTMLDivElement>(null);
   const picInputRef = useRef<HTMLInputElement>(null);
   const vidInputRef = useRef<HTMLInputElement>(null);
@@ -152,6 +155,7 @@ export default function LocalChatHome() {
     });
 
     setActiveChat({ convId, type: 'private', targetId: user.userId, title: user.username });
+    setMobilePane('chat');
     startConversation(convId);
     fetchChatHistory(convId);
     markChatRead(convId);
@@ -179,6 +183,7 @@ export default function LocalChatHome() {
     });
 
     setActiveChat({ convId, type: 'group', targetId: group.id, title: group.name });
+    setMobilePane('chat');
     startConversation(convId);
     fetchChatHistory(convId);
     markChatRead(convId);
@@ -210,6 +215,7 @@ export default function LocalChatHome() {
       targetId: other,
       title: conv.peerName || other,
     });
+    setMobilePane('chat');
     startConversation(conv.id);
     fetchChatHistory(conv.id);
     markChatRead(conv.id);
@@ -357,13 +363,29 @@ export default function LocalChatHome() {
   };
 
   return (
-    <div className={styles.container}>
+    <div
+      className={`${styles.container} ${
+        mobilePane === 'chat'
+          ? styles.mobileChat
+          : mobilePane === 'discover'
+            ? styles.mobileDiscover
+            : styles.mobileList
+      }`}
+    >
       <aside className={styles.historyPanel}>
         <div className={styles.panelHead}>
           <button type="button" className={styles.myAvatarBtn} onClick={() => push('/local-chat/profile')}>
             <span className={styles.avatar}>{identity.avatar}</span>
           </button>
           <span className={styles.panelTitle}>聊天记录</span>
+          <button
+            type="button"
+            className={styles.mobileOnlyBtn}
+            onClick={() => setMobilePane('discover')}
+            title="发现"
+          >
+            <UserAddOutlined /> 发现
+          </button>
         </div>
         <div className={styles.convList}>
           {conversations.map(conv => {
@@ -401,7 +423,7 @@ export default function LocalChatHome() {
               </button>
             );
           })}
-          {!conversations.length && <p className={styles.emptyTip}>暂无聊天记录，从右侧选择在线用户开始对话</p>}
+          {!conversations.length && <p className={styles.emptyTip}>暂无聊天记录，去「发现」选择在线用户开始对话</p>}
         </div>
       </aside>
 
@@ -428,7 +450,17 @@ export default function LocalChatHome() {
       >
         {activeChat ? (
           <>
-            <div className={styles.chatHead}>{activeChat.title}</div>
+            <div className={styles.chatHead}>
+              <button
+                type="button"
+                className={styles.mobileBackBtn}
+                onClick={() => setMobilePane('list')}
+                aria-label="返回会话列表"
+              >
+                <LeftOutlined />
+              </button>
+              <span className={styles.chatHeadTitle}>{activeChat.title}</span>
+            </div>
             <div className={styles.msgList}>
               {messages.map(renderMessage)}
               <div ref={msgEndRef} />
@@ -474,13 +506,21 @@ export default function LocalChatHome() {
         ) : (
           <div className={styles.chatEmpty}>
             <MessageOutlined style={{ fontSize: 48, color: '#ccc' }} />
-            <p>双击右侧在线用户或群组开始对话</p>
+            <p>点击右侧在线用户或群组开始对话</p>
           </div>
         )}
       </section>
 
       <aside className={styles.discoverPanel}>
         <div className={styles.panelHead}>
+          <button
+            type="button"
+            className={styles.mobileBackBtn}
+            onClick={() => setMobilePane('list')}
+            aria-label="返回会话列表"
+          >
+            <LeftOutlined />
+          </button>
           <span className={styles.panelTitle}>发现</span>
           <Button onClick={() => setGroupModal(true)}>建群</Button>
         </div>
@@ -490,8 +530,9 @@ export default function LocalChatHome() {
             <div
               key={user.userId}
               className={styles.discoverItem}
+              onClick={() => openPrivateChat(user)}
               onDoubleClick={() => openPrivateChat(user)}
-              title="双击开始对话"
+              title="点击开始对话"
             >
               <span className={styles.convAvatar}>
                 {user.avatar}
@@ -509,8 +550,9 @@ export default function LocalChatHome() {
             <div
               key={group.id}
               className={styles.discoverItem}
+              onClick={() => openGroupChat(group)}
               onDoubleClick={() => openGroupChat(group)}
-              title="双击进入群组"
+              title="点击进入群组"
             >
               <span className={styles.convAvatar}><TeamOutlined /></span>
               <span className={styles.discoverName}>{group.name}</span>
@@ -527,14 +569,14 @@ export default function LocalChatHome() {
             群组名称
             <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="输入群组名" />
           </label>
-          <p className={styles.memberLabel}>选择成员（双击切换，仅在线用户）</p>
+          <p className={styles.memberLabel}>选择成员（点击切换，仅在线用户）</p>
           <div className={styles.memberList}>
             {users.filter(u => u.userId !== selfId && u.online).map(user => (
               <button
                 key={user.userId}
                 type="button"
                 className={`${styles.memberChip} ${selectedMembers.includes(user.userId) ? styles.memberSelected : ''}`}
-                onDoubleClick={() => setSelectedMembers(prev =>
+                onClick={() => setSelectedMembers(prev =>
                   prev.includes(user.userId) ? prev.filter(id => id !== user.userId) : [...prev, user.userId]
                 )}
               >

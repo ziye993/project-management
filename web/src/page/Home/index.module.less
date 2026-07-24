@@ -523,3 +523,46 @@
     color: var(--accent);
   }
 }
+
+@media (max-width: 768px) {
+  .box {
+    padding: 10px;
+    overflow: auto;
+    height: auto;
+    min-height: 100vh;
+    max-height: none;
+  }
+
+  .authBtn {
+    margin: 0;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .main {
+    padding: 4px 4px 24px;
+    width: 100%;
+  }
+
+  .card {
+    padding: 14px 12px;
+    gap: 10px;
+    border-radius: 18px;
+  }
+
+  .iconWrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    font-size: 20px;
+
+    :global(.anticon) {
+      font-size: 20px;
+    }
+  }
+
+  .cardArrow {
+    opacity: 0.45;
+    transform: none;
+  }
+}

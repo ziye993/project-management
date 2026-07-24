@@ -155,7 +155,7 @@ export default function MirageTab() {
               params={revealParams as unknown as Record<string, unknown>}
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className={shared.previewPair}>
             {lightUrl && <figure><img className={shared.preview} src={lightUrl} alt="浅底" /><figcaption>浅底显形</figcaption></figure>}
             {darkUrl && <figure><img className={shared.preview} src={darkUrl} alt="深底" /><figcaption>深底显形</figcaption></figure>}
           </div>

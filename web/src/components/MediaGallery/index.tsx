@@ -108,7 +108,7 @@ export default function MediaGallery({
         },
       })}
 
-      <Modal open={!!preview} title={previewTitle} onClose={() => setPreview('')} onOK={() => setPreview('')} width="80vw">
+      <Modal open={!!preview} title={previewTitle} onClose={() => setPreview('')} onOK={() => setPreview('')} width="min(96vw, 960px)">
         {preview && (
           type === 'mov'
             ? <video src={preview} controls className={styles.previewVideo} />

@@ -160,7 +160,7 @@ export default function LANSharingHome() {
                 {!item.isDirectory && (
                   <>
                     <button type="button" onClick={() => openKkFileViewPreview(item)}>
-                      <EyeOutlined /> 使用kkFileView预览
+                      <EyeOutlined /> 预览
                     </button>
                     <button type="button" onClick={() => download(item)}><DownloadOutlined /> 下载</button>
                     <button type="button" onClick={() => setLinkModal({ open: true, links: item.downloadLinks || [] })}><LinkOutlined /> 链接</button>

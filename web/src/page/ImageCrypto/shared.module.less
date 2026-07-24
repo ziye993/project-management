@@ -103,6 +103,12 @@
   font-size: 13px;
 }
 
+.previewPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 .layoutRow {
   display: flex;
   gap: 20px;
@@ -112,5 +118,15 @@
 @media (max-width: 768px) {
   .layoutRow {
     flex-direction: column;
+  }
+
+  .sliderRow {
+    grid-template-columns: 72px 1fr 36px;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .previewPair {
+    grid-template-columns: 1fr;
   }
 }

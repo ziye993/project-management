@@ -194,6 +194,9 @@
   border-bottom: 1px solid #f0f0f0;
   font-weight: 600;
   font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .msgList {
@@ -454,4 +457,84 @@
   background: #eef3ff;
   border-color: #667eea;
   color: #667eea;
+}
+
+.mobileOnlyBtn,
+.mobileBackBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: #f5f5f5;
+  color: #555;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.mobileBackBtn {
+  width: 32px;
+  padding: 0;
+}
+
+.chatHeadTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .historyPanel,
+  .chatPanel,
+  .discoverPanel {
+    display: none;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .mobileList .historyPanel,
+  .mobileChat .chatPanel,
+  .mobileDiscover .discoverPanel {
+    display: flex;
+  }
+
+  .mobileOnlyBtn,
+  .mobileBackBtn {
+    display: inline-flex;
+  }
+
+  .msgBubble {
+    max-width: 78%;
+  }
+
+  .inputBar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .textInput {
+    order: 1;
+    flex: 1 1 100%;
+  }
+
+  .sendBtn {
+    margin-left: auto;
+  }
+
+  .discoverPanel .mobileBackBtn {
+    display: inline-flex;
+  }
 }
