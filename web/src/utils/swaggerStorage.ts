@@ -1,7 +1,11 @@
 import type { DocTab } from '../type/docTab'
 import { createTabId, createTabLabel } from '../type/docTab'
 import type { OpenAPISpec } from '../type/openapi'
-import { isFetchableSourceUrl } from './openapi'
+import {
+  DEFAULT_DOC_DOCUMENT_TYPE,
+  normalizeDocDocumentType,
+} from '../constants/docDocumentType'
+import { findConflictIndex } from './swaggerDiff'
 
 const SESSION_KEY = 'swagger_session'
 const HISTORY_KEY = 'swagger_history'
@@ -29,6 +33,18 @@ export interface SwaggerHistoryEntry {
   loadedAt: number
 }
 
+function normalizeTab(tab: DocTab): DocTab {
+  return {
+    ...tab,
+    id: typeof tab.id === 'string' && tab.id ? tab.id : createTabId(),
+    label:
+      typeof tab.label === 'string' && tab.label
+        ? tab.label
+        : createTabLabel(tab.spec, tab.sourceUrl, tab.remark),
+    documentType: normalizeDocDocumentType(tab.documentType),
+  }
+}
+
 export function loadSwaggerSearch(): string {
   try {
     return localStorage.getItem(SEARCH_KEY) ?? ''
@@ -52,7 +68,7 @@ export function loadSwaggerSession(): SwaggerSession | null {
     const parsed = JSON.parse(raw) as SwaggerSession
     if (!Array.isArray(parsed.tabs)) return null
     return {
-      tabs: parsed.tabs,
+      tabs: parsed.tabs.map(normalizeTab),
       activeTabId: parsed.activeTabId ?? null,
     }
   } catch {
@@ -152,53 +168,39 @@ export function parseSwaggerImport(raw: string): SwaggerExportPayload {
   return {
     version: EXPORT_VERSION,
     exportedAt: typeof data.exportedAt === 'number' ? data.exportedAt : Date.now(),
-    tabs: tabs.map((tab) => ({
-      ...tab,
-      id: typeof tab.id === 'string' && tab.id ? tab.id : createTabId(),
-      label:
-        typeof tab.label === 'string' && tab.label
-          ? tab.label
-          : createTabLabel(tab.spec, tab.sourceUrl, tab.remark),
-    })),
+    tabs: tabs.map(normalizeTab),
     activeTabId: typeof data.activeTabId === 'string' ? data.activeTabId : null,
   }
 }
 
 /** 与当前 tabs 合并：同 id，或可拉取文档的同 sourceUrl 视为冲突，导入数据优先 */
 export function mergeSwaggerTabs(current: DocTab[], imported: DocTab[]): DocTab[] {
-  const result = current.map((tab) => ({ ...tab }))
+  const result = current.map((tab) => normalizeTab(tab))
 
   for (const incoming of imported) {
-    const conflictIndex = findConflictIndex(result, incoming)
+    const normalized = normalizeTab(incoming)
+    const conflictIndex = findConflictIndex(result, normalized)
     if (conflictIndex >= 0) {
       const existing = result[conflictIndex]
       result[conflictIndex] = {
-        ...incoming,
+        ...normalized,
         // 保留当前 tab id，避免激活态丢失；其余字段（备注、cookie、spec 等）以导入为准
         id: existing.id,
-        label: createTabLabel(incoming.spec, incoming.sourceUrl, incoming.remark),
+        label: createTabLabel(normalized.spec, normalized.sourceUrl, normalized.remark),
+        documentType: normalizeDocDocumentType(
+          normalized.documentType ?? existing.documentType ?? DEFAULT_DOC_DOCUMENT_TYPE,
+        ),
       }
     } else {
       result.push({
-        ...incoming,
-        id: incoming.id || createTabId(),
-        label: createTabLabel(incoming.spec, incoming.sourceUrl, incoming.remark),
+        ...normalized,
+        id: normalized.id || createTabId(),
+        label: createTabLabel(normalized.spec, normalized.sourceUrl, normalized.remark),
       })
     }
   }
 
   return result
-}
-
-function findConflictIndex(tabs: DocTab[], incoming: DocTab): number {
-  if (incoming.id) {
-    const byId = tabs.findIndex((tab) => tab.id === incoming.id)
-    if (byId >= 0) return byId
-  }
-  if (isFetchableSourceUrl(incoming.sourceUrl)) {
-    return tabs.findIndex((tab) => tab.sourceUrl === incoming.sourceUrl)
-  }
-  return -1
 }
 
 export function downloadSwaggerExport(payload: SwaggerExportPayload) {

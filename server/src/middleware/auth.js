@@ -91,6 +91,7 @@ export function requireRealSuperAdmin(req, res, next) {
 const LOCAL_ONLY_PREFIXES = [
   '/api/project',
   '/api/config',
+  '/api/swagger',
   '/api/mock',
   '/openapi-proxy',
   '/openapi-api-proxy',

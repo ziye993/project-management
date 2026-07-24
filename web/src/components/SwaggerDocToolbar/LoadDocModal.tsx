@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import { API_DOC_GROUPS, type ApiDocGroup } from '../../utils/openapi'
+import {
+  DEFAULT_DOC_DOCUMENT_TYPE,
+  DOC_DOCUMENT_TYPES,
+  DOC_DOCUMENT_TYPE_LABELS,
+  type DocDocumentType,
+} from '@/constants/docDocumentType'
 import styles from './LoadDocModal.module.less'
 
 export type LoadDocConfirmInput =
-  | { mode: 'url'; baseUrl: string; group: string }
-  | { mode: 'paste'; json: string }
+  | { mode: 'url'; baseUrl: string; group: string; documentType: DocDocumentType }
+  | { mode: 'paste'; json: string; documentType: DocDocumentType }
 
 interface LoadDocModalProps {
   open: boolean
@@ -18,6 +24,7 @@ interface LoadDocModalProps {
 export default function LoadDocModal({ open, loading, onClose, onConfirm }: LoadDocModalProps) {
   const [baseUrl, setBaseUrl] = useState('http://10.1.101.54:8208/dmom-mes')
   const [group, setGroup] = useState<ApiDocGroup>('应用')
+  const [documentType, setDocumentType] = useState<DocDocumentType>(DEFAULT_DOC_DOCUMENT_TYPE)
   const [pasteJson, setPasteJson] = useState('')
   const [localError, setLocalError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -26,6 +33,7 @@ export default function LoadDocModal({ open, loading, onClose, onConfirm }: Load
     if (open) {
       setBaseUrl('http://10.1.101.54:8208/dmom-mes')
       setGroup('应用')
+      setDocumentType(DEFAULT_DOC_DOCUMENT_TYPE)
       setPasteJson('')
       setLocalError(null)
       setSubmitting(false)
@@ -49,8 +57,8 @@ export default function LoadDocModal({ open, loading, onClose, onConfirm }: Load
     setSubmitting(true)
     try {
       const input: LoadDocConfirmInput = trimmedPaste
-        ? { mode: 'paste', json: trimmedPaste }
-        : { mode: 'url', baseUrl: trimmedUrl, group }
+        ? { mode: 'paste', json: trimmedPaste, documentType }
+        : { mode: 'url', baseUrl: trimmedUrl, group, documentType }
 
       const ok = await onConfirm(input)
       if (ok) {
@@ -68,6 +76,20 @@ export default function LoadDocModal({ open, loading, onClose, onConfirm }: Load
   return (
     <Modal open={open} title="加载文档" onClose={onClose} onOK={() => void handleConfirm()} width={560}>
       <div className={styles.form}>
+        <label className={styles.field}>
+          <span>文档类型</span>
+          <select
+            value={documentType}
+            onChange={(e) => setDocumentType(e.target.value as DocDocumentType)}
+            disabled={busy}
+          >
+            {DOC_DOCUMENT_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {DOC_DOCUMENT_TYPE_LABELS[type]}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className={styles.field}>
           <span>服务地址</span>
           <input

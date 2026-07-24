@@ -1,6 +1,11 @@
 import { PlusOutlined } from '@ant-design/icons'
 import type { DocTab } from '../../../type/docTab'
 import { getDocBaseUrl } from '../../../type/docTab'
+import {
+  getDocDocumentTypeColor,
+  getDocDocumentTypeLabel,
+  normalizeDocDocumentType,
+} from '@/constants/docDocumentType'
 import styles from './index.module.less'
 
 interface DocTabsProps {
@@ -17,6 +22,8 @@ export function DocTabs({ tabs, activeTabId, onSelect, onClose, onAdd }: DocTabs
       <div className={styles.docTabsList} role="tablist">
         {tabs.map((tab) => {
           const isActive = tab.id === activeTabId
+          const docType = normalizeDocDocumentType(tab.documentType)
+          const color = getDocDocumentTypeColor(docType)
           return (
             <div
               key={tab.id}
@@ -28,8 +35,13 @@ export function DocTabs({ tabs, activeTabId, onSelect, onClose, onAdd }: DocTabs
                 type="button"
                 className={styles.docTabLabel}
                 onClick={() => onSelect(tab.id)}
-                title={tab.remark?.trim() || getDocBaseUrl(tab.sourceUrl)}
+                title={`${getDocDocumentTypeLabel(docType)} · ${tab.remark?.trim() || getDocBaseUrl(tab.sourceUrl)}`}
               >
+                <span
+                  className={styles.docTypeDot}
+                  style={{ backgroundColor: color }}
+                  aria-hidden
+                />
                 {tab.label}
               </button>
               <button

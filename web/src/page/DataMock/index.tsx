@@ -52,7 +52,9 @@ function buildMockBaseUrlClient(baseUrl: string): string {
 function DataMock() {
   const {
     tabs,
+    setTabs,
     activeTabId,
+    setActiveTabId,
     activeTab,
     fetchLoading,
     error,
@@ -137,8 +139,11 @@ function DataMock() {
     setSelected(null)
     const tab =
       input.mode === 'paste'
-        ? await loadFromPaste(input.json)
-        : await fetchDocument(input.baseUrl, input.group, { preferCache: true })
+        ? await loadFromPaste(input.json, input.documentType)
+        : await fetchDocument(input.baseUrl, input.group, {
+            preferCache: true,
+            documentType: input.documentType,
+          })
     if (tab) {
       activateTab(tab)
     }
@@ -152,6 +157,16 @@ function DataMock() {
     setArrayLengths({})
     setStaticResponseText('')
     setPhase('pick')
+  }
+
+  const handleApplySyncedTabs = (nextTabs: DocTab[], nextActiveId: string | null) => {
+    setTabs(nextTabs)
+    setActiveTabId(nextActiveId)
+    setSelected(null)
+    setFieldRules({})
+    setArrayLengths({})
+    setStaticResponseText('')
+    setPhase(nextTabs.length > 0 ? 'pick' : 'load')
   }
 
   const handleTabSelect = (id: string) => {
@@ -265,6 +280,7 @@ function DataMock() {
           onImport={handleImport}
           onSelectTab={handleTabSelect}
           onCloseTab={handleCloseTab}
+          onApplySyncedTabs={handleApplySyncedTabs}
         />
       }
     >

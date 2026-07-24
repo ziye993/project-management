@@ -9,6 +9,7 @@ import './file/index.js';
 import './upload/index.js';
 import './upload/chunkUpload.js';
 import './config/index.js';
+import './swagger/index.js';
 import './imageCrypto/index.js';
 import './calc/index.js';
 import './appStore/download.js';

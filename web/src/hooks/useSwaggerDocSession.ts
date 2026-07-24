@@ -9,6 +9,11 @@ import {
 } from '@/utils/swaggerStorage';
 import { buildApiDocsUrl, fetchOpenAPISpec, parseOpenAPISpec } from '@/utils/openapi';
 import { createDocTab, createTabLabel, type DocTab } from '@/type/docTab';
+import {
+  DEFAULT_DOC_DOCUMENT_TYPE,
+  normalizeDocDocumentType,
+  type DocDocumentType,
+} from '@/constants/docDocumentType';
 
 interface UseSwaggerDocSessionOptions {
   relabelTabs?: boolean;
@@ -18,10 +23,12 @@ export function useSwaggerDocSession(options: UseSwaggerDocSessionOptions = {}) 
   const [initialSession] = useState(() => loadSwaggerSession());
   const [tabs, setTabs] = useState<DocTab[]>(() => {
     const raw = initialSession?.tabs ?? [];
-    if (!options.relabelTabs) return raw;
     return raw.map((tab) => ({
       ...tab,
-      label: createTabLabel(tab.spec, tab.sourceUrl, tab.remark),
+      documentType: normalizeDocDocumentType(tab.documentType),
+      ...(options.relabelTabs
+        ? { label: createTabLabel(tab.spec, tab.sourceUrl, tab.remark) }
+        : {}),
     }));
   });
   const [activeTabId, setActiveTabId] = useState<string | null>(initialSession?.activeTabId ?? null);
@@ -40,13 +47,19 @@ export function useSwaggerDocSession(options: UseSwaggerDocSessionOptions = {}) 
   const addTab = (
     spec: DocTab['spec'],
     sourceUrl: string,
-    meta?: { baseUrl: string; group: string },
+    meta?: { baseUrl?: string; group?: string; documentType?: DocDocumentType },
   ) => {
-    const tab = createDocTab(spec, sourceUrl);
+    const tab = createDocTab(
+      spec,
+      sourceUrl,
+      '',
+      '',
+      meta?.documentType ?? DEFAULT_DOC_DOCUMENT_TYPE,
+    );
     setTabs((prev) => [...prev, tab]);
     setActiveTabId(tab.id);
     setError(null);
-    if (meta) {
+    if (meta?.baseUrl && meta?.group) {
       addSwaggerHistory(spec, sourceUrl, meta.baseUrl, meta.group);
     }
     return tab;
@@ -61,7 +74,7 @@ export function useSwaggerDocSession(options: UseSwaggerDocSessionOptions = {}) 
   const fetchDocument = async (
     baseUrl: string,
     group: string,
-    opts?: { preferCache?: boolean },
+    opts?: { preferCache?: boolean; documentType?: DocDocumentType },
   ) => {
     const docsUrl = buildApiDocsUrl(baseUrl, group);
     if (opts?.preferCache) {
@@ -76,7 +89,11 @@ export function useSwaggerDocSession(options: UseSwaggerDocSessionOptions = {}) 
     setError(null);
     try {
       const data = await fetchOpenAPISpec(docsUrl);
-      return addTab(data, docsUrl, { baseUrl, group });
+      return addTab(data, docsUrl, {
+        baseUrl,
+        group,
+        documentType: opts?.documentType ?? DEFAULT_DOC_DOCUMENT_TYPE,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : '加载失败';
       setError(message);
@@ -86,12 +103,12 @@ export function useSwaggerDocSession(options: UseSwaggerDocSessionOptions = {}) 
     }
   };
 
-  const loadFromPaste = async (json: string) => {
+  const loadFromPaste = async (json: string, documentType: DocDocumentType = DEFAULT_DOC_DOCUMENT_TYPE) => {
     setFetchLoading(true);
     setError(null);
     try {
       const data = parseOpenAPISpec(json);
-      return addTab(data, '本地粘贴的 JSON');
+      return addTab(data, '本地粘贴的 JSON', { documentType });
     } catch (err) {
       const message = err instanceof Error ? err.message : '解析失败';
       setError(message);

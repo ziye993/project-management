@@ -1,4 +1,9 @@
 import type { OpenAPISpec } from './openapi'
+import {
+  DEFAULT_DOC_DOCUMENT_TYPE,
+  normalizeDocDocumentType,
+  type DocDocumentType,
+} from '../constants/docDocumentType'
 
 export interface DocTab {
   id: string
@@ -9,6 +14,8 @@ export interface DocTab {
   cookie?: string
   /** User-defined tab remark; shown in tab bar when set */
   remark?: string
+  /** 文档类型，默认 swagger */
+  documentType?: DocDocumentType
 }
 
 export function createTabId(): string {
@@ -44,6 +51,7 @@ export function createDocTab(
   sourceUrl: string,
   cookie = '',
   remark = '',
+  documentType: DocDocumentType = DEFAULT_DOC_DOCUMENT_TYPE,
 ): DocTab {
   return {
     id: createTabId(),
@@ -52,5 +60,6 @@ export function createDocTab(
     spec,
     cookie,
     remark: remark || undefined,
+    documentType: normalizeDocDocumentType(documentType),
   }
 }

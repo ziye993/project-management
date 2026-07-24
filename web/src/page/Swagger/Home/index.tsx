@@ -44,10 +44,10 @@ function Swagger() {
 
   const handleFetch = async (input: LoadDocConfirmInput) => {
     if (input.mode === 'paste') {
-      await loadFromPaste(input.json);
+      await loadFromPaste(input.json, input.documentType);
       return true;
     }
-    await fetchDocument(input.baseUrl, input.group);
+    await fetchDocument(input.baseUrl, input.group, { documentType: input.documentType });
     return true;
   };
 
@@ -57,6 +57,11 @@ function Swagger() {
     } catch (err) {
       throw err instanceof Error ? err : new Error('导入失败');
     }
+  };
+
+  const handleApplySyncedTabs = (nextTabs: typeof tabs, nextActiveId: string | null) => {
+    setTabs(nextTabs);
+    setActiveTabId(nextActiveId);
   };
 
   const handleRefreshTab = async (tabId: string) => {
@@ -115,6 +120,7 @@ function Swagger() {
           onImport={handleImport}
           onSelectTab={setActiveTabId}
           onCloseTab={closeTab}
+          onApplySyncedTabs={handleApplySyncedTabs}
         />
       )}
     >
